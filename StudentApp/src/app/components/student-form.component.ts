@@ -19,14 +19,16 @@ import { StudentService, Student } from '../services/student.service';
           <label for="firstName">First Name:</label>
           <input type="text" id="firstName" [(ngModel)]="student.firstName" name="firstName" required />
           <span class="error" *ngIf="form.submitted && !student.firstName">First name is required</span>
-          <span class="error" *ngIf="form.submitted && student.firstName && !isValidName(student.firstName)">Enter valid First Name</span>
+          <span class="error" *ngIf="form.submitted && student.firstName && student.firstName.length < 2">First name must be at least 2 characters</span>
+          <span class="error" *ngIf="form.submitted && student.firstName && student.firstName.length >= 2 && !isValidName(student.firstName)">First name can only contain letters, spaces, hyphens, and apostrophes</span>
         </div>
         
         <div class="form-group">
           <label for="lastName">Last Name:</label>
           <input type="text" id="lastName" [(ngModel)]="student.lastName" name="lastName" required />
           <span class="error" *ngIf="form.submitted && !student.lastName">Last name is required</span>
-          <span class="error" *ngIf="form.submitted && student.lastName && !isValidName(student.lastName)">Enter valid Last Name</span>
+          <span class="error" *ngIf="form.submitted && student.lastName && student.lastName.length < 2">Last name must be at least 2 characters</span>
+          <span class="error" *ngIf="form.submitted && student.lastName && student.lastName.length >= 2 && !isValidName(student.lastName)">Last name can only contain letters, spaces, hyphens, and apostrophes</span>
         </div>
         
         <div class="form-group">
@@ -253,39 +255,71 @@ export class StudentFormComponent implements OnInit {
   onSubmit(): void {
     this.error = null; // Clear previous errors
     
-    // Validate firstName format
-    if (this.student.firstName && !this.isValidName(this.student.firstName)) {
-      this.error = 'Please enter a valid First Name (letters only)';
+    // Validate firstName
+    if (!this.student.firstName) {
+      this.error = 'First name is required';
+      return;
+    }
+    if (this.student.firstName.length < 2) {
+      this.error = 'First name must be at least 2 characters';
+      return;
+    }
+    if (!this.isValidName(this.student.firstName)) {
+      this.error = 'Please enter a valid First Name (letters, spaces, hyphens, and apostrophes only)';
       return;
     }
     
-    // Validate lastName format
-    if (this.student.lastName && !this.isValidName(this.student.lastName)) {
-      this.error = 'Please enter a valid Last Name (letters only)';
+    // Validate lastName
+    if (!this.student.lastName) {
+      this.error = 'Last name is required';
+      return;
+    }
+    if (this.student.lastName.length < 2) {
+      this.error = 'Last name must be at least 2 characters';
+      return;
+    }
+    if (!this.isValidName(this.student.lastName)) {
+      this.error = 'Please enter a valid Last Name (letters, spaces, hyphens, and apostrophes only)';
       return;
     }
 
     // Validate email format
-    if (this.student.email && !this.isValidEmail(this.student.email)) {
+    if (!this.student.email) {
+      this.error = 'Email is required';
+      return;
+    }
+    if (!this.isValidEmail(this.student.email)) {
       this.error = 'Please enter a valid email address';
       return;
     }
     
-    // Phone validation is handled in the template - don't set error here
-    // Just prevent submission if validation fails
+    // Phone validation
     if (!this.student.phone || this.student.phone.length !== 8) {
-      return; // Template will show the appropriate error
+      this.error = 'Phone must be exactly 8 digits';
+      return;
     }
 
-    // Assessment validation is handled in the template - don't set error here
-    // Just prevent submission if validation fails
+    // Grade validation
+    if (!this.student.grade) {
+      this.error = 'Grade is required';
+      return;
+    }
+
+    // Assessment validation
     if (this.student.assessment1 === null || this.student.assessment1 === undefined ||
-        this.student.assessment1 < 0 || this.student.assessment1 > 20 ||
-        this.student.assessment2 === null || this.student.assessment2 === undefined ||
-        this.student.assessment2 < 0 || this.student.assessment2 > 20 ||
-        this.student.assessment3 === null || this.student.assessment3 === undefined ||
+        this.student.assessment1 < 0 || this.student.assessment1 > 20) {
+      this.error = 'Assessment 1 must be between 0 and 20';
+      return;
+    }
+    if (this.student.assessment2 === null || this.student.assessment2 === undefined ||
+        this.student.assessment2 < 0 || this.student.assessment2 > 20) {
+      this.error = 'Assessment 2 must be between 0 and 20';
+      return;
+    }
+    if (this.student.assessment3 === null || this.student.assessment3 === undefined ||
         this.student.assessment3 < 0 || this.student.assessment3 > 20) {
-      return; // Template will show the appropriate error
+      this.error = 'Assessment 3 must be between 0 and 20';
+      return;
     }
 
     this.loading = true;
