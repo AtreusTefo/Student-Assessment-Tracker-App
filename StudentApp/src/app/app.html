@@ -1,0 +1,22 @@
+<!-- Navigation Bar -->
+<nav class="navbar">
+  <div class="navbar-content">
+    <h1 class="app-title">📊 Student Assessment Tracker</h1>
+    <div class="nav-buttons">
+      <button class="nav-btn" (click)="navigateToList()">📋 View Students</button>
+      <button class="nav-btn create-btn" (click)="navigateToCreate()">➕ Add Student</button>
+    </div>
+  </div>
+</nav>
+
+<!-- Main Content -->
+<main class="main-content">
+  <div class="container">
+    <router-outlet></router-outlet>
+  </div>
+</main>
+
+<!-- Footer -->
+<footer class="footer">
+  <p>&copy; 2026 Student Assessment Tracker | Full-Stack Angular + ASP.NET Core Application</p>
+</footer>
