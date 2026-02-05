@@ -1,8 +1,3 @@
-C:\Users\User\Desktop\StudentAssessmentTracker\obj\Debug\net8.0\StudentAssessmentTracker.csproj.AssemblyReference.cache
-C:\Users\User\Desktop\StudentAssessmentTracker\obj\Debug\net8.0\rpswa.dswa.cache.json
-C:\Users\User\Desktop\StudentAssessmentTracker\obj\Debug\net8.0\StudentAssessmentTracker.GeneratedMSBuildEditorConfig.editorconfig
-C:\Users\User\Desktop\StudentAssessmentTracker\obj\Debug\net8.0\StudentAssessmentTracker.AssemblyInfoInputs.cache
-C:\Users\User\Desktop\StudentAssessmentTracker\obj\Debug\net8.0\StudentAssessmentTracker.AssemblyInfo.cs
 C:\Users\User\Desktop\StudentAssessmentTracker\bin\Debug\net8.0\StudentApp\angular.json
 C:\Users\User\Desktop\StudentAssessmentTracker\bin\Debug\net8.0\StudentApp\dist\StudentApp\prerendered-routes.json
 C:\Users\User\Desktop\StudentAssessmentTracker\bin\Debug\net8.0\StudentApp\package-lock.json
@@ -27,9 +22,15 @@ C:\Users\User\Desktop\StudentAssessmentTracker\bin\Debug\net8.0\FluentValidation
 C:\Users\User\Desktop\StudentAssessmentTracker\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.dll
 C:\Users\User\Desktop\StudentAssessmentTracker\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.Abstractions.dll
 C:\Users\User\Desktop\StudentAssessmentTracker\bin\Debug\net8.0\Microsoft.EntityFrameworkCore.InMemory.dll
+C:\Users\User\Desktop\StudentAssessmentTracker\obj\Debug\net8.0\StudentAssessmentTracker.csproj.AssemblyReference.cache
+C:\Users\User\Desktop\StudentAssessmentTracker\obj\Debug\net8.0\rpswa.dswa.cache.json
+C:\Users\User\Desktop\StudentAssessmentTracker\obj\Debug\net8.0\StudentAssessmentTracker.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\User\Desktop\StudentAssessmentTracker\obj\Debug\net8.0\StudentAssessmentTracker.AssemblyInfoInputs.cache
+C:\Users\User\Desktop\StudentAssessmentTracker\obj\Debug\net8.0\StudentAssessmentTracker.AssemblyInfo.cs
 C:\Users\User\Desktop\StudentAssessmentTracker\obj\Debug\net8.0\StudentAssessmentTracker.csproj.CoreCompileInputs.cache
 C:\Users\User\Desktop\StudentAssessmentTracker\obj\Debug\net8.0\StudentAssessmentTracker.MvcApplicationPartsAssemblyInfo.cs
 C:\Users\User\Desktop\StudentAssessmentTracker\obj\Debug\net8.0\StudentAssessmentTracker.MvcApplicationPartsAssemblyInfo.cache
+C:\Users\User\Desktop\StudentAssessmentTracker\obj\Debug\net8.0\StudentAssessmentTracker.sourcelink.json
 C:\Users\User\Desktop\StudentAssessmentTracker\obj\Debug\net8.0\rjimswa.dswa.cache.json
 C:\Users\User\Desktop\StudentAssessmentTracker\obj\Debug\net8.0\rjsmrazor.dswa.cache.json
 C:\Users\User\Desktop\StudentAssessmentTracker\obj\Debug\net8.0\rjsmcshtml.dswa.cache.json
