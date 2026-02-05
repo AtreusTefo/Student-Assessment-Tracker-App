@@ -1,8 +1,5 @@
-bin/
-obj/
-node_modules/
+/bin/
+/obj/
 *.dll
 *.exe
 *.pdb
-dist/
-.angular/
