@@ -5,7 +5,14 @@ using FluentValidation.AspNetCore;
 using StudentAssessmentTracker.Validators;
 using StudentAssessmentTracker.Mappings;
 
-var builder = WebApplication.CreateBuilder(args);
+var contentRoot = Directory.GetCurrentDirectory();
+var angularDistPath = Path.Combine(contentRoot, "StudentApp", "dist", "StudentApp", "browser");
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions
+{
+    Args = args,
+    ContentRootPath = contentRoot,
+    WebRootPath = Directory.Exists(angularDistPath) ? angularDistPath : "wwwroot"
+});
 
 builder.Services.AddControllers();
 builder.Services.AddCors(options =>

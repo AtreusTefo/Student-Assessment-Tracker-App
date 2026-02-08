@@ -5,7 +5,7 @@ This document provides a comprehensive record of all errors encountered during d
 
 **Project**: Student Assessment Tracker  
 **Tech Stack**: ASP.NET Core 8 + Angular 18 + Entity Framework Core  
-**Date**: February 4, 2026
+**Date**: February 8, 2026
 
 ---
 
@@ -17,6 +17,7 @@ This document provides a comprehensive record of all errors encountered during d
 5. [Issue #5: Student List Not Displaying After Create (Redirect)](#issue-5-student-list-not-displaying-after-create-redirect)
 6. [Issue #6: Edit Form Fields Empty When Loading Student](#issue-6-edit-form-fields-empty-when-loading-student)
 7. [Issue #7: Phone Field Validation - Duplicate Error Messages](#issue-7-phone-field-validation-duplicate-error-messages)
+8. [Issue #8: Top-of-Form Validation Errors for Empty Assessments](#issue-8-top-of-form-validation-errors-for-empty-assessments)
 8. [Quick Reference: Common Issues & Solutions](#quick-reference-common-issues--solutions)
 
 ---
@@ -686,6 +687,61 @@ Server/API Validation Errors (shown in global error div):
 ---
 
 
+## Issue #8: Top-of-Form Validation Errors for Empty Assessments
+
+### Problem
+When submitting the Create Student form with empty assessment fields, an error banner appeared at the top of the form:
+- "The student field is required."
+- "The JSON value could not be converted to System.Int32. Path: $.assessment1 ..."
+
+These messages duplicated the inline validation errors already displayed below each field.
+
+### Root Cause
+The backend model binder rejects empty strings for integer fields (`assessment1/2/3`) before FluentValidation runs. This returns a 400 response with model binding errors, and the UI was showing those errors in the global error banner.
+
+### Solution Implemented
+
+**Frontend:**
+1. Prevent submission unless assessments are valid numbers (0â€“20).
+2. Coerce assessment inputs to numbers before sending.
+3. Suppress the top error banner for validation responses (HTTP 400 with `errors`).
+
+**In `student-form.component.ts`:**
+```typescript
+private isValidationErrorResponse(err: any): boolean {
+  return err?.status === 400 && !!err?.error?.errors;
+}
+
+private handleServerError(action: 'create' | 'update', err: any): void {
+  this.loading = false;
+
+  if (this.isValidationErrorResponse(err)) {
+    this.isServerError = false;
+    this.error = null;
+    this.cdr.markForCheck();
+    return;
+  }
+
+  this.isServerError = true;
+  this.error = `Failed to ${action} student: ` + (err.error?.title || err.message);
+  this.cdr.markForCheck();
+}
+```
+
+**Result:**
+- Inline field validation remains the source of truth for user input errors.
+- The top banner only shows real server/system failures.
+
+### Files Changed
+- [StudentApp/src/app/components/student-form.component.ts](StudentApp/src/app/components/student-form.component.ts)
+
+### Prevention Tips
+- âœ… Do not show model binding errors in a global banner if inline validation already exists
+- âœ… Validate and normalize numeric inputs on the client before submit
+- âœ… Only surface global errors for non-validation server failures
+
+---
+
 ### Issue: Table/List not showing data
 **Symptoms**: Component loads but table is empty or missing columns  
 **First Check**:
@@ -848,5 +904,5 @@ If you encounter similar issues or need clarification on any fix:
 
 ---
 
-**Last Updated**: February 4, 2026  
+**Last Updated**: February 8, 2026  
 **Status**: All issues resolved, production-ready

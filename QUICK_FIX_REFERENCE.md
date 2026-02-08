@@ -1,6 +1,6 @@
 # Quick Fix Reference Guide
 
-## 7 Major Issues Fixed & How to Fix Them Again
+## 8 Major Issues Fixed & How to Fix Them Again
 
 ### 1️⃣ Student List Table Shows Wrong Columns
 **Problem**: Table displays columns that don't exist in the DTO  
@@ -162,6 +162,31 @@ onSubmit(): void {
 - Prevents duplicate messages
 
 **File**: `student-form.component.ts`, `StudentValidator.cs`
+
+---
+
+### 8ï¸âƒ£ Top-of-Form Validation Error Banner for Empty Assessments
+**Problem**: Submitting empty assessments shows model binding errors at the top (duplicates inline errors)  
+**Fix**: Suppress global banner for validation responses and validate assessments before submit
+```typescript
+private isValidationErrorResponse(err: any): boolean {
+  return err?.status === 400 && !!err?.error?.errors;
+}
+
+private handleServerError(action: 'create' | 'update', err: any): void {
+  this.loading = false;
+  if (this.isValidationErrorResponse(err)) {
+    this.isServerError = false;
+    this.error = null;
+    this.cdr.markForCheck();
+    return;
+  }
+  this.isServerError = true;
+  this.error = `Failed to ${action} student: ` + (err.error?.title || err.message);
+  this.cdr.markForCheck();
+}
+```
+**File**: `student-form.component.ts`
 
 ---
 

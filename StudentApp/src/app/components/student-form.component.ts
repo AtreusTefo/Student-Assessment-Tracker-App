@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { StudentService, Student } from '../services/student.service';
 
 @Component({
@@ -12,37 +12,31 @@ import { StudentService, Student } from '../services/student.service';
     <div class="container">
       <h2>{{ isEdit ? 'Edit Student' : 'Create Student' }}</h2>
       
-      <div *ngIf="error" class="error">{{ error }}</div>
+      <div *ngIf="error && isServerError" class="server-error">{{ error }}</div>
       
-      <form (ngSubmit)="onSubmit()" #form="ngForm" class="form">
+      <form (ngSubmit)="onSubmit(form)" #form="ngForm" class="form">
         <div class="form-group">
           <label for="firstName">First Name:</label>
           <input type="text" id="firstName" [(ngModel)]="student.firstName" name="firstName" required />
           <span class="error" *ngIf="form.submitted && !student.firstName">First name is required</span>
-          <span class="error" *ngIf="form.submitted && student.firstName && student.firstName.length < 2">First name must be at least 2 characters</span>
-          <span class="error" *ngIf="form.submitted && student.firstName && student.firstName.length >= 2 && !isValidName(student.firstName)">First name can only contain letters, spaces, hyphens, and apostrophes</span>
         </div>
         
         <div class="form-group">
           <label for="lastName">Last Name:</label>
           <input type="text" id="lastName" [(ngModel)]="student.lastName" name="lastName" required />
           <span class="error" *ngIf="form.submitted && !student.lastName">Last name is required</span>
-          <span class="error" *ngIf="form.submitted && student.lastName && student.lastName.length < 2">Last name must be at least 2 characters</span>
-          <span class="error" *ngIf="form.submitted && student.lastName && student.lastName.length >= 2 && !isValidName(student.lastName)">Last name can only contain letters, spaces, hyphens, and apostrophes</span>
         </div>
         
         <div class="form-group">
           <label for="email">Email:</label>
           <input type="email" id="email" [(ngModel)]="student.email" name="email" required />
           <span class="error" *ngIf="form.submitted && !student.email">Email is required</span>
-          <span class="error" *ngIf="form.submitted && student.email && !isValidEmail(student.email)">Enter valid email</span>
         </div>
         
         <div class="form-group">
           <label for="phone">Phone (8 digits, e.g., 72254856):</label>
           <input type="text" id="phone" [(ngModel)]="student.phone" name="phone" placeholder="72254856" maxlength="8" (input)="validatePhone()" (keypress)="allowOnlyNumbers($event)" required />
           <span class="error" *ngIf="form.submitted && !student.phone">Phone is required</span>
-          <span class="error" *ngIf="form.submitted && student.phone && student.phone.length < 8">Phone must be exactly 8 digits</span>
         </div>
         
         <div class="form-group">
@@ -55,21 +49,18 @@ import { StudentService, Student } from '../services/student.service';
           <label for="assessment1">Assessment 1 (0-20):</label>
           <input type="number" id="assessment1" [(ngModel)]="student.assessment1" name="assessment1" min="0" max="20" required />
           <span class="error" *ngIf="form.submitted && (student.assessment1 === null || student.assessment1 === undefined)">Assessment 1 is required</span>
-          <span class="error" *ngIf="form.submitted && student.assessment1 !== null && student.assessment1 !== undefined && (student.assessment1 < 0 || student.assessment1 > 20)">Must be between 0 and 20</span>
         </div>
         
         <div class="form-group">
           <label for="assessment2">Assessment 2 (0-20):</label>
           <input type="number" id="assessment2" [(ngModel)]="student.assessment2" name="assessment2" min="0" max="20" required />
           <span class="error" *ngIf="form.submitted && (student.assessment2 === null || student.assessment2 === undefined)">Assessment 2 is required</span>
-          <span class="error" *ngIf="form.submitted && student.assessment2 !== null && student.assessment2 !== undefined && (student.assessment2 < 0 || student.assessment2 > 20)">Must be between 0 and 20</span>
         </div>
         
         <div class="form-group">
           <label for="assessment3">Assessment 3 (0-20):</label>
           <input type="number" id="assessment3" [(ngModel)]="student.assessment3" name="assessment3" min="0" max="20" required />
           <span class="error" *ngIf="form.submitted && (student.assessment3 === null || student.assessment3 === undefined)">Assessment 3 is required</span>
-          <span class="error" *ngIf="form.submitted && student.assessment3 !== null && student.assessment3 !== undefined && (student.assessment3 < 0 || student.assessment3 > 20)">Must be between 0 and 20</span>
         </div>
         
         <div class="actions">
@@ -157,6 +148,22 @@ import { StudentService, Student } from '../services/student.service';
       font-size: 12px;
       margin-top: 5px;
       display: block;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-wrap: break-word;
+    }
+
+    .server-error {
+      background-color: #ffebee;
+      border: 1px solid #f44336;
+      border-radius: 4px;
+      color: #c62828;
+      padding: 12px;
+      margin-bottom: 20px;
+      font-size: 13px;
+      line-height: 1.6;
+      white-space: pre-wrap;
+      word-wrap: break-word;
     }
   `]
 })
@@ -178,6 +185,7 @@ export class StudentFormComponent implements OnInit {
   isEdit = false;
   loading = false;
   error: string | null = null;
+  isServerError = false;
 
   constructor(
     private route: ActivatedRoute,
@@ -240,126 +248,87 @@ export class StudentFormComponent implements OnInit {
     }
   }
 
-  isValidName(name: string): boolean {
-    // Only allow letters, spaces, and hyphens
-    const nameRegex = /^[a-zA-Z\s\-']+$/;
-    return nameRegex.test(name);
+  private isValidationErrorResponse(err: any): boolean {
+    return err?.status === 400 && !!err?.error?.errors;
   }
 
-  isValidEmail(email: string): boolean {
-    // Simple email regex validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
+  private handleServerError(action: 'create' | 'update', err: any): void {
+    this.loading = false;
+
+    if (this.isValidationErrorResponse(err)) {
+      // Inline field errors already guide the user for validation issues.
+      this.isServerError = false;
+      this.error = null;
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.isServerError = true;
+    if (err.error && err.error.errors) {
+      const errorMessages = Object.values(err.error.errors)
+        .flat()
+        .join('\n');
+      this.error = errorMessages as string;
+    } else {
+      this.error = `Failed to ${action} student: ` + (err.error?.title || err.message);
+    }
+    this.cdr.markForCheck();
   }
 
-  onSubmit(): void {
-    this.error = null; // Clear previous errors
-    
-    // Validate firstName
-    if (!this.student.firstName) {
-      this.error = 'First name is required';
-      return;
-    }
-    if (this.student.firstName.length < 2) {
-      this.error = 'First name must be at least 2 characters';
-      return;
-    }
-    if (!this.isValidName(this.student.firstName)) {
-      this.error = 'Please enter a valid First Name (letters, spaces, hyphens, and apostrophes only)';
-      return;
-    }
-    
-    // Validate lastName
-    if (!this.student.lastName) {
-      this.error = 'Last name is required';
-      return;
-    }
-    if (this.student.lastName.length < 2) {
-      this.error = 'Last name must be at least 2 characters';
-      return;
-    }
-    if (!this.isValidName(this.student.lastName)) {
-      this.error = 'Please enter a valid Last Name (letters, spaces, hyphens, and apostrophes only)';
-      return;
+
+  private parseAssessment(value: unknown): number | null {
+    if (value === null || value === undefined || value === '') {
+      return null;
     }
 
-    // Validate email format
-    if (!this.student.email) {
-      this.error = 'Email is required';
-      return;
-    }
-    if (!this.isValidEmail(this.student.email)) {
-      this.error = 'Please enter a valid email address';
-      return;
-    }
-    
-    // Phone validation
-    if (!this.student.phone || this.student.phone.length !== 8) {
-      this.error = 'Phone must be exactly 8 digits';
-      return;
-    }
+    const parsed = typeof value === 'number' ? value : Number(value);
+    return Number.isFinite(parsed) ? parsed : null;
+  }
 
-    // Grade validation
-    if (!this.student.grade) {
-      this.error = 'Grade is required';
-      return;
-    }
+  onSubmit(form: NgForm): void {
+    this.error = null;
+    this.isServerError = false;
 
-    // Assessment validation
-    if (this.student.assessment1 === null || this.student.assessment1 === undefined ||
-        this.student.assessment1 < 0 || this.student.assessment1 > 20) {
-      this.error = 'Assessment 1 must be between 0 and 20';
-      return;
-    }
-    if (this.student.assessment2 === null || this.student.assessment2 === undefined ||
-        this.student.assessment2 < 0 || this.student.assessment2 > 20) {
-      this.error = 'Assessment 2 must be between 0 and 20';
-      return;
-    }
-    if (this.student.assessment3 === null || this.student.assessment3 === undefined ||
-        this.student.assessment3 < 0 || this.student.assessment3 > 20) {
-      this.error = 'Assessment 3 must be between 0 and 20';
+    const assessment1 = this.parseAssessment(this.student.assessment1);
+    const assessment2 = this.parseAssessment(this.student.assessment2);
+    const assessment3 = this.parseAssessment(this.student.assessment3);
+
+    const assessmentsValid =
+      assessment1 !== null &&
+      assessment2 !== null &&
+      assessment3 !== null &&
+      assessment1 >= 0 && assessment1 <= 20 &&
+      assessment2 >= 0 && assessment2 <= 20 &&
+      assessment3 >= 0 && assessment3 <= 20;
+
+    if (form.invalid || !assessmentsValid) {
       return;
     }
 
     this.loading = true;
-    this.error = null;
+
+    const payload: Student = {
+      ...this.student,
+      assessment1,
+      assessment2,
+      assessment3
+    };
 
     if (this.isEdit) {
-      this.studentService.updateStudent(this.student.studentId, this.student).subscribe({
+      this.studentService.updateStudent(this.student.studentId, payload).subscribe({
         next: () => {
           this.loading = false;
           this.router.navigate(['/detail', this.student.studentId]);
         },
-        error: (err) => {
-          this.loading = false;
-          if (err.error && err.error.errors) {
-            const errorMessages = Object.values(err.error.errors)
-              .flat()
-              .join('\n');
-            this.error = errorMessages as string;
-          } else {
-            this.error = 'Failed to update student: ' + (err.error?.title || err.message);
-          }
-        }
+        error: (err) => this.handleServerError('update', err)
       });
     } else {
-      this.studentService.createStudent(this.student).subscribe({
+      this.studentService.createStudent(payload).subscribe({
         next: (response) => {
           this.loading = false;
           this.router.navigate(['/']);
         },
-        error: (err) => {
-          this.loading = false;
-          if (err.error && err.error.errors) {
-            const errorMessages = Object.values(err.error.errors)
-              .flat()
-              .join('\n');
-            this.error = errorMessages as string;
-          } else {
-            this.error = 'Failed to create student: ' + (err.error?.title || err.message);
-          }
-        }
+        error: (err) => this.handleServerError('create', err)
       });
     }
   }

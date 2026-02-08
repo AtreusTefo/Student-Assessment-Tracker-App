@@ -32,6 +32,26 @@ public class MappingProfile : Profile
             .ForMember(dest => dest.Average, opt => opt.MapFrom(src => src.Average))
             .ForMember(dest => dest.Percentage, opt => opt.MapFrom(src => src.Percentage))
             .ForMember(dest => dest.PerformanceLevel, opt => opt.MapFrom(src => src.PerformanceLevel));
+
+        // Map Teacher to Teacher (for basic operations)
+        CreateMap<Teacher, Teacher>().ReverseMap();
+
+        // Map Teacher to LoginDto (filters to Id, FirstName, LastName for list views)
+        CreateMap<Teacher, LoginDto>()
+            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+            .ForMember(dest => dest.Password, opt => opt.MapFrom(src => src.Password));
+
+        // Map Teacher to TeacherDetailDto (includes all teacher details for detail views)
+        CreateMap<Teacher, TeacherDetailDto>()
+            .ForMember(dest => dest.TeacherId, opt => opt.MapFrom(src => src.TeacherId))
+            .ForMember(dest => dest.FirstName, opt => opt.MapFrom(src => src.FirstName))
+            .ForMember(dest => dest.LastName, opt => opt.MapFrom(src => src.LastName))
+            .ForMember(dest => dest.Email, opt => opt.MapFrom(src => src.Email))
+            .ForMember(dest => dest.Phone, opt => opt.MapFrom(src => src.Phone))
+            .ForMember(dest => dest.Subject, opt => opt.MapFrom(src => src.Subject))
+            .ForMember(dest => dest.Password, opt => opt.MapFrom(src => src.Password))
+            .ForMember(dest => dest.EnrollmentDate, opt => opt.MapFrom(src => src.EnrollmentDate))
+            .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(src => src.CreatedDate));
     }
 }
 

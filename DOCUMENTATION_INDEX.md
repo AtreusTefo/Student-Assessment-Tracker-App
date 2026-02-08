@@ -4,7 +4,7 @@
 
 ### 1. **QUICK_FIX_REFERENCE.md** ⭐ START HERE
 - **Best for**: Quick lookups when something breaks
-- **Contains**: 7 major issues + quick fixes + diagnostic checklist
+- **Contains**: 8 major issues + quick fixes + diagnostic checklist
 - **Read time**: 5 minutes
 - **Use when**: You need a fast answer
 
@@ -26,9 +26,12 @@
 ### 4. **TESTING_GUIDE.md** (existing)
 - **How to test the application**
 
+### 5. **PROJECT_REQUIREMENTS.md**
+- **Project requirements document (scope, functional/non-functional requirements, acceptance criteria)**
+
 ---
 
-## 🔧 The 7 Issues Fixed
+## 🔧 The 8 Issues Fixed
 
 ### Issue #1: Incorrect Table Columns
 - **Problem**: Student List showing wrong columns (Email, Grade instead of StudentId, FirstName, LastName)
@@ -73,13 +76,19 @@
 - **See**: `QUICK_FIX_REFERENCE.md` → Issue #7 or `ERROR_FIXES_DOCUMENTATION.md` → Issue #7
 - **Key Learning**: Separate frontend validation errors (template) from server errors (global)
 
+### Issue #8: Top-of-Form Validation Errors for Empty Assessments
+- **Problem**: Model binding errors appear in the global banner when assessments are empty
+- **Root Cause**: Empty values for integer fields fail JSON conversion before FluentValidation runs
+- **Quick Fix**: Suppress validation errors in the global banner and block submit until assessments are valid
+- **See**: `QUICK_FIX_REFERENCE.md` → Issue #8 or `ERROR_FIXES_DOCUMENTATION.md` → Issue #8
+
 ---
 
 ## 🎯 How to Use This Documentation
 
 ### Scenario 1: "Something is broken, fix it now!"
 1. Open **QUICK_FIX_REFERENCE.md**
-2. Find your issue in "4 Major Issues" section
+2. Find your issue in "8 Major Issues" section
 3. Follow the fix (takes 2-5 minutes)
 
 ### Scenario 2: "I want to prevent these bugs in future development"
@@ -181,5 +190,5 @@ After implementing any fix:
 
 ---
 
-**Last Updated**: February 4, 2026  
-**Status**: All 6 issues resolved and documented
+**Last Updated**: February 8, 2026  
+**Status**: All 8 issues resolved and documented

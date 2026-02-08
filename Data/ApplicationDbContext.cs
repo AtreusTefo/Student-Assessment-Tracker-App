@@ -10,6 +10,7 @@ public class ApplicationDbContext : DbContext
         : base(options) { }
 
     public DbSet<Student> Students { get; set; }
+    public DbSet<Teacher> Teachers { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -57,6 +58,22 @@ public class ApplicationDbContext : DbContext
                 Assessment1 = 12,
                 Assessment2 = 13,
                 Assessment3 = 11,
+                CreatedDate = DateTime.Now
+            }
+        );
+
+        // Seed initial teacher data for testing
+        modelBuilder.Entity<Teacher>().HasData(
+            new Teacher
+            {
+                TeacherId = 1,
+                FirstName = "Kratos",
+                LastName = "Sailorman",
+                Email = "kratos.sailorman@example.com",
+                Phone = "77754256",
+                Subject = "System Analysis & Design",
+                Password = "Test@1234",
+                EnrollmentDate = DateTime.Now,
                 CreatedDate = DateTime.Now
             }
         );
