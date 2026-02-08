@@ -3,3 +3,6 @@
 *.dll
 *.exe
 *.pdb
+tmpclaude-*
+StudentApp/public/*
+!StudentApp/public/favicon*
