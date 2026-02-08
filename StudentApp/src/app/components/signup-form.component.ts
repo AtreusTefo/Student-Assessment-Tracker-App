@@ -1,7 +1,7 @@
 import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { TeacherService, Teacher } from '../services/teacher.service';
 
 @Component({
@@ -14,7 +14,7 @@ import { TeacherService, Teacher } from '../services/teacher.service';
       
       <div *ngIf="error && isServerError" class="server-error">{{ error }}</div>
       
-      <form (ngSubmit)="onSubmit()" #form="ngForm" class="form">
+      <form (ngSubmit)="onSubmit(form)" #form="ngForm" class="form">
         <div class="form-group">
           <label for="firstName">First Name:</label>
           <input type="text" id="firstName" [(ngModel)]="teacher.firstName" name="firstName" required />
@@ -225,12 +225,54 @@ export class SignUpFormComponent implements OnInit {
     }
   }
 
+  private isValidationErrorResponse(err: any): boolean {
+    // Check if this is a validation error response from the server
+    // ProblemDetails format will have status 400 and an errors object with field names as keys
+    if (err?.status !== 400) {
+      return false;
+    }
+    
+    const errors = err?.error?.errors;
+    if (!errors || typeof errors !== 'object') {
+      return false;
+    }
+    
+    // Check if errors object has at least one field-level error
+    // (field validation errors have property names as keys with array values)
+    return Object.keys(errors).length > 0;
+  }
 
+  private handleServerError(action: 'register' | 'update', err: any): void {
+    this.loading = false;
 
-  onSubmit(): void {
+    if (this.isValidationErrorResponse(err)) {
+      // Inline field errors already guide the user for validation issues.
+      this.isServerError = false;
+      this.error = null;
+      this.cdr.markForCheck();
+      return;
+    }
+
+    this.isServerError = true;
+    if (err.error && err.error.errors) {
+      const errorMessages = Object.values(err.error.errors)
+        .flat()
+        .join('\n');
+      this.error = errorMessages as string;
+    } else {
+      this.error = `Failed to ${action} teacher: ` + (err.error?.title || err.message);
+    }
+    this.cdr.markForCheck();
+  }
+
+  onSubmit(form: NgForm): void {
     this.error = null;
     this.isServerError = false;
     
+    if (form.invalid) {
+      return;
+    }
+
     this.loading = true;
 
     if (this.isEdit) {
@@ -239,19 +281,7 @@ export class SignUpFormComponent implements OnInit {
           this.loading = false;
           this.router.navigate(['/']);
         },
-        error: (err: any) => {
-          this.loading = false;
-          this.isServerError = true;
-          if (err.error && err.error.errors) {
-            const errorMessages = Object.values(err.error.errors)
-              .flat()
-              .join('\n');
-            this.error = errorMessages as string;
-          } else {
-            this.error = 'Failed to update teacher: ' + (err.error?.title || err.message);
-          }
-          this.cdr.markForCheck();
-        }
+        error: (err: any) => this.handleServerError('update', err)
       });
     } else {
       this.teacherService.createTeacher(this.teacher).subscribe({
@@ -259,19 +289,7 @@ export class SignUpFormComponent implements OnInit {
           this.loading = false;
           this.router.navigate(['/login']);
         },
-        error: (err: any) => {
-          this.loading = false;
-          this.isServerError = true;
-          if (err.error && err.error.errors) {
-            const errorMessages = Object.values(err.error.errors)
-              .flat()
-              .join('\n');
-            this.error = errorMessages as string;
-          } else {
-            this.error = 'Failed to register teacher: ' + (err.error?.title || err.message);
-          }
-          this.cdr.markForCheck();
-        }
+        error: (err: any) => this.handleServerError('register', err)
       });
     }
   }

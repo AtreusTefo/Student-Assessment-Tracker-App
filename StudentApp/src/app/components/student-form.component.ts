@@ -249,7 +249,20 @@ export class StudentFormComponent implements OnInit {
   }
 
   private isValidationErrorResponse(err: any): boolean {
-    return err?.status === 400 && !!err?.error?.errors;
+    // Check if this is a validation error response from the server
+    // ProblemDetails format will have status 400 and an errors object with field names as keys
+    if (err?.status !== 400) {
+      return false;
+    }
+    
+    const errors = err?.error?.errors;
+    if (!errors || typeof errors !== 'object') {
+      return false;
+    }
+    
+    // Check if errors object has at least one field-level error
+    // (field validation errors have property names as keys with array values)
+    return Object.keys(errors).length > 0;
   }
 
   private handleServerError(action: 'create' | 'update', err: any): void {
