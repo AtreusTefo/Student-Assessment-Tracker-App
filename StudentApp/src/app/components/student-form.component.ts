@@ -17,50 +17,69 @@ import { StudentService, Student } from '../services/student.service';
       <form (ngSubmit)="onSubmit(form)" #form="ngForm" class="form">
         <div class="form-group">
           <label for="firstName">First Name:</label>
-          <input type="text" id="firstName" [(ngModel)]="student.firstName" name="firstName" required />
-          <span class="error" *ngIf="form.submitted && !student.firstName">First name is required</span>
+          <input type="text" id="firstName" [(ngModel)]="student.firstName" name="firstName" #firstName="ngModel" required minlength="2" maxlength="50" />
+          <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('required')">First name is required</span>
+          <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('minlength')">First name must be at least 2 characters</span>
+          <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('maxlength')">First name cannot exceed 50 characters</span>
+          <span class="error" *ngIf="fieldErrors['firstName'] && fieldErrors['firstName'].length">{{ fieldErrors['firstName'].join('\n') }}</span>
         </div>
         
         <div class="form-group">
           <label for="lastName">Last Name:</label>
-          <input type="text" id="lastName" [(ngModel)]="student.lastName" name="lastName" required />
-          <span class="error" *ngIf="form.submitted && !student.lastName">Last name is required</span>
+          <input type="text" id="lastName" [(ngModel)]="student.lastName" name="lastName" #lastName="ngModel" required minlength="2" maxlength="50" />
+          <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('required')">Last name is required</span>
+          <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('minlength')">Last name must be at least 2 characters</span>
+          <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('maxlength')">Last name cannot exceed 50 characters</span>
+          <span class="error" *ngIf="fieldErrors['lastName'] && fieldErrors['lastName'].length">{{ fieldErrors['lastName'].join('\n') }}</span>
         </div>
         
         <div class="form-group">
           <label for="email">Email:</label>
-          <input type="email" id="email" [(ngModel)]="student.email" name="email" required />
-          <span class="error" *ngIf="form.submitted && !student.email">Email is required</span>
+          <input type="email" id="email" [(ngModel)]="student.email" name="email" #email="ngModel" required maxlength="100" />
+          <span class="error" *ngIf="(form.submitted || email.touched || email.dirty) && email.hasError('required')">Email is required</span>
+          <span class="error" *ngIf="(form.submitted || email.touched || email.dirty) && email.hasError('email')">Email must be a valid email address</span>
+          <span class="error" *ngIf="(form.submitted || email.touched || email.dirty) && email.hasError('maxlength')">Email cannot exceed 100 characters</span>
+          <span class="error" *ngIf="fieldErrors['email'] && fieldErrors['email'].length">{{ fieldErrors['email'].join('\n') }}</span>
         </div>
         
         <div class="form-group">
           <label for="phone">Phone (8 digits, e.g., 72254856):</label>
-          <input type="text" id="phone" [(ngModel)]="student.phone" name="phone" placeholder="72254856" maxlength="8" (input)="validatePhone()" (keypress)="allowOnlyNumbers($event)" required />
-          <span class="error" *ngIf="form.submitted && !student.phone">Phone is required</span>
+          <input type="text" id="phone" [(ngModel)]="student.phone" name="phone" #phone="ngModel" placeholder="72254856" minlength="8" maxlength="8" pattern="^\\d{8}$" (input)="validatePhone()" (keypress)="allowOnlyNumbers($event)" required />
+          <span class="error" *ngIf="(form.submitted || phone.touched || phone.dirty) && phone.hasError('required')">Phone is required</span>
+          <span class="error" *ngIf="(form.submitted || phone.touched || phone.dirty) && (phone.hasError('pattern') || phone.hasError('minlength') || phone.hasError('maxlength'))">Phone must be exactly 8 digits</span>
+          <span class="error" *ngIf="fieldErrors['phone'] && fieldErrors['phone'].length">{{ fieldErrors['phone'].join('\n') }}</span>
         </div>
         
         <div class="form-group">
           <label for="grade">Grade:</label>
-          <input type="text" id="grade" [(ngModel)]="student.grade" name="grade" placeholder="e.g., 10A, 11B" required />
-          <span class="error" *ngIf="form.submitted && !student.grade">Grade is required</span>
+          <input type="text" id="grade" [(ngModel)]="student.grade" name="grade" #grade="ngModel" placeholder="e.g., 10A, 11B" required maxlength="10" />
+          <span class="error" *ngIf="(form.submitted || grade.touched || grade.dirty) && grade.hasError('required')">Grade is required</span>
+          <span class="error" *ngIf="(form.submitted || grade.touched || grade.dirty) && grade.hasError('maxlength')">Grade cannot exceed 10 characters</span>
+          <span class="error" *ngIf="fieldErrors['grade'] && fieldErrors['grade'].length">{{ fieldErrors['grade'].join('\n') }}</span>
         </div>
         
         <div class="form-group">
           <label for="assessment1">Assessment 1 (0-20):</label>
-          <input type="number" id="assessment1" [(ngModel)]="student.assessment1" name="assessment1" min="0" max="20" required />
-          <span class="error" *ngIf="form.submitted && (student.assessment1 === null || student.assessment1 === undefined)">Assessment 1 is required</span>
+          <input type="number" id="assessment1" [(ngModel)]="student.assessment1" name="assessment1" #assessment1="ngModel" min="0" max="20" required />
+          <span class="error" *ngIf="(form.submitted || assessment1.touched || assessment1.dirty) && assessment1.hasError('required')">Assessment 1 is required</span>
+          <span class="error" *ngIf="(form.submitted || assessment1.touched || assessment1.dirty) && (assessment1.hasError('min') || assessment1.hasError('max'))">Assessment 1 must be between 0 and 20</span>
+          <span class="error" *ngIf="fieldErrors['assessment1'] && fieldErrors['assessment1'].length">{{ fieldErrors['assessment1'].join('\n') }}</span>
         </div>
         
         <div class="form-group">
           <label for="assessment2">Assessment 2 (0-20):</label>
-          <input type="number" id="assessment2" [(ngModel)]="student.assessment2" name="assessment2" min="0" max="20" required />
-          <span class="error" *ngIf="form.submitted && (student.assessment2 === null || student.assessment2 === undefined)">Assessment 2 is required</span>
+          <input type="number" id="assessment2" [(ngModel)]="student.assessment2" name="assessment2" #assessment2="ngModel" min="0" max="20" required />
+          <span class="error" *ngIf="(form.submitted || assessment2.touched || assessment2.dirty) && assessment2.hasError('required')">Assessment 2 is required</span>
+          <span class="error" *ngIf="(form.submitted || assessment2.touched || assessment2.dirty) && (assessment2.hasError('min') || assessment2.hasError('max'))">Assessment 2 must be between 0 and 20</span>
+          <span class="error" *ngIf="fieldErrors['assessment2'] && fieldErrors['assessment2'].length">{{ fieldErrors['assessment2'].join('\n') }}</span>
         </div>
         
         <div class="form-group">
           <label for="assessment3">Assessment 3 (0-20):</label>
-          <input type="number" id="assessment3" [(ngModel)]="student.assessment3" name="assessment3" min="0" max="20" required />
-          <span class="error" *ngIf="form.submitted && (student.assessment3 === null || student.assessment3 === undefined)">Assessment 3 is required</span>
+          <input type="number" id="assessment3" [(ngModel)]="student.assessment3" name="assessment3" #assessment3="ngModel" min="0" max="20" required />
+          <span class="error" *ngIf="(form.submitted || assessment3.touched || assessment3.dirty) && assessment3.hasError('required')">Assessment 3 is required</span>
+          <span class="error" *ngIf="(form.submitted || assessment3.touched || assessment3.dirty) && (assessment3.hasError('min') || assessment3.hasError('max'))">Assessment 3 must be between 0 and 20</span>
+          <span class="error" *ngIf="fieldErrors['assessment3'] && fieldErrors['assessment3'].length">{{ fieldErrors['assessment3'].join('\n') }}</span>
         </div>
         
         <div class="actions">
@@ -186,6 +205,7 @@ export class StudentFormComponent implements OnInit {
   loading = false;
   error: string | null = null;
   isServerError = false;
+  fieldErrors: Record<string, string[]> = {};
 
   constructor(
     private route: ActivatedRoute,
@@ -265,11 +285,24 @@ export class StudentFormComponent implements OnInit {
     return Object.keys(errors).length > 0;
   }
 
+  private normalizeValidationErrors(errors: Record<string, string[]>): Record<string, string[]> {
+    const normalized: Record<string, string[]> = {};
+
+    Object.entries(errors).forEach(([key, messages]) => {
+      const lastSegment = key.split('.').pop() ?? key;
+      const normalizedKey = lastSegment.charAt(0).toLowerCase() + lastSegment.slice(1);
+      normalized[normalizedKey] = messages;
+    });
+
+    return normalized;
+  }
+
   private handleServerError(action: 'create' | 'update', err: any): void {
     this.loading = false;
 
     if (this.isValidationErrorResponse(err)) {
-      // Inline field errors already guide the user for validation issues.
+      // Surface FluentValidation errors inline by field.
+      this.fieldErrors = this.normalizeValidationErrors(err.error.errors);
       this.isServerError = false;
       this.error = null;
       this.cdr.markForCheck();
@@ -301,6 +334,7 @@ export class StudentFormComponent implements OnInit {
   onSubmit(form: NgForm): void {
     this.error = null;
     this.isServerError = false;
+    this.fieldErrors = {};
 
     const assessment1 = this.parseAssessment(this.student.assessment1);
     const assessment2 = this.parseAssessment(this.student.assessment2);
