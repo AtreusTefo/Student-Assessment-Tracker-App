@@ -4,20 +4,20 @@
 
 ### 1. **QUICK_FIX_REFERENCE.md** ⭐ START HERE
 - **Best for**: Quick lookups when something breaks
-- **Contains**: 8 major issues + quick fixes + diagnostic checklist
+- **Contains**: 11 major issues + quick fixes + diagnostic checklist
 - **Read time**: 5 minutes
 - **Use when**: You need a fast answer
 
 ### 2. **ERROR_FIXES_DOCUMENTATION.md** 📖 COMPREHENSIVE GUIDE
 - **Best for**: Understanding root causes and prevention
 - **Contains**: 
-  - Detailed problem descriptions
+  - Detailed problem descriptions for all 11 issues
   - Root cause analysis
   - Complete code examples
   - Prevention tips for future development
   - Testing checklist
   - Alternative solutions
-- **Read time**: 20 minutes (full), 5 minutes (specific issue)
+- **Read time**: 30 minutes (full), 5 minutes (specific issue)
 - **Use when**: You want to understand WHY something broke
 
 ### 3. **README.md** (original)
@@ -31,7 +31,7 @@
 
 ---
 
-## 🔧 The 8 Issues Fixed
+## 🔧 The 11 Issues Fixed
 
 ### Issue #1: Incorrect Table Columns
 - **Problem**: Student List showing wrong columns (Email, Grade instead of StudentId, FirstName, LastName)
@@ -81,6 +81,24 @@
 - **Root Cause**: Empty values for integer fields fail JSON conversion before FluentValidation runs
 - **Quick Fix**: Suppress validation errors in the global banner and block submit until assessments are valid
 - **See**: `QUICK_FIX_REFERENCE.md` → Issue #8 or `ERROR_FIXES_DOCUMENTATION.md` → Issue #8
+
+### Issue #9: Native Confirm Dialog Not Working in VS Code Simple Browser
+- **Problem**: Delete button shows "localhost:5000 says Are you sure you want to delete this student?" popup that doesn't respond in Simple Browser
+- **Root Cause**: VS Code Simple Browser doesn't support native JavaScript `confirm()` dialogs
+- **Quick Fix**: Replace `confirm()` with custom Angular modal dialog
+- **See**: `QUICK_FIX_REFERENCE.md` → Issue #9 or `ERROR_FIXES_DOCUMENTATION.md` → Issue #9
+
+### Issue #10: Missing HTML5 Autocomplete Attributes
+- **Problem**: Form fields don't provide browser autocomplete suggestions for better UX
+- **Root Cause**: Input fields lacked semantically correct `autocomplete` attributes
+- **Quick Fix**: Add appropriate `autocomplete` attributes to all form inputs
+- **See**: `QUICK_FIX_REFERENCE.md` → Issue #10 or `ERROR_FIXES_DOCUMENTATION.md` → Issue #10
+
+### Issue #11: Duplicate Startup Log Messages
+- **Problem**: Application startup messages appear twice in console output
+- **Root Cause**: Serilog configured to write to console in TWO places (appsettings.json AND programmatic setup)
+- **Quick Fix**: Remove duplicate `.WriteTo.Console()` configuration from Program.cs, use static `Log` facade instead
+- **See**: `QUICK_FIX_REFERENCE.md` → Issue #11 or `ERROR_FIXES_DOCUMENTATION.md` → Issue #11
 
 ---
 

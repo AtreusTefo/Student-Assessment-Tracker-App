@@ -1,6 +1,6 @@
 # Quick Fix Reference Guide
 
-## 8 Major Issues Fixed & How to Fix Them Again
+## 11 Major Issues Fixed & How to Fix Them Again
 
 ### 1️⃣ Student List Table Shows Wrong Columns
 **Problem**: Table displays columns that don't exist in the DTO  
@@ -190,6 +190,105 @@ private handleServerError(action: 'create' | 'update', err: any): void {
 
 ---
 
+### 9️⃣ Native Confirm Dialog Not Working in VS Code Simple Browser
+**Problem**: Delete button shows browser confirm popup that doesn't respond in Simple Browser  
+**Fix**: Replace JavaScript `confirm()` with custom Angular modal dialog
+```typescript
+// Template: Add modal overlay
+<div *ngIf="showConfirmDialog" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header"><h3>Confirm Delete</h3></div>
+    <div class="modal-body">
+      <p>Are you sure you want to delete this student? This action cannot be undone.</p>
+    </div>
+    <div class="modal-footer">
+      <button (click)="confirmDelete()" class="btn btn-danger">Delete</button>
+      <button (click)="cancelDelete()" class="btn btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>
+
+// Component: Add modal logic
+showConfirmDialog = false;
+studentToDelete: number | null = null;
+
+showDeleteConfirm(id: number): void {
+  this.studentToDelete = id;
+  this.showConfirmDialog = true;
+}
+
+confirmDelete(): void {
+  if (this.studentToDelete !== null) {
+    this.studentService.deleteStudent(this.studentToDelete).subscribe({
+      next: () => {
+        this.showConfirmDialog = false;
+        this.studentToDelete = null;
+        this.loadStudents();
+      }
+    });
+  }
+}
+
+cancelDelete(): void {
+  this.showConfirmDialog = false;
+  this.studentToDelete = null;
+}
+```
+**File**: `student-list.component.ts`
+
+---
+
+### 🔟 Missing HTML5 Autocomplete Attributes
+**Problem**: Form fields don't suggest browser autofill, reducing usability  
+**Fix**: Add semantic `autocomplete` attributes to inputs
+```html
+<!-- Login Form -->
+<input type="email" autocomplete="email" />
+<input type="password" autocomplete="current-password" />
+
+<!-- Registration Form -->
+<input type="text" autocomplete="given-name" placeholder="First Name" />
+<input type="text" autocomplete="family-name" placeholder="Last Name" />
+<input type="email" autocomplete="email" />
+<input type="tel" autocomplete="tel" placeholder="Phone" />
+<input type="text" autocomplete="off" placeholder="Subject" /> <!-- Custom field -->
+<input type="password" autocomplete="new-password" />
+
+<!-- Student Form -->
+<input type="text" autocomplete="given-name" placeholder="First Name" />
+<input type="text" autocomplete="family-name" placeholder="Last Name" />
+<input type="email" autocomplete="email" />
+<input type="tel" autocomplete="tel" placeholder="Phone" />
+<input type="text" autocomplete="off" placeholder="Grade" /> <!-- Custom field -->
+```
+**Files**: `login-form.component.ts`, `signup-form.component.ts`, `student-form.component.ts`
+
+---
+
+### 1️⃣1️⃣ Duplicate Startup Log Messages in Console
+**Problem**: Application startup messages appear twice with same timestamp  
+**Fix**: Remove duplicate Serilog console sink configuration
+```csharp
+// Program.cs - BEFORE (causes duplicate):
+builder.Host.UseSerilog((context, logger) => {
+  logger.ReadFrom.Configuration(context.Configuration)
+        .WriteTo.Console(outputTemplate: "...");  // ❌ DUPLICATE
+});
+
+// AFTER (correct):
+builder.Host.UseSerilog((context, logger) => {
+  logger.ReadFrom.Configuration(context.Configuration);
+  // Console output configured ONLY in appsettings.json
+});
+
+// Also use static Log facade for startup messages:
+Log.Information("Application Started");  // ✅ Uses already-configured Serilog
+```
+**File**: `Program.cs`
+
+---
+
+## 📋 Diagnostic Checklist
 
 1. **Data not showing?**
    - ✅ Check API response in browser DevTools (Network tab)

@@ -18,7 +18,10 @@ This document provides a comprehensive record of all errors encountered during d
 6. [Issue #6: Edit Form Fields Empty When Loading Student](#issue-6-edit-form-fields-empty-when-loading-student)
 7. [Issue #7: Phone Field Validation - Duplicate Error Messages](#issue-7-phone-field-validation-duplicate-error-messages)
 8. [Issue #8: Top-of-Form Validation Errors for Empty Assessments](#issue-8-top-of-form-validation-errors-for-empty-assessments)
-8. [Quick Reference: Common Issues & Solutions](#quick-reference-common-issues--solutions)
+9. [Issue #9: Native Confirm Dialog Not Working in VS Code Simple Browser](#issue-9-native-confirm-dialog-not-working-in-vs-code-simple-browser)
+10. [Issue #10: Missing HTML5 Autocomplete Attributes on Forms](#issue-10-missing-html5-autocomplete-attributes-on-forms)
+11. [Issue #11: Duplicate Startup Log Messages](#issue-11-duplicate-startup-log-messages)
+12. [Quick Reference: Common Issues & Solutions](#quick-reference-common-issues--solutions)
 
 ---
 
@@ -742,6 +745,455 @@ private handleServerError(action: 'create' | 'update', err: any): void {
 
 ---
 
+## Issue #9: Native Confirm Dialog Not Working in VS Code Simple Browser
+
+### Problem
+When clicking the Delete button on a student row in the list, a browser dialog box appeared:
+```
+"localhost:5000 says
+Are you sure you want to delete this student?
+[Cancel] [OK]"
+```
+
+However, the buttons didn't respond when clicked in the VS Code Simple Browser, making it impossible to delete students in the browser preview.
+
+### Root Cause
+The component used JavaScript's native `confirm()` function to request deletion confirmation:
+```typescript
+if (confirm('Are you sure you want to delete this student?')) {
+  // Delete logic
+}
+```
+
+The VS Code Simple Browser has limited support for native JavaScript dialogs (`alert()`, `confirm()`, `prompt()`). While the dialog displays, user interactions with it don't work reliably.
+
+### Solution Implemented
+
+**Replaced native `confirm()` with a custom Angular modal dialog.**
+
+**Template Changes** (student-list.component.ts):
+```html
+<!-- Delete Button -->
+<button (click)="showDeleteConfirm(student.studentId)" class="btn btn-danger">Delete</button>
+
+<!-- Confirmation Modal -->
+<div *ngIf="showConfirmDialog" class="modal-overlay">
+  <div class="modal">
+    <div class="modal-header">
+      <h3>Confirm Delete</h3>
+    </div>
+    <div class="modal-body">
+      <p>Are you sure you want to delete this student? This action cannot be undone.</p>
+    </div>
+    <div class="modal-footer">
+      <button (click)="confirmDelete()" class="btn btn-danger">Delete</button>
+      <button (click)="cancelDelete()" class="btn btn-secondary">Cancel</button>
+    </div>
+  </div>
+</div>
+```
+
+**Component Logic** (student-list.component.ts):
+```typescript
+export class StudentListComponent implements OnInit, OnDestroy {
+  showConfirmDialog = false;
+  studentToDelete: number | null = null;
+
+  showDeleteConfirm(id: number): void {
+    this.studentToDelete = id;
+    this.showConfirmDialog = true;
+  }
+
+  confirmDelete(): void {
+    if (this.studentToDelete !== null) {
+      this.studentService.deleteStudent(this.studentToDelete).subscribe({
+        next: () => {
+          this.showConfirmDialog = false;
+          this.studentToDelete = null;
+          this.loadStudents();
+        },
+        error: (err) => {
+          this.error = 'Failed to delete student: ' + (err.message || 'Unknown error');
+          this.showConfirmDialog = false;
+          this.studentToDelete = null;
+        }
+      });
+    }
+  }
+
+  cancelDelete(): void {
+    this.showConfirmDialog = false;
+    this.studentToDelete = null;
+  }
+}
+```
+
+**Modal Styles:**
+```css
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+}
+
+.modal {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+  max-width: 400px;
+  width: 90%;
+}
+
+.modal-header {
+  padding: 20px;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #f5f5f5;
+}
+
+.modal-body {
+  padding: 20px;
+}
+
+.modal-footer {
+  padding: 15px 20px;
+  border-top: 1px solid #e0e0e0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+```
+
+### Files Changed
+- [StudentApp/src/app/components/student-list.component.ts](StudentApp/src/app/components/student-list.component.ts)
+  - Replaced `deleteStudent()` method with `showDeleteConfirm()`, `confirmDelete()`, and `cancelDelete()` methods
+  - Added modal state properties: `showConfirmDialog`, `studentToDelete`
+  - Updated template with modal overlay and styling
+
+### Why This Works
+✅ **Works everywhere** - Custom modal is pure Angular/HTML/CSS, no native browser dialogs
+✅ **Better UX** - Styled modal matches the application design
+✅ **More accessible** - Can add ARIA attributes for screen readers if needed
+✅ **Debuggable** - All logic is in TypeScript, easy to inspect
+
+### Prevention Tips
+- ✅ **Avoid native dialogs** - Use custom modals for better compatibility
+- ✅ **Test in Simple Browser** - Before declaring a feature complete
+- ✅ **Consider non-modal alternatives** - Delete buttons with inline undo, toast notifications, etc.
+- ✅ **Accessibility** - Add `role="dialog"`, `aria-modal="true"` to modal divs
+
+---
+
+## Issue #10: Missing HTML5 Autocomplete Attributes on Forms
+
+### Problem
+Users filling out forms (login, signup, student registration) noticed that browsers didn't suggest saved passwords, emails, or names. This reduced usability and made the forms feel less polished compared to modern web applications.
+
+### Root Cause
+The form input elements lacked the `autocomplete` HTML5 attribute, which tells browsers which type of information each field should contain. Without these hints, browsers can't reliably auto-fill sensitive fields.
+
+### Solution Implemented
+
+**Added semantic `autocomplete` attributes to all form inputs.**
+
+**Login Form** (login-form.component.ts):
+```html
+<input type="email" 
+       id="email" 
+       [(ngModel)]="teacher.email" 
+       name="email" 
+       #email="ngModel" 
+       autocomplete="email"
+       required />
+
+<input type="password" 
+       id="password" 
+       [(ngModel)]="teacher.password" 
+       name="password" 
+       #password="ngModel" 
+       autocomplete="current-password"
+       required />
+```
+
+**Registration Form** (signup-form.component.ts):
+```html
+<input type="text" 
+       id="firstName" 
+       [(ngModel)]="teacher.firstName" 
+       name="firstName" 
+       #firstName="ngModel" 
+       autocomplete="given-name"
+       required />
+
+<input type="text" 
+       id="lastName" 
+       [(ngModel)]="teacher.lastName" 
+       name="lastName" 
+       #lastName="ngModel" 
+       autocomplete="family-name"
+       required />
+
+<input type="email" 
+       id="email" 
+       [(ngModel)]="teacher.email" 
+       name="email" 
+       #email="ngModel" 
+       autocomplete="email"
+       required />
+
+<input type="tel" 
+       id="phone" 
+       [(ngModel)]="teacher.phone" 
+       name="phone" 
+       #phone="ngModel" 
+       autocomplete="tel"
+       required />
+
+<input type="text" 
+       id="subject" 
+       [(ngModel)]="teacher.subject" 
+       name="subject" 
+       #subject="ngModel" 
+       autocomplete="off"
+       required />
+
+<input type="password" 
+       id="password" 
+       [(ngModel)]="teacher.password" 
+       name="password" 
+       #password="ngModel" 
+       autocomplete="new-password"
+       required />
+```
+
+**Student Form** (student-form.component.ts):
+```html
+<input type="text" 
+       id="firstName" 
+       [(ngModel)]="student.firstName" 
+       name="firstName" 
+       #firstName="ngModel" 
+       autocomplete="given-name"
+       required />
+
+<input type="text" 
+       id="lastName" 
+       [(ngModel)]="student.lastName" 
+       name="lastName" 
+       #lastName="ngModel" 
+       autocomplete="family-name"
+       required />
+
+<input type="email" 
+       id="email" 
+       [(ngModel)]="student.email" 
+       name="email" 
+       #email="ngModel" 
+       autocomplete="email"
+       required />
+
+<input type="tel" 
+       id="phone" 
+       [(ngModel)]="student.phone" 
+       name="phone" 
+       #phone="ngModel" 
+       autocomplete="tel"
+       required />
+
+<input type="text" 
+       id="grade" 
+       [(ngModel)]="student.grade" 
+       name="grade" 
+       #grade="ngModel" 
+       autocomplete="off"
+       required />
+```
+
+### Autocomplete Values Used
+| Input Type | Value | Purpose |
+|-----------|-------|---------|
+| Email field | `autocomplete="email"` | Browser recognizes email field |
+| Password (login) | `autocomplete="current-password"` | Suggests saved password for existing accounts |
+| Password (registration) | `autocomplete="new-password"` | Hints this is a NEW password, prevents autofill of old password |
+| First Name | `autocomplete="given-name"` | Browser autofill with first name |
+| Last Name | `autocomplete="family-name"` | Browser autofill with last name |
+| Phone | `autocomplete="tel"` | Browser autofill with phone number |
+| Custom fields (Subject, Grade) | `autocomplete="off"` | No browser autofill for custom fields |
+
+### Files Changed
+- [StudentApp/src/app/components/login-form.component.ts](StudentApp/src/app/components/login-form.component.ts)
+- [StudentApp/src/app/components/signup-form.component.ts](StudentApp/src/app/components/signup-form.component.ts)
+- [StudentApp/src/app/components/student-form.component.ts](StudentApp/src/app/components/student-form.component.ts)
+
+### Why This Matters
+✅ **Better UX** - Users get helpful autofill suggestions
+✅ **Increased conversion** - Fewer typos in form fields
+✅ **Standards compliance** - Follows HTML5 spec recommendations
+✅ **Password security** - Browsers can suggest strong passwords for new accounts
+✅ **Accessibility** - Helps password managers autofill correctly
+
+### Prevention Tips
+- ✅ **Always add `autocomplete` attributes** - Especially for common fields (email, phone, name)
+- ✅ **Use semantic values** - Don't use `autocomplete="off"` unless necessary
+- ✅ **Test with password manager** - Verify autofill works in 1Password, LastPass, etc.
+- ✅ **For custom fields** - Use `autocomplete="off"` to prevent confusion
+
+### MDN Reference
+See [HTML autocomplete attribute](https://developer.mozilla.org/en-US/docs/Web/HTML/Attributes/autocomplete) for a complete list of valid values.
+
+---
+
+## Issue #11: Duplicate Startup Log Messages
+
+### Problem
+Every time the application started, startup messages appeared twice in the console output:
+
+```
+[15:39:52 INF] ╔════════════════════════════════════════════════════════════╗
+[15:39:52 INF] ║   Student Assessment Tracker - Application Started        ║
+[15:39:52 INF] ║   Student Assessment Tracker - Application Started        ║
+[15:39:52 INF] ║   🚀 Running on: http://localhost:5000
+[15:39:52 INF] ║   🚀 Running on: http://localhost:5000
+...
+```
+
+This duplication made it difficult to read startup messages and suggested a configuration problem.
+
+### Root Cause
+Serilog was configured to write console output in TWO places:
+
+1. **appsettings.json** configured a Console sink:
+   ```json
+   "Serilog": {
+     "WriteTo": [
+       { "Name": "Console", "Args": { "outputTemplate": "[{Timestamp:HH:mm:ss} {Level:u3}] ..." } }
+     ]
+   }
+   ```
+
+2. **Program.cs** also added a Console sink programmatically:
+   ```csharp
+   builder.Host.UseSerilog((context, logger) => {
+     logger.ReadFrom.Configuration(context.Configuration)
+           .WriteTo.Console(outputTemplate: "...");  // ← DUPLICATE!
+   });
+   ```
+
+When both configurations exist, Serilog adds BOTH sinks to the same logger instance, causing duplicate logged messages.
+
+### Solution Implemented
+
+**Removed the duplicate `.WriteTo.Console()` call from Program.cs:**
+
+```csharp
+// BEFORE (causes duplicates)
+builder.Host.UseSerilog((context, logger) => {
+  logger.ReadFrom.Configuration(context.Configuration)
+        .WriteTo.File("Logs/app-{Date}.log", rollingInterval: RollingInterval.Day)
+        .WriteTo.Console(outputTemplate: "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}",
+                         standardErrorFromLevel: LogEventLevel.Error);
+});
+
+// AFTER (correct - single source of truth)
+builder.Host.UseSerilog((context, logger) => {
+  logger.ReadFrom.Configuration(context.Configuration);
+  // Console output is only configured in appsettings.json now
+});
+```
+
+**Updated startup message logging to use static `Log.Information()` instead of service-resolved logger:**
+
+```csharp
+// BEFORE (less preferred)
+var logger = app.Services.GetRequiredService<Serilog.ILogger>();
+logger.Information("╔════════════════════════════════════════════════════════════╗");
+
+// AFTER (cleaner, uses already-configured static instance)
+Log.Information("╔════════════════════════════════════════════════════════════╗");
+Log.Information("║   Student Assessment Tracker - Application Started        ║");
+Log.Information("║   🚀 Running on: http://localhost:5000                    ║");
+Log.Information("║   📊 API Base: http://localhost:5000/api                  ║");
+Log.Information("║   ✨ Autocomplete enabled on all forms                    ║");
+Log.Information("╚════════════════════════════════════════════════════════════╝");
+```
+
+**appsettings.json already had proper console and file configuration:**
+```json
+{
+  "Serilog": {
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft": "Warning",
+        "AspNetCore": "Warning"
+      }
+    },
+    "WriteTo": [
+      {
+        "Name": "Console",
+        "Args": {
+          "outputTemplate": "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj}{NewLine}{Exception}",
+          "standardErrorFromLevel": "Error"
+        }
+      },
+      {
+        "Name": "File",
+        "Args": {
+          "path": "Logs/app-.log",
+          "rollingInterval": "Day",
+          "retainedFileCountLimit": 14,
+          "outputTemplate": "{Timestamp:o} [{Level:u3}] {Message:lj}{NewLine}{Exception}"
+        }
+      }
+    ]
+  }
+}
+```
+
+### Result
+✅ Startup messages now appear **exactly once** in console  
+✅ Log files still receive both Console and File sink outputs  
+✅ Cleaner, single source of truth for logging configuration  
+
+### Files Changed
+- [Program.cs](Program.cs)
+  - Removed duplicate `.WriteTo.Console()` and `.WriteTo.File()` calls
+  - Changed to use static `Log.Information()` for startup messages
+- [appsettings.json](appsettings.json)
+  - Configuration unchanged, but now the single source of truth
+
+### Prevention Tips
+- ✅ **Read from config, don't duplicate** - Use `.ReadFrom.Configuration()` only, don't add same sinks in code
+- ✅ **Single source of truth** - Configure sinks either in code OR appsettings.json, not both
+- ✅ **Use static Log facade** - For one-off startup messages that happen before dependency injection
+- ✅ **Test startup output** - Verify messages appear exactly once
+- ✅ **Check logs file** - Ensure file output is still working: `Logs/app-{Date}.log`
+
+### Testing Verification
+```powershell
+# Run application
+dotnet run
+
+# Expected output (exact once):
+[15:42:17 INF] ╔════════════════════════════════════════════════════════════╗
+[15:42:17 INF] ║   Student Assessment Tracker - Application Started        ║
+[15:42:17 INF] ║   🚀 Running on: http://localhost:5000
+[15:42:17 INF] ║   📊 API Base: http://localhost:5000/api
+[15:42:17 INF] ║   ✨ Autocomplete enabled on all forms
+[15:42:17 INF] ╚════════════════════════════════════════════════════════════╝
+
+# Check logs file
+Get-Content "Logs/app-*.log" | tail -50
+```
+
+---
+
 ### Issue: Table/List not showing data
 **Symptoms**: Component loads but table is empty or missing columns  
 **First Check**:
@@ -904,5 +1356,5 @@ If you encounter similar issues or need clarification on any fix:
 
 ---
 
-**Last Updated**: February 8, 2026  
-**Status**: All issues resolved, production-ready
+**Last Updated**: February 10, 2026  
+**Status**: All 11 issues resolved, production-ready
