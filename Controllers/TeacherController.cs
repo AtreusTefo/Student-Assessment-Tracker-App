@@ -13,18 +13,22 @@ public class TeacherController : ControllerBase
     private readonly ApplicationDbContext _context;
     private readonly IValidator<Teacher> _validator;
     private readonly IMapper _mapper;
+    private readonly ILogger<TeacherController> _logger;
 
-    public TeacherController(ApplicationDbContext context, IValidator<Teacher> validator, IMapper mapper)
+    public TeacherController(ApplicationDbContext context, IValidator<Teacher> validator, IMapper mapper, ILogger<TeacherController> logger)
     {
         _context = context;
         _validator = validator;
         _mapper = mapper;
+        _logger = logger;
     }
 
     // GET: api/teachers?sortOrder=fname
     [HttpGet]
     public IActionResult GetAll(string sortOrder = "")
     {
+        _logger.LogInformation("Fetching all teachers with sort order: {SortOrder}", sortOrder);
+
         var teachers = _context.Teachers.AsQueryable();
 
         switch (sortOrder)
@@ -43,21 +47,27 @@ public class TeacherController : ControllerBase
                 break;
         }
 
-        return Ok(teachers.ToList());
+        var teacherList = teachers.ToList();
+        _logger.LogInformation("Successfully retrieved {TeacherCount} teachers", teacherList.Count);
+        return Ok(teacherList);
     }
 
     // GET: api/teachers/{id}
     [HttpGet("{id}")]
     public IActionResult GetById(int id)
     {
+        _logger.LogInformation("Fetching teacher with ID: {TeacherId}", id);
+
         var teacher = _context.Teachers.Find(id);
         if (teacher == null)
         {
+            _logger.LogWarning("Teacher not found with ID: {TeacherId}", id);
             return NotFound();
         }
 
         // AutoMapper converts Teacher to TeacherDetailDto (includes marks and calculations)
         var teacherDetail = _mapper.Map<TeacherDetailDto>(teacher);
+        _logger.LogInformation("Successfully retrieved teacher: {TeacherName}", $"{teacher.FirstName} {teacher.LastName}");
         return Ok(teacherDetail);
     }
 
@@ -65,22 +75,31 @@ public class TeacherController : ControllerBase
     [HttpPost]
     public IActionResult Create([FromBody] Teacher teacher)
     {
+        var teacherName = teacher != null ? $"{teacher.FirstName} {teacher.LastName}" : "unknown";
+        _logger.LogInformation("Creating new teacher: {TeacherName}", teacherName);
+
         // FluentValidation is registered with AddFluentValidationAutoValidation(),
         // so validators run automatically during model binding and populate ModelState.
         if (!ModelState.IsValid)
         {
+            _logger.LogWarning("Teacher creation failed - validation errors: {@ModelState}", ModelState);
             return BadRequest(ModelState);
         }
 
         // Automatically prepend country code to phone number
         // User inputs: 72254856 → We store: +267 72254856
-        teacher.Phone = $"+267 {teacher.Phone}";
+        if (teacher != null)
+        {
+            teacher.Phone = $"+267 {teacher.Phone}";
+        }
 
         // AutoMapper usage (mapping Teacher to Teacher here as an example)
         var mappedTeacher = _mapper.Map<Teacher>(teacher);
 
         _context.Teachers.Add(mappedTeacher);
         _context.SaveChanges();
+
+        _logger.LogInformation("Teacher created successfully with ID: {TeacherId}", mappedTeacher.TeacherId);
         return CreatedAtAction(nameof(GetById), new { id = mappedTeacher.TeacherId }, mappedTeacher);
     }
 
@@ -88,19 +107,24 @@ public class TeacherController : ControllerBase
     [HttpPut("{id}")]
     public IActionResult Update(int id, [FromBody] Teacher teacher)
     {
+        _logger.LogInformation("Updating teacher with ID: {TeacherId}", id);
+
         if (teacher == null)
         {
+            _logger.LogWarning("Update failed - teacher object is null for ID: {TeacherId}", id);
             return BadRequest();
         }
 
         var existingTeacher = _context.Teachers.Find(id);
         if (existingTeacher == null)
         {
+            _logger.LogWarning("Update failed - teacher not found with ID: {TeacherId}", id);
             return NotFound();
         }
 
         if (!ModelState.IsValid)
         {
+            _logger.LogWarning("Update validation failed for teacher ID: {TeacherId}", id);
             return BadRequest(ModelState);
         }
 
@@ -118,6 +142,8 @@ public class TeacherController : ControllerBase
 
         _context.Teachers.Update(existingTeacher);
         _context.SaveChanges();
+
+        _logger.LogInformation("Teacher updated successfully: ID={TeacherId}, Name={TeacherName}", id, $"{existingTeacher.FirstName} {existingTeacher.LastName}");
         return Ok(existingTeacher);
     }
 
@@ -125,14 +151,19 @@ public class TeacherController : ControllerBase
     [HttpDelete("{id}")]
     public IActionResult Delete(int id)
     {
+        _logger.LogInformation("Deleting teacher with ID: {TeacherId}", id);
+
         var teacher = _context.Teachers.Find(id);
         if (teacher == null)
         {
+            _logger.LogWarning("Delete failed - teacher not found with ID: {TeacherId}", id);
             return NotFound();
         }
 
         _context.Teachers.Remove(teacher);
         _context.SaveChanges();
+
+        _logger.LogInformation("Teacher deleted successfully: ID={TeacherId}, Name={TeacherName}", id, $"{teacher.FirstName} {teacher.LastName}");
         return Ok();
     }
 
@@ -140,8 +171,11 @@ public class TeacherController : ControllerBase
     [HttpPost("login")]
     public IActionResult Login([FromBody] LoginDto credentials)
     {
+        _logger.LogInformation("Login attempt for email: {Email}", credentials?.Email ?? "unknown");
+
         if (credentials == null || string.IsNullOrEmpty(credentials.Email) || string.IsNullOrEmpty(credentials.Password))
         {
+            _logger.LogWarning("Login failed - missing email or password");
             return BadRequest(new { message = "Email and password are required" });
         }
 
@@ -149,17 +183,20 @@ public class TeacherController : ControllerBase
         var teacher = _context.Teachers.FirstOrDefault(t => t.Email == credentials.Email);
         if (teacher == null)
         {
+            _logger.LogWarning("Login failed - teacher not found with email: {Email}", credentials.Email);
             return Unauthorized(new { message = "Invalid email or password" });
         }
 
         // Simple password check (in production, use proper password hashing)
         if (teacher.Password != credentials.Password)
         {
+            _logger.LogWarning("Login failed - invalid password for email: {Email}", credentials.Email);
             return Unauthorized(new { message = "Invalid email or password" });
         }
 
         // For now, return a simple token (in production, use JWT)
         var token = $"Bearer_{teacher.TeacherId}_{DateTime.UtcNow.Ticks}";
+        _logger.LogInformation("Login successful for teacher: {TeacherId}", teacher.TeacherId);
 
         return Ok(new
         {

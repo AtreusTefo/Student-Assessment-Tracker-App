@@ -159,14 +159,27 @@ The Angular frontend is pre-built and included in the `wwwroot/` directory. If y
    npm install
    ```
 
-3. **Build the Angular application**
+3. **Regenerate favicon assets (after logo/icon updates)**
+   ```bash
+   npm run generate:favicon
+   ```
+
+   This regenerates:
+   - `favicon.ico`
+   - `favicon-16x16.png`
+   - `favicon-32x32.png`
+   - `favicon-64x64.png`
+   - `apple-touch-icon.png`
+   - `favicon.png`
+
+4. **Build the Angular application**
    ```bash
    npm run build
    ```
    
    This creates optimized files in `dist/StudentApp/browser/`
 
-4. **Copy built files to wwwroot**
+5. **Copy built files to wwwroot**
    ```bash
    copy dist/StudentApp/browser/* ../wwwroot/ /Y
    ```

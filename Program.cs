@@ -4,14 +4,26 @@ using FluentValidation;
 using FluentValidation.AspNetCore;
 using StudentAssessmentTracker.Validators;
 using StudentAssessmentTracker.Mappings;
+using Serilog;
 
 var contentRoot = Directory.GetCurrentDirectory();
+var logsDirectory = Path.Combine(contentRoot, "Logs");
+Directory.CreateDirectory(logsDirectory);
+
 var angularDistPath = Path.Combine(contentRoot, "StudentApp", "dist", "StudentApp", "browser");
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
     Args = args,
     ContentRootPath = contentRoot,
     WebRootPath = Directory.Exists(angularDistPath) ? angularDistPath : "wwwroot"
+});
+
+builder.Host.UseSerilog((context, services, loggerConfiguration) =>
+{
+    loggerConfiguration
+        .ReadFrom.Configuration(context.Configuration)
+        .ReadFrom.Services(services)
+        .Enrich.FromLogContext();
 });
 
 builder.Services.AddControllers();
@@ -37,6 +49,8 @@ builder.Services
 builder.Services.AddAutoMapper(typeof(MappingProfile));
 
 var app = builder.Build();
+
+app.UseSerilogRequestLogging();
 
 app.UseDefaultFiles();
 app.UseStaticFiles();

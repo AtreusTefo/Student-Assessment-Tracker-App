@@ -23,6 +23,7 @@ public class TeacherValidator : AbstractValidator<Teacher>
             .Cascade(CascadeMode.Stop)
             .NotEmpty().WithMessage("Email is required")
             .EmailAddress().WithMessage("Email must be a valid email address")
+            .MinimumLength(3).WithMessage("Email must be at least 3 characters long")
             .MaximumLength(100).WithMessage("Email cannot exceed 100 characters");
 
         RuleFor(t => t.Phone)
