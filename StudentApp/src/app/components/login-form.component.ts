@@ -17,13 +17,13 @@ import { TeacherService, LoginDto } from '../services/teacher.service';
       <form (ngSubmit)="onSubmit()" #form="ngForm" class="form">
         <div class="form-group">
           <label for="email">Email:</label>
-          <input type="email" id="email" [(ngModel)]="credentials.email" name="email" required />
+          <input type="email" id="email" [(ngModel)]="credentials.email" name="email" autocomplete="email" required />
           <span class="error" *ngIf="form.submitted && !credentials.email">Email is required</span>
         </div>
         
         <div class="form-group">
           <label for="password">Password:</label>
-          <input type="password" id="password" [(ngModel)]="credentials.password" name="password" required />
+          <input type="password" id="password" [(ngModel)]="credentials.password" name="password" autocomplete="current-password" required />
           <span class="error" *ngIf="form.submitted && !credentials.password">Password is required</span>
         </div>
         

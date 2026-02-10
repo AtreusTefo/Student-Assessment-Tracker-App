@@ -10,6 +10,10 @@ var contentRoot = Directory.GetCurrentDirectory();
 var logsDirectory = Path.Combine(contentRoot, "Logs");
 Directory.CreateDirectory(logsDirectory);
 
+// Configure console output for immediate display
+Console.OutputEncoding = System.Text.Encoding.UTF8;
+Console.Out.Flush();
+
 var angularDistPath = Path.Combine(contentRoot, "StudentApp", "dist", "StudentApp", "browser");
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions
 {
@@ -59,5 +63,13 @@ app.UseCors("AllowAngular");
 
 app.MapControllers();
 app.MapFallbackToFile("index.html");
+
+// Log startup information
+Log.Information("╔════════════════════════════════════════════════════════════╗");
+Log.Information("║   Student Assessment Tracker - Application Started        ║");
+Log.Information("║   🚀 Running on: http://localhost:5000                    ║");
+Log.Information("║   📊 API Base: http://localhost:5000/api                  ║");
+Log.Information("║   ✨ Autocomplete enabled on all forms                    ║");
+Log.Information("╚════════════════════════════════════════════════════════════╝");
 
 app.Run();

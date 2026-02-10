@@ -17,7 +17,7 @@ import { StudentService, Student } from '../services/student.service';
       <form (ngSubmit)="onSubmit(form)" #form="ngForm" class="form">
         <div class="form-group">
           <label for="firstName">First Name:</label>
-          <input type="text" id="firstName" [(ngModel)]="student.firstName" name="firstName" #firstName="ngModel" required minlength="2" maxlength="50" />
+          <input type="text" id="firstName" [(ngModel)]="student.firstName" name="firstName" #firstName="ngModel" autocomplete="given-name" required minlength="2" maxlength="50" />
           <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('required')">First name is required</span>
           <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('minlength')">First name must be at least 2 characters</span>
           <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('maxlength')">First name cannot exceed 50 characters</span>
@@ -26,7 +26,7 @@ import { StudentService, Student } from '../services/student.service';
         
         <div class="form-group">
           <label for="lastName">Last Name:</label>
-          <input type="text" id="lastName" [(ngModel)]="student.lastName" name="lastName" #lastName="ngModel" required minlength="2" maxlength="50" />
+          <input type="text" id="lastName" [(ngModel)]="student.lastName" name="lastName" #lastName="ngModel" autocomplete="family-name" required minlength="2" maxlength="50" />
           <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('required')">Last name is required</span>
           <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('minlength')">Last name must be at least 2 characters</span>
           <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('maxlength')">Last name cannot exceed 50 characters</span>
@@ -35,7 +35,7 @@ import { StudentService, Student } from '../services/student.service';
         
         <div class="form-group">
           <label for="email">Email:</label>
-          <input type="email" id="email" [(ngModel)]="student.email" name="email" #email="ngModel" required maxlength="100" />
+          <input type="email" id="email" [(ngModel)]="student.email" name="email" #email="ngModel" autocomplete="email" required maxlength="100" />
           <span class="error" *ngIf="(form.submitted || email.touched || email.dirty) && email.hasError('required')">Email is required</span>
           <span class="error" *ngIf="(form.submitted || email.touched || email.dirty) && email.hasError('email')">Email must be a valid email address</span>
           <span class="error" *ngIf="(form.submitted || email.touched || email.dirty) && email.hasError('maxlength')">Email cannot exceed 100 characters</span>
@@ -44,7 +44,7 @@ import { StudentService, Student } from '../services/student.service';
         
         <div class="form-group">
           <label for="phone">Phone (8 digits, e.g., 72254856):</label>
-          <input type="text" id="phone" [(ngModel)]="student.phone" name="phone" #phone="ngModel" placeholder="72254856" minlength="8" maxlength="8" pattern="^\\d{8}$" (input)="validatePhone()" (keypress)="allowOnlyNumbers($event)" required />
+          <input type="text" id="phone" [(ngModel)]="student.phone" name="phone" #phone="ngModel" placeholder="72254856" minlength="8" maxlength="8" pattern="^\\d{8}$" autocomplete="tel" (input)="validatePhone()" (keypress)="allowOnlyNumbers($event)" required />
           <span class="error" *ngIf="(form.submitted || phone.touched || phone.dirty) && phone.hasError('required')">Phone is required</span>
           <span class="error" *ngIf="(form.submitted || phone.touched || phone.dirty) && (phone.hasError('pattern') || phone.hasError('minlength') || phone.hasError('maxlength'))">Phone must be exactly 8 digits</span>
           <span class="error" *ngIf="fieldErrors['phone'] && fieldErrors['phone'].length">{{ fieldErrors['phone'].join('\n') }}</span>
@@ -52,7 +52,7 @@ import { StudentService, Student } from '../services/student.service';
         
         <div class="form-group">
           <label for="grade">Grade:</label>
-          <input type="text" id="grade" [(ngModel)]="student.grade" name="grade" #grade="ngModel" placeholder="e.g., 10A, 11B" required maxlength="10" />
+          <input type="text" id="grade" [(ngModel)]="student.grade" name="grade" #grade="ngModel" placeholder="e.g., 10A, 11B" autocomplete="off" required maxlength="10" />
           <span class="error" *ngIf="(form.submitted || grade.touched || grade.dirty) && grade.hasError('required')">Grade is required</span>
           <span class="error" *ngIf="(form.submitted || grade.touched || grade.dirty) && grade.hasError('maxlength')">Grade cannot exceed 10 characters</span>
           <span class="error" *ngIf="fieldErrors['grade'] && fieldErrors['grade'].length">{{ fieldErrors['grade'].join('\n') }}</span>

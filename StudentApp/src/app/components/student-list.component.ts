@@ -35,7 +35,7 @@ import { takeUntil, filter } from 'rxjs/operators';
             <td>
               <a [routerLink]="['/detail', student.studentId]" class="btn btn-info">View</a>
               <a [routerLink]="['/edit', student.studentId]" class="btn btn-warning">Edit</a>
-              <button (click)="deleteStudent(student.studentId)" class="btn btn-danger">Delete</button>
+              <button (click)="showDeleteConfirm(student.studentId)" class="btn btn-danger">Delete</button>
             </td>
           </tr>
         </tbody>
@@ -43,6 +43,22 @@ import { takeUntil, filter } from 'rxjs/operators';
       
       <div *ngIf="students.length === 0 && !loading && !error" class="no-data">
         No students found. <a routerLink="/create">Create one</a>
+      </div>
+
+      <!-- Confirmation Modal -->
+      <div *ngIf="showConfirmDialog" class="modal-overlay">
+        <div class="modal">
+          <div class="modal-header">
+            <h3>Confirm Delete</h3>
+          </div>
+          <div class="modal-body">
+            <p>Are you sure you want to delete this student? This action cannot be undone.</p>
+          </div>
+          <div class="modal-footer">
+            <button (click)="confirmDelete()" class="btn btn-danger">Delete</button>
+            <button (click)="cancelDelete()" class="btn btn-secondary">Cancel</button>
+          </div>
+        </div>
       </div>
     </div>
   `,
@@ -79,6 +95,11 @@ import { takeUntil, filter } from 'rxjs/operators';
     
     .btn-danger {
       background-color: #f44336;
+      color: white;
+    }
+    
+    .btn-secondary {
+      background-color: #757575;
       color: white;
     }
     
@@ -120,12 +141,73 @@ import { takeUntil, filter } from 'rxjs/operators';
       background-color: #f5f5f5;
       color: #666;
     }
+
+    .modal-overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.5);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 1000;
+    }
+
+    .modal {
+      background-color: white;
+      border-radius: 8px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+      max-width: 400px;
+      width: 90%;
+      margin: 0 auto;
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid #e0e0e0;
+      background-color: #f5f5f5;
+      border-radius: 8px 8px 0 0;
+    }
+
+    .modal-header h3 {
+      margin: 0;
+      font-size: 18px;
+      color: #333;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .modal-body p {
+      margin: 0;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    .modal-footer {
+      padding: 15px 20px;
+      border-top: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+      border-radius: 0 0 8px 8px;
+    }
+
+    .modal-footer .btn {
+      margin: 0;
+      padding: 10px 20px;
+    }
   `]
 })
 export class StudentListComponent implements OnInit, OnDestroy {
   students: StudentListDto[] = [];
   loading = true;
   error: string | null = null;
+  showConfirmDialog = false;
+  studentToDelete: number | null = null;
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -173,16 +255,30 @@ export class StudentListComponent implements OnInit, OnDestroy {
     });
   }
 
-  deleteStudent(id: number): void {
-    if (confirm('Are you sure you want to delete this student?')) {
-      this.studentService.deleteStudent(id).subscribe({
+  showDeleteConfirm(id: number): void {
+    this.studentToDelete = id;
+    this.showConfirmDialog = true;
+  }
+
+  confirmDelete(): void {
+    if (this.studentToDelete !== null) {
+      this.studentService.deleteStudent(this.studentToDelete).subscribe({
         next: () => {
+          this.showConfirmDialog = false;
+          this.studentToDelete = null;
           this.loadStudents();
         },
         error: (err) => {
           this.error = 'Failed to delete student: ' + (err.message || 'Unknown error');
+          this.showConfirmDialog = false;
+          this.studentToDelete = null;
         }
       });
     }
+  }
+
+  cancelDelete(): void {
+    this.showConfirmDialog = false;
+    this.studentToDelete = null;
   }
 }
