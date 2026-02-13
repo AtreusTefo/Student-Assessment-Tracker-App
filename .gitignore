@@ -1,8 +1,32 @@
+# Build outputs and artifacts
 /bin/
 /obj/
+/dist/
+.angular/
 *.dll
 *.exe
 *.pdb
+
+# Node modules
+StudentApp/node_modules/
+
+# Logs and temporary files
+*.log
+Logs/
+build_*.txt
+run_*.txt
+startup_*.txt
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temporary files
 tmpclaude-*
+wwwrootcd/
+
+# Angular build artifacts
 StudentApp/public/*
 !StudentApp/public/favicon*
