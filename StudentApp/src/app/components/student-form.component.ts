@@ -226,18 +226,27 @@ export class StudentFormComponent implements OnInit {
     this.loading = true;
     this.studentService.getStudent(id).subscribe({
       next: (data) => {
+        // Parse phone number: strip "+267 " prefix if present, otherwise use as-is
+        let parsedPhone = '';
+        if (data.phone) {
+          // Only strip country code if it actually starts with it
+          parsedPhone = data.phone.startsWith('+267 ') 
+            ? data.phone.substring(5) 
+            : data.phone;
+        }
+        
         this.student = {
-          studentId: data.studentId,
-          firstName: data.firstName,
-          lastName: data.lastName,
-          email: data.email,
-          phone: data.phone.substring(5), // Strip "+267 " for editing
-          grade: data.grade,
-          enrollmentDate: data.enrollmentDate,
-          assessment1: data.assessment1,
-          assessment2: data.assessment2,
-          assessment3: data.assessment3,
-          createdDate: new Date().toISOString()
+          studentId: data.id,
+          firstName: data.firstName || '',
+          lastName: data.lastName || '',
+          email: data.email || '',
+          phone: parsedPhone,
+          grade: data.grade || '',
+          enrollmentDate: data.createdAt || new Date().toISOString(),
+          assessment1: data.assessment1 || 0,
+          assessment2: data.assessment2 || 0,
+          assessment3: data.assessment3 || 0,
+          createdDate: data.createdAt || new Date().toISOString()
         };
         this.loading = false;
         this.cdr.markForCheck();

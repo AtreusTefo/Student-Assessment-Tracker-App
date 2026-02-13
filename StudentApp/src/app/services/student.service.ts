@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
+import { map } from 'rxjs/operators';
 
 export interface Student {
   studentId: number;
@@ -17,24 +18,24 @@ export interface Student {
 }
 
 export interface StudentListDto {
-  studentId: number;
+  id: number;
   firstName: string;
   lastName: string;
 }
 
 export interface StudentDetailDto {
-  studentId: number;
+  id: number;
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
   grade: string;
-  enrollmentDate: string;
+  createdAt: string;
   assessment1: number;
   assessment2: number;
   assessment3: number;
-  total: number;
-  average: number;
+  totalScore: number;
+  averageScore: number;
   percentage: number;
   performanceLevel: string;
 }
@@ -49,7 +50,13 @@ export class StudentService {
 
   // Get all students (returns StudentListDto with minimal fields)
   getStudents(): Observable<StudentListDto[]> {
-    return this.http.get<StudentListDto[]>(this.apiUrl);
+    return this.http.get<StudentListDto[]>(this.apiUrl).pipe(
+      // Ensure id property is properly mapped if needed
+      map(students => students.map(s => ({
+        ...s,
+        id: s.id || (s as any).studentId // Fallback in case of format mismatch
+      })))
+    );
   }
 
   // Get single student by ID

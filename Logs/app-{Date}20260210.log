@@ -1,0 +1,223 @@
+2026-02-10 15:11:52.940 +02:00 [INF] Fetching all students with sort order: 
+2026-02-10 15:11:53.465 +02:00 [INF] Successfully retrieved 0 students
+2026-02-10 15:11:53.587 +02:00 [INF] HTTP GET /api/students responded 200 in 1690.6872 ms
+2026-02-10 15:18:02.765 +02:00 [INF] Fetching all students with sort order: 
+2026-02-10 15:18:03.150 +02:00 [INF] Successfully retrieved 0 students
+2026-02-10 15:18:03.177 +02:00 [INF] HTTP GET /api/students responded 200 in 638.5053 ms
+2026-02-10 15:21:39.743 +02:00 [INF] Fetching all students with sort order: 
+2026-02-10 15:21:40.144 +02:00 [INF] Successfully retrieved 0 students
+2026-02-10 15:21:40.179 +02:00 [INF] HTTP GET /api/students responded 200 in 946.1490 ms
+2026-02-10 15:24:19.963 +02:00 [INF] HTTP GET /index.html responded 200 in 10.8577 ms
+2026-02-10 15:26:01.450 +02:00 [INF] HTTP GET /index.html responded 200 in 12.2863 ms
+2026-02-10 15:27:11.557 +02:00 [INF] HTTP GET /index.html responded 200 in 11.8273 ms
+2026-02-10 15:27:11.760 +02:00 [INF] HTTP GET /styles-5INURTSO.css responded 304 in 0.5068 ms
+2026-02-10 15:27:11.760 +02:00 [INF] HTTP GET /main-MSW4ITA4.js responded 304 in 0.5073 ms
+2026-02-10 15:27:13.227 +02:00 [INF] Fetching all students with sort order: 
+2026-02-10 15:27:13.824 +02:00 [INF] Successfully retrieved 0 students
+2026-02-10 15:27:13.853 +02:00 [INF] HTTP GET /api/students responded 200 in 1614.0930 ms
+2026-02-10T15:33:42.4305031+02:00 [INF] ╔════════════════════════════════════════════════════════════╗
+2026-02-10T15:33:42.4895646+02:00 [INF] ║   Student Assessment Tracker - Application Started        ║
+2026-02-10T15:33:42.4899145+02:00 [INF] ║   🚀 Running on: http://localhost:5000                    ║
+2026-02-10T15:33:42.4900239+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                  ║
+2026-02-10T15:33:42.4901175+02:00 [INF] ║   ✨ Autocomplete enabled on all forms                    ║
+2026-02-10T15:33:42.4901886+02:00 [INF] ╚════════════════════════════════════════════════════════════╝
+2026-02-10T15:34:49.3703849+02:00 [INF] ╔════════════════════════════════════════════════════════════╗
+2026-02-10T15:34:49.4041367+02:00 [INF] ║   Student Assessment Tracker - Application Started        ║
+2026-02-10T15:34:49.4044302+02:00 [INF] ║   🚀 Running on: http://localhost:5000                    ║
+2026-02-10T15:34:49.4046026+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                  ║
+2026-02-10T15:34:49.4047122+02:00 [INF] ║   ✨ Autocomplete enabled on all forms                    ║
+2026-02-10T15:34:49.4048333+02:00 [INF] ╚════════════════════════════════════════════════════════════╝
+2026-02-10T15:35:25.9771379+02:00 [INF] Fetching all students with sort order: 
+2026-02-10T15:35:26.3059414+02:00 [INF] Successfully retrieved 0 students
+2026-02-10T15:35:26.3343406+02:00 [INF] HTTP GET /api/students responded 200 in 569.6666 ms
+2026-02-10T15:36:13.0491085+02:00 [INF] ╔════════════════════════════════════════════════════════════╗
+2026-02-10T15:36:13.1059135+02:00 [INF] ║   Student Assessment Tracker - Application Started        ║
+2026-02-10T15:36:13.1088849+02:00 [INF] ║   🚀 Running on: http://localhost:5000                    ║
+2026-02-10T15:36:13.1115306+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                  ║
+2026-02-10T15:36:13.1137603+02:00 [INF] ║   ✨ Autocomplete enabled on all forms                    ║
+2026-02-10T15:36:13.1160677+02:00 [INF] ╚════════════════════════════════════════════════════════════╝
+2026-02-10T15:36:13.2095244+02:00 [ERR] Hosting failed to start
+System.IO.IOException: Failed to bind to address http://127.0.0.1:5000: address already in use.
+ ---> Microsoft.AspNetCore.Connections.AddressInUseException: Only one usage of each socket address (protocol/network address/port) is normally permitted.
+ ---> System.Net.Sockets.SocketException (10048): Only one usage of each socket address (protocol/network address/port) is normally permitted.
+   at System.Net.Sockets.Socket.UpdateStatusAfterSocketErrorAndThrowException(SocketError error, Boolean disconnectOnFailure, String callerName)
+   at System.Net.Sockets.Socket.DoBind(EndPoint endPointSnapshot, SocketAddress socketAddress)
+   at System.Net.Sockets.Socket.Bind(EndPoint localEP)
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportOptions.CreateDefaultBoundListenSocket(EndPoint endpoint)
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+   --- End of inner exception stack trace ---
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportFactory.BindAsync(EndPoint endpoint, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.TransportManager.BindAsync(EndPoint endPoint, ConnectionDelegate connectionDelegate, EndpointConfig endpointConfig, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.<>c__DisplayClass28_0`1.<<StartAsync>g__OnBind|0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindEndpointAsync(ListenOptions endpoint, AddressBindContext context, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindEndpointAsync(ListenOptions endpoint, AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.LocalhostListenOptions.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.DefaultAddressStrategy.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindAsync(ListenOptions[] listenOptions, AddressBindContext context, Func`2 useHttps, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.BindAsync(CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.StartAsync[TContext](IHttpApplication`1 application, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Hosting.GenericWebHostService.StartAsync(CancellationToken cancellationToken)
+   at Microsoft.Extensions.Hosting.Internal.Host.<StartAsync>b__15_1(IHostedService service, CancellationToken token)
+   at Microsoft.Extensions.Hosting.Internal.Host.ForeachService[T](IEnumerable`1 services, CancellationToken token, Boolean concurrent, Boolean abortOnFirstException, List`1 exceptions, Func`3 operation)
+2026-02-10T15:37:48.6436909+02:00 [INF] ╔════════════════════════════════════════════════════════════╗
+2026-02-10T15:37:48.6860219+02:00 [INF] ║   Student Assessment Tracker - Application Started        ║
+2026-02-10T15:37:48.6863702+02:00 [INF] ║   🚀 Running on: http://localhost:5000                    ║
+2026-02-10T15:37:48.6865687+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                  ║
+2026-02-10T15:37:48.6867046+02:00 [INF] ║   ✨ Autocomplete enabled on all forms                    ║
+2026-02-10T15:37:48.6869695+02:00 [INF] ╚════════════════════════════════════════════════════════════╝
+2026-02-10T15:38:22.4099585+02:00 [INF] ╔════════════════════════════════════════════════════════════╗
+2026-02-10T15:38:22.4519404+02:00 [INF] ║   Student Assessment Tracker - Application Started        ║
+2026-02-10T15:38:22.4523334+02:00 [INF] ║   🚀 Running on: http://localhost:5000                    ║
+2026-02-10T15:38:22.4524194+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                  ║
+2026-02-10T15:38:22.4524999+02:00 [INF] ║   ✨ Autocomplete enabled on all forms                    ║
+2026-02-10T15:38:22.4525735+02:00 [INF] ╚════════════════════════════════════════════════════════════╝
+2026-02-10T15:38:22.5186526+02:00 [ERR] Hosting failed to start
+System.IO.IOException: Failed to bind to address http://127.0.0.1:5000: address already in use.
+ ---> Microsoft.AspNetCore.Connections.AddressInUseException: Only one usage of each socket address (protocol/network address/port) is normally permitted.
+ ---> System.Net.Sockets.SocketException (10048): Only one usage of each socket address (protocol/network address/port) is normally permitted.
+   at System.Net.Sockets.Socket.UpdateStatusAfterSocketErrorAndThrowException(SocketError error, Boolean disconnectOnFailure, String callerName)
+   at System.Net.Sockets.Socket.DoBind(EndPoint endPointSnapshot, SocketAddress socketAddress)
+   at System.Net.Sockets.Socket.Bind(EndPoint localEP)
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportOptions.CreateDefaultBoundListenSocket(EndPoint endpoint)
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+   --- End of inner exception stack trace ---
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketConnectionListener.Bind()
+   at Microsoft.AspNetCore.Server.Kestrel.Transport.Sockets.SocketTransportFactory.BindAsync(EndPoint endpoint, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Infrastructure.TransportManager.BindAsync(EndPoint endPoint, ConnectionDelegate connectionDelegate, EndpointConfig endpointConfig, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.<>c__DisplayClass28_0`1.<<StartAsync>g__OnBind|0>d.MoveNext()
+--- End of stack trace from previous location ---
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindEndpointAsync(ListenOptions endpoint, AddressBindContext context, CancellationToken cancellationToken)
+   --- End of inner exception stack trace ---
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindEndpointAsync(ListenOptions endpoint, AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.LocalhostListenOptions.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.DefaultAddressStrategy.BindAsync(AddressBindContext context, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.AddressBinder.BindAsync(ListenOptions[] listenOptions, AddressBindContext context, Func`2 useHttps, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.BindAsync(CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServerImpl.StartAsync[TContext](IHttpApplication`1 application, CancellationToken cancellationToken)
+   at Microsoft.AspNetCore.Hosting.GenericWebHostService.StartAsync(CancellationToken cancellationToken)
+   at Microsoft.Extensions.Hosting.Internal.Host.<StartAsync>b__15_1(IHostedService service, CancellationToken token)
+   at Microsoft.Extensions.Hosting.Internal.Host.ForeachService[T](IEnumerable`1 services, CancellationToken token, Boolean concurrent, Boolean abortOnFirstException, List`1 exceptions, Func`3 operation)
+2026-02-10T15:38:40.9910405+02:00 [INF] ╔════════════════════════════════════════════════════════════╗
+2026-02-10T15:38:41.0360287+02:00 [INF] ║   Student Assessment Tracker - Application Started        ║
+2026-02-10T15:38:41.0362909+02:00 [INF] ║   🚀 Running on: http://localhost:5000                    ║
+2026-02-10T15:38:41.0363470+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                  ║
+2026-02-10T15:38:41.0364452+02:00 [INF] ║   ✨ Autocomplete enabled on all forms                    ║
+2026-02-10T15:38:41.0364991+02:00 [INF] ╚════════════════════════════════════════════════════════════╝
+2026-02-10T15:39:52.0358869+02:00 [INF] ╔════════════════════════════════════════════════════════════╗
+2026-02-10T15:39:52.0841308+02:00 [INF] ║   Student Assessment Tracker - Application Started        ║
+2026-02-10T15:39:52.0865417+02:00 [INF] ║   🚀 Running on: http://localhost:5000                    ║
+2026-02-10T15:39:52.0886380+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                  ║
+2026-02-10T15:39:52.0904963+02:00 [INF] ║   ✨ Autocomplete enabled on all forms                    ║
+2026-02-10T15:39:52.0938152+02:00 [INF] ╚════════════════════════════════════════════════════════════╝
+2026-02-10T15:41:33.1542855+02:00 [INF] ╔════════════════════════════════════════════════════════════╗
+2026-02-10T15:41:33.1932331+02:00 [INF] ║   Student Assessment Tracker - Application Started        ║
+2026-02-10T15:41:33.1935408+02:00 [INF] ║   🚀 Running on: http://localhost:5000                    ║
+2026-02-10T15:41:33.1936291+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                  ║
+2026-02-10T15:41:33.1937041+02:00 [INF] ║   ✨ Autocomplete enabled on all forms                    ║
+2026-02-10T15:41:33.1938030+02:00 [INF] ╚════════════════════════════════════════════════════════════╝
+2026-02-10T15:42:17.6886076+02:00 [INF] ╔════════════════════════════════════════════════════════════╗
+2026-02-10T15:42:17.7236425+02:00 [INF] ║   Student Assessment Tracker - Application Started        ║
+2026-02-10T15:42:17.7238778+02:00 [INF] ║   🚀 Running on: http://localhost:5000                    ║
+2026-02-10T15:42:17.7239441+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                  ║
+2026-02-10T15:42:17.7239810+02:00 [INF] ║   ✨ Autocomplete enabled on all forms                    ║
+2026-02-10T15:42:17.7240194+02:00 [INF] ╚════════════════════════════════════════════════════════════╝
+2026-02-10T15:43:03.0553162+02:00 [INF] ╔════════════════════════════════════════════════════════════╗
+2026-02-10T15:43:03.1033029+02:00 [INF] ║   Student Assessment Tracker - Application Started        ║
+2026-02-10T15:43:03.1050891+02:00 [INF] ║   🚀 Running on: http://localhost:5000                    ║
+2026-02-10T15:43:03.1065500+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                  ║
+2026-02-10T15:43:03.1076882+02:00 [INF] ║   ✨ Autocomplete enabled on all forms                    ║
+2026-02-10T15:43:03.1090588+02:00 [INF] ╚════════════════════════════════════════════════════════════╝
+2026-02-10T15:43:23.0116445+02:00 [INF] HTTP GET /index.html responded 304 in 9.5691 ms
+2026-02-10T15:43:23.1789450+02:00 [INF] HTTP GET /main-MSW4ITA4.js responded 304 in 2.4623 ms
+2026-02-10T15:43:23.1790497+02:00 [INF] HTTP GET /styles-5INURTSO.css responded 304 in 3.8260 ms
+2026-02-10T15:43:24.0473324+02:00 [INF] Fetching all students with sort order: 
+2026-02-10T15:43:24.4834390+02:00 [INF] Successfully retrieved 0 students
+2026-02-10T15:43:24.5149333+02:00 [INF] HTTP GET /api/students responded 200 in 737.6538 ms
+2026-02-10T15:43:51.7411300+02:00 [INF] Creating new student: Atreus Ramokate
+2026-02-10T15:43:51.8625111+02:00 [INF] Student created successfully with ID: 1
+2026-02-10T15:43:51.9722182+02:00 [INF] HTTP POST /api/students responded 201 in 797.6974 ms
+2026-02-10T15:43:52.0226019+02:00 [INF] Fetching all students with sort order: 
+2026-02-10T15:43:52.0769710+02:00 [INF] Successfully retrieved 1 students
+2026-02-10T15:43:52.0805281+02:00 [INF] HTTP GET /api/students responded 200 in 61.1593 ms
+2026-02-10T15:44:01.0463835+02:00 [INF] Deleting student with ID: 1
+2026-02-10T15:44:01.3209685+02:00 [INF] Student deleted successfully: ID=1, Name=Atreus Ramokate
+2026-02-10T15:44:01.3230692+02:00 [INF] HTTP DELETE /api/students/1 responded 200 in 336.7608 ms
+2026-02-10T15:44:01.3301274+02:00 [INF] Fetching all students with sort order: 
+2026-02-10T15:44:01.3314957+02:00 [INF] Successfully retrieved 0 students
+2026-02-10T15:44:01.3329404+02:00 [INF] HTTP GET /api/students responded 200 in 3.7972 ms
+2026-02-10T15:45:24.8189512+02:00 [INF] Creating new student: Tefo Ramokate
+2026-02-10T15:45:24.8218082+02:00 [INF] Student created successfully with ID: 2
+2026-02-10T15:45:24.8239572+02:00 [INF] HTTP POST /api/students responded 201 in 7.7837 ms
+2026-02-10T15:45:24.8520434+02:00 [INF] Fetching all students with sort order: 
+2026-02-10T15:45:24.8560655+02:00 [INF] Successfully retrieved 1 students
+2026-02-10T15:45:24.8583529+02:00 [INF] HTTP GET /api/students responded 200 in 8.9445 ms
+2026-02-10T15:47:51.1651664+02:00 [INF] Deleting student with ID: 2
+2026-02-10T15:47:51.1746751+02:00 [INF] Student deleted successfully: ID=2, Name=Tefo Ramokate
+2026-02-10T15:47:51.1763216+02:00 [INF] HTTP DELETE /api/students/2 responded 200 in 13.0935 ms
+2026-02-10T15:47:51.1894019+02:00 [INF] Fetching all students with sort order: 
+2026-02-10T15:47:51.1909226+02:00 [INF] Successfully retrieved 0 students
+2026-02-10T15:47:51.1924377+02:00 [INF] HTTP GET /api/students responded 200 in 3.8170 ms
+2026-02-10T15:48:00.6118467+02:00 [INF] HTTP GET /index.html responded 304 in 1.1955 ms
+2026-02-10T15:48:00.7058634+02:00 [INF] Fetching all students with sort order: 
+2026-02-10T15:48:00.7086205+02:00 [INF] Successfully retrieved 0 students
+2026-02-10T15:48:00.7139985+02:00 [INF] HTTP GET /api/students responded 200 in 9.4300 ms
+2026-02-10T15:48:05.2734251+02:00 [INF] HTTP GET /index.html responded 200 in 37.7069 ms
+2026-02-10T15:48:05.4028423+02:00 [INF] HTTP GET /styles-5INURTSO.css responded 200 in 0.9795 ms
+2026-02-10T15:48:05.4033577+02:00 [INF] HTTP GET /main-MSW4ITA4.js responded 304 in 0.3615 ms
+2026-02-10T15:48:05.5479084+02:00 [INF] Fetching all students with sort order: 
+2026-02-10T15:48:05.5494706+02:00 [INF] Successfully retrieved 0 students
+2026-02-10T15:48:05.5507451+02:00 [INF] HTTP GET /api/students responded 200 in 3.4495 ms
+2026-02-10T15:50:58.2732718+02:00 [INF] ╔════════════════════════════════════════════════════════════╗
+2026-02-10T15:50:58.3158036+02:00 [INF] ║   Student Assessment Tracker - Application Started        ║
+2026-02-10T15:50:58.3163159+02:00 [INF] ║   🚀 Running on: http://localhost:5000                    ║
+2026-02-10T15:50:58.3164772+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                  ║
+2026-02-10T15:50:58.3165942+02:00 [INF] ║   ✨ Autocomplete enabled on all forms                    ║
+2026-02-10T15:50:58.3167148+02:00 [INF] ╚════════════════════════════════════════════════════════════╝
+2026-02-10T15:51:36.0141765+02:00 [INF] HTTP GET /index.html responded 200 in 1488.1776 ms
+2026-02-10T15:51:36.6461389+02:00 [INF] HTTP GET /main-3YCCFNNA.js responded 200 in 511.6372 ms
+2026-02-10T15:51:36.9433732+02:00 [INF] Fetching all students with sort order: 
+2026-02-10T15:51:37.3419783+02:00 [INF] Successfully retrieved 0 students
+2026-02-10T15:51:37.3623930+02:00 [INF] HTTP GET /api/students responded 200 in 655.5044 ms
+2026-02-10T15:52:24.0168435+02:00 [INF] Creating new student: Atreus Ramokate
+2026-02-10T15:52:24.1157828+02:00 [INF] Student created successfully with ID: 1
+2026-02-10T15:52:24.1353751+02:00 [INF] HTTP POST /api/students responded 201 in 163.8875 ms
+2026-02-10T15:52:24.1611949+02:00 [INF] Fetching all students with sort order: 
+2026-02-10T15:52:24.2067198+02:00 [INF] Successfully retrieved 1 students
+2026-02-10T15:52:24.2078075+02:00 [INF] HTTP GET /api/students responded 200 in 52.8502 ms
+2026-02-10T15:52:31.7917122+02:00 [INF] Deleting student with ID: 1
+2026-02-10T15:52:31.8718072+02:00 [INF] Student deleted successfully: ID=1, Name=Atreus Ramokate
+2026-02-10T15:52:31.8722767+02:00 [INF] HTTP DELETE /api/students/1 responded 200 in 84.4074 ms
+2026-02-10T15:52:31.8781494+02:00 [INF] Fetching all students with sort order: 
+2026-02-10T15:52:31.8791486+02:00 [INF] Successfully retrieved 0 students
+2026-02-10T15:52:31.8797838+02:00 [INF] HTTP GET /api/students responded 200 in 3.0276 ms
+2026-02-10T15:52:39.4548665+02:00 [INF] HTTP GET /index.html responded 200 in 1.5603 ms
+2026-02-10T15:52:39.6907232+02:00 [INF] HTTP GET /styles-5INURTSO.css responded 200 in 0.7541 ms
+2026-02-10T15:52:39.6971289+02:00 [INF] HTTP GET /main-3YCCFNNA.js responded 200 in 5.6336 ms
+2026-02-10T15:52:40.4967876+02:00 [INF] HTTP GET /index.html responded 304 in 0.4537 ms
+2026-02-10T15:52:56.4193467+02:00 [INF] Creating new student: Tefo Ramokate
+2026-02-10T15:52:56.4206173+02:00 [INF] Student created successfully with ID: 2
+2026-02-10T15:52:56.4259375+02:00 [INF] HTTP POST /api/students responded 201 in 9.4177 ms
+2026-02-10T15:52:56.4463058+02:00 [INF] Fetching all students with sort order: 
+2026-02-10T15:52:56.4472997+02:00 [INF] Successfully retrieved 1 students
+2026-02-10T15:52:56.4477245+02:00 [INF] HTTP GET /api/students responded 200 in 2.1905 ms
+2026-02-10T15:53:02.2026950+02:00 [INF] Deleting student with ID: 2
+2026-02-10T15:53:02.2066719+02:00 [INF] Student deleted successfully: ID=2, Name=Tefo Ramokate
+2026-02-10T15:53:02.2069553+02:00 [INF] HTTP DELETE /api/students/2 responded 200 in 4.9613 ms
+2026-02-10T15:53:02.2129277+02:00 [INF] Fetching all students with sort order: 
+2026-02-10T15:53:02.2135110+02:00 [INF] Successfully retrieved 0 students
+2026-02-10T15:53:02.2138907+02:00 [INF] HTTP GET /api/students responded 200 in 1.6311 ms
+2026-02-10T15:53:39.4854433+02:00 [INF] Creating new student: Atreus Tefo
+2026-02-10T15:53:39.4862937+02:00 [INF] Student created successfully with ID: 3
+2026-02-10T15:53:39.4867328+02:00 [INF] HTTP POST /api/students responded 201 in 2.4386 ms
+2026-02-10T15:53:39.4940557+02:00 [INF] Fetching all students with sort order: 
+2026-02-10T15:53:39.4947309+02:00 [INF] Successfully retrieved 1 students
+2026-02-10T15:53:39.4952210+02:00 [INF] HTTP GET /api/students responded 200 in 1.8196 ms
+2026-02-10T15:53:41.8279968+02:00 [INF] Deleting student with ID: 3
+2026-02-10T15:53:41.8295190+02:00 [INF] Student deleted successfully: ID=3, Name=Atreus Tefo
+2026-02-10T15:53:41.8297655+02:00 [INF] HTTP DELETE /api/students/3 responded 200 in 2.3728 ms
+2026-02-10T15:53:41.8339137+02:00 [INF] Fetching all students with sort order: 
+2026-02-10T15:53:41.8344409+02:00 [INF] Successfully retrieved 0 students
+2026-02-10T15:53:41.8348539+02:00 [INF] HTTP GET /api/students responded 200 in 1.4207 ms

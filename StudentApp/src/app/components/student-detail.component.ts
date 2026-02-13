@@ -33,8 +33,8 @@ import { StudentService, StudentDetailDto } from '../services/student.service';
             <span>{{ student.grade }}</span>
           </div>
           <div class="detail-row">
-            <label>Enrollment Date:</label>
-            <span>{{ student.enrollmentDate | date: 'MM/dd/yyyy' }}</span>
+            <label>Created Date:</label>
+            <span>{{ student.createdAt | date: 'MM/dd/yyyy' }}</span>
           </div>
         </div>
         
@@ -58,11 +58,11 @@ import { StudentService, StudentDetailDto } from '../services/student.service';
           <h4>Performance Summary</h4>
           <div class="detail-row">
             <label>Total Score:</label>
-            <span>{{ student.total }}/60</span>
+            <span>{{ student.totalScore }}/60</span>
           </div>
           <div class="detail-row">
             <label>Average:</label>
-            <span>{{ student.average | number: '1.2-2' }}/20</span>
+            <span>{{ student.averageScore | number: '1.2-2' }}/20</span>
           </div>
           <div class="detail-row">
             <label>Percentage:</label>
@@ -70,14 +70,14 @@ import { StudentService, StudentDetailDto } from '../services/student.service';
           </div>
           <div class="detail-row">
             <label>Performance Level:</label>
-            <span [ngClass]="'performance-' + student.performanceLevel.toLowerCase().replace(' ', '-')">
+            <span [ngClass]="'performance-' + (student.performanceLevel ? student.performanceLevel.toLowerCase().replace(' ', '-') : '')">
               {{ student.performanceLevel }}
             </span>
           </div>
         </div>
         
         <div class="actions">
-          <a [routerLink]="['/edit', student.studentId]" class="btn btn-warning">Edit</a>
+          <a [routerLink]="['/edit', student.id]" class="btn btn-warning">Edit</a>
           <a routerLink="/" class="btn btn-secondary">Back to List</a>
         </div>
       </div>

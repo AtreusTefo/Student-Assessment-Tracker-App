@@ -31,7 +31,7 @@
 
 ---
 
-## 🔧 The 11 Issues Fixed
+## 🔧 The 13 Issues Fixed
 
 ### Issue #1: Incorrect Table Columns
 - **Problem**: Student List showing wrong columns (Email, Grade instead of StudentId, FirstName, LastName)
@@ -98,6 +98,19 @@
 - **Problem**: Application startup messages appear twice in console output
 - **Root Cause**: Serilog configured to write to console in TWO places (appsettings.json AND programmatic setup)
 - **Quick Fix**: Remove duplicate `.WriteTo.Console()` configuration from Program.cs, use static `Log` facade instead
+- **See**: `ERROR_FIXES_DOCUMENTATION.md` → Issue #11
+
+### Issue #12: Undefined Student ID in View/Edit/Delete Operations (CRITICAL) ✨ NEW
+- **Problem**: View, Edit, Delete buttons fail with "Http failure response for http://localhost:5000/api/students/undefined: 400 Bad Request"
+- **Root Cause**: StudentListDto interface declares `studentId: number` but backend API returns `id: number`. JSON deserialization creates properties based on exact names → `studentId` becomes undefined.
+- **Quick Fix**: Change StudentListDto interface `studentId` → `id`, update template references, add RxJS map operator in service
+- **See**: `ERROR_FIXES_DOCUMENTATION.md` → Issue #12
+
+### Issue #13: Phone Field Shows "856" Instead of Full Number When Editing (NEW) 🔧
+- **Problem**: Edit form displays "856" instead of full phone (e.g., "72254856") when loading student for editing
+- **Root Cause**: Code unconditionally removes first 5 characters assuming "+267 " prefix, but API returns just 8-digit number → cuts into actual phone digits
+- **Quick Fix**: Add `startsWith('+267 ')` check before removing country code prefix
+- **See**: `ERROR_FIXES_DOCUMENTATION.md` → Issue #13
 - **See**: `QUICK_FIX_REFERENCE.md` → Issue #11 or `ERROR_FIXES_DOCUMENTATION.md` → Issue #11
 
 ---

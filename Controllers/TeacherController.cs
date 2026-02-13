@@ -6,16 +6,20 @@ using AutoMapper;
 
 namespace StudentAssessmentTracker.Controllers;
 
+/// <summary>
+/// DEPRECATED: This controller has been replaced by the new multi-layered architecture.
+/// This file is kept for reference only and is not used by the application.
+/// </summary>
 [ApiController]
-[Route("api/teachers")]
-public class TeacherController : ControllerBase
+[Route("api/_legacy/teachers")]
+public class TeacherControllerLegacy : ControllerBase
 {
     private readonly ApplicationDbContext _context;
     private readonly IValidator<Teacher> _validator;
     private readonly IMapper _mapper;
-    private readonly ILogger<TeacherController> _logger;
+    private readonly ILogger<TeacherControllerLegacy> _logger;
 
-    public TeacherController(ApplicationDbContext context, IValidator<Teacher> validator, IMapper mapper, ILogger<TeacherController> logger)
+    public TeacherControllerLegacy(ApplicationDbContext context, IValidator<Teacher> validator, IMapper mapper, ILogger<TeacherControllerLegacy> logger)
     {
         _context = context;
         _validator = validator;

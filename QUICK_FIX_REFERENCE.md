@@ -288,6 +288,87 @@ Log.Information("Application Started");  // ✅ Uses already-configured Serilog
 
 ---
 
+### 1️⃣2️⃣ Undefined Student ID in View/Edit/Delete Operations (CRITICAL) ⚡ NEW
+**Problem**: Delete, View, Edit buttons fail with `Http failure response for .../students/undefined: 400 Bad Request`  
+**Fix**: Synchronize StudentListDto interface to match backend API property names
+```typescript
+// StudentListDto interface - BEFORE (WRONG):
+export interface StudentListDto {
+  studentId: number;  // ❌ Backend returns 'id', not 'studentId'
+  firstName: string;
+  lastName: string;
+}
+
+// StudentListDto interface - AFTER (CORRECT):
+export interface StudentListDto {
+  id: number;         // ✅ Matches backend JSON property name
+  firstName: string;
+  lastName: string;
+}
+```
+
+**Update template references:**
+```html
+<!-- BEFORE: -->
+<td>{{ student.studentId }}</td>
+<button (click)="viewStudent(student.studentId)">View</button>
+<button (click)="editStudent(student.studentId)">Edit</button>
+<button (click)="deleteStudent(student.studentId)">Delete</button>
+
+<!-- AFTER: -->
+<td>{{ student.id }}</td>
+<button (click)="viewStudent(student.id)">View</button>
+<button (click)="editStudent(student.id)">Edit</button>
+<button (click)="deleteStudent(student.id)">Delete</button>
+```
+
+**Add RxJS mapping in service as fallback:**
+```typescript
+getStudents(): Observable<StudentListDto[]> {
+  return this.http.get<StudentListDto[]>(this.apiUrl).pipe(
+    map(students => students.map(s => ({
+      ...s,
+      id: s.id || (s as any).studentId
+    })))
+  );
+}
+```
+
+**Root Cause**: Backend returns `{id: 1, ...}` but frontend expected `{studentId: 1, ...}`. TypeScript HttpClient deserializes JSON by exact property name match → creates `id` property, but code referenced `studentId` → undefined resulting in API calls like `/api/students/undefined`.
+
+**Files**: `student.service.ts`, `student-list.component.ts`
+
+---
+
+### 1️⃣3️⃣ Phone Field Shows "856" Instead of Full Number When Editing (NEW) 🔧
+**Problem**: Edit Student form displays "856" instead of the full 8-digit phone number when loading student data  
+**Fix**: Add defensive check before removing country code prefix from phone
+```typescript
+// BEFORE (WRONG - removes 5 chars unconditionally):
+phone: data.phone ? data.phone.substring(5) : ''
+
+// AFTER (CORRECT - only removes "+267 " if present):
+let parsedPhone = '';
+if (data.phone) {
+  parsedPhone = data.phone.startsWith('+267 ') 
+    ? data.phone.substring(5) 
+    : data.phone;
+}
+phone: parsedPhone
+```
+
+**Root Cause**: 
+- Code assumed phone always came with "+267 " prefix (5 characters)
+- API actually returns just the 8-digit number: "72254856"
+- `substring(5)` on "72254856" removes "72254" → leaves only "856"
+- The phone number ends in "856", so that's what showed up
+
+**Why It Happened**: The display view might add the country code format, but the API response doesn't include it.
+
+**File**: `student-form.component.ts` → `loadStudent()` method
+
+---
+
 ## 📋 Diagnostic Checklist
 
 1. **Data not showing?**

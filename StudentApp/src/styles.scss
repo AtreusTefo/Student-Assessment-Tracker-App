@@ -1,1 +1,67 @@
 /* You can add global styles to this file, and also import other style files */
+
+// Note: DataTables CSS will be imported separately via index.html or component styles
+
+// Global styles
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+// DataTables customizations
+.dataTables_wrapper {
+  .dataTables_filter {
+    margin-bottom: 15px;
+    
+    input {
+      margin-left: 5px;
+    }
+  }
+  
+  .dataTables_paginate {
+    margin-top: 15px;
+  }
+}
+
+// Global styles
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+// DataTables customizations
+.dataTables_wrapper {
+  .dataTables_filter {
+    margin-bottom: 15px;
+    
+    input {
+      margin-left: 5px;
+    }
+  }
+  
+  .dataTables_paginate {
+    margin-top: 15px;
+  }
+}

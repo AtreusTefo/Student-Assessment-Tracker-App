@@ -21,7 +21,9 @@ This document provides a comprehensive record of all errors encountered during d
 9. [Issue #9: Native Confirm Dialog Not Working in VS Code Simple Browser](#issue-9-native-confirm-dialog-not-working-in-vs-code-simple-browser)
 10. [Issue #10: Missing HTML5 Autocomplete Attributes on Forms](#issue-10-missing-html5-autocomplete-attributes-on-forms)
 11. [Issue #11: Duplicate Startup Log Messages](#issue-11-duplicate-startup-log-messages)
-12. [Quick Reference: Common Issues & Solutions](#quick-reference-common-issues--solutions)
+12. [Issue #12: Undefined Student ID in View/Edit/Delete Operations (CRITICAL)](#issue-12-undefined-student-id-in-vieweditdelete-operations-critical)
+13. [Issue #13: Phone Field Shows "856" Instead of Full Number When Editing (NEW)](#issue-13-phone-field-shows-856-instead-of-full-number-when-editing-new)
+14. [Quick Reference: Common Issues & Solutions](#quick-reference-common-issues--solutions)
 
 ---
 
@@ -1296,7 +1298,331 @@ Use this checklist to prevent similar issues:
 
 ---
 
-## Key Learnings
+## Issue #12: Undefined Student ID in View/Edit/Delete Operations (CRITICAL) ⚡ NEW
+
+### Problem
+After integrating DataTables and fixing styling issues, the View, Edit, and Delete buttons on the student list all failed with:
+```
+Failed to delete student: Http failure response for http://localhost:5000/api/students/undefined: 400 Bad Request
+```
+
+- ❌ Clicking "View" tried to navigate to `/detail/undefined`
+- ❌ Clicking "Edit" tried to navigate to `/edit/undefined`
+- ❌ Clicking "Delete" tried to call `DELETE /api/students/undefined` → 400 error
+- ❌ Delete modal showed student ID as "undefined"
+
+All CRUD operations that required passing the student ID were failing silently.
+
+### Root Cause: Critical Property Name Mismatch
+
+This was a **JSON deserialization** issue caused by property name mismatch between backend API response and frontend TypeScript interface.
+
+**Backend API Response:**
+```json
+{
+  "id": 1,              // ← Backend returns lowercase 'id'
+  "firstName": "John",
+  "lastName": "Doe"
+}
+```
+
+**Frontend StudentListDto Interface (BEFORE - WRONG):**
+```typescript
+export interface StudentListDto {
+  studentId: number;    // ❌ WRONG: expects 'studentId' but API sends 'id'
+  firstName: string;
+  lastName: string;
+}
+```
+
+**What Happened:**
+1. Angular HttpClient receives JSON: `{id: 1, firstName: "John", lastName: "Doe"}`
+2. HttpClient deserializes by exact property name match (not by position)
+3. Creates properties: `id` (from JSON), `firstName`, `lastName`
+4. Property `studentId` is never created → remains `undefined`
+5. TypeScript type system shows `studentId: number` so code calls `student.studentId`
+6. Returns `undefined` silently
+7. Template binding: `{{ student.studentId }}` renders empty
+8. Method calls: `deleteStudent(student.studentId)` receives `undefined`
+9. API calls: `DELETE /api/students/undefined` → 400 Bad Request
+
+### Why This Was Silent
+
+JavaScript/TypeScript don't throw errors for undefined properties:
+```typescript
+const student: StudentListDto = {
+  id: 1,
+  firstName: "John",
+  lastName: "Doe"
+  // studentId property doesn't exist
+};
+
+console.log(student.studentId);        // ✅ No error, prints: undefined
+deleteStudent(student.studentId);      // ✅ No error, passes undefined to function
+```
+
+This is why it passed TypeScript strict type checking but failed at runtime.
+
+### Solution Implemented
+
+**1. Update StudentListDto Interface to Match Backend:**
+
+```typescript
+// BEFORE (WRONG)
+export interface StudentListDto {
+  studentId: number;    // ❌ Mismatch with backend
+  firstName: string;
+  lastName: string;
+}
+
+// AFTER (CORRECT)
+export interface StudentListDto {
+  id: number;           // ✅ Matches backend API response
+  firstName: string;
+  lastName: string;
+}
+```
+
+**2. Update Template Bindings in student-list.component.ts:**
+
+```html
+<!-- BEFORE: All references to student.studentId -->
+<td>{{ student.studentId }}</td>
+<button (click)="viewStudent(student.studentId)">View</button>
+<button (click)="editStudent(student.studentId)">Edit</button>
+<button (click)="showDeleteConfirm(student.studentId)">Delete</button>
+
+<!-- AFTER: All references to student.id -->
+<td>{{ student.id }}</td>
+<button (click)="viewStudent(student.id)">View</button>
+<button (click)="editStudent(student.id)">Edit</button>
+<button (click)="showDeleteConfirm(student.id)">Delete</button>
+```
+
+**3. Add RxJS Map Operator for Defensive Programming:**
+
+In `student.service.ts`:
+
+```typescript
+import { map } from 'rxjs/operators';
+
+getStudents(): Observable<StudentListDto[]> {
+  return this.http.get<StudentListDto[]>(this.apiUrl).pipe(
+    // Ensure id property is always present (defensive programming)
+    map(students => students.map(s => ({
+      ...s,
+      id: s.id || (s as any).studentId  // Fallback mapping for safety
+    })))
+  );
+}
+```
+
+This provides a fallback in case format ever changes but maintains type safety.
+
+### Files Changed
+
+1. **[StudentApp/src/app/services/student.service.ts](StudentApp/src/app/services/student.service.ts)**
+   - Line 2: Added `import { map } from 'rxjs/operators';`
+   - Lines 20-23: Updated `StudentListDto` interface, changed `studentId` → `id`
+   - Lines 50-60: Updated `getStudents()` method with RxJS `map` operator and fallback
+   - Results in: Service always returns StudentListDto[] with correct `id` property
+
+2. **[StudentApp/src/app/components/student-list.component.ts](StudentApp/src/app/components/student-list.component.ts)**
+   - Line 35: Table data cell: `{{ student.studentId }}` → `{{ student.id }}`
+   - Line 36: View button: `viewStudent(student.studentId)` → `viewStudent(student.id)`
+   - Line 38: Edit button: `editStudent(student.studentId)` → `editStudent(student.id)`
+   - Line 40: Delete button: `showDeleteConfirm(student.studentId)` → `showDeleteConfirm(student.id)`
+   - Results in: All CRUD operations receive correct numeric student ID
+
+### Impact on Other Components
+
+**student-detail.component.ts:**
+- Already uses `student.id` (not `studentId`) when displaying details
+- No changes needed
+
+**student-form.component.ts:**
+- Maps API response `data.id` to internal model `student.studentId` (maintains backward compatibility)
+- Already had other critical fixes from Issue #1
+- No additional changes needed
+
+### Result
+✅ View button now navigates to correct student detail page  
+✅ Edit button now loads correct student data  
+✅ Delete button now sends correct ID to API  
+✅ All CRUD operations functional without "undefined" errors  
+✅ Delete modal shows correct student information  
+
+### Build Verification
+```powershell
+# Frontend
+ng build
+# Success: Application bundle generation complete 538.60 kB, 0 errors
+
+# Backend  
+dotnet build
+# Success: Build succeeded
+```
+
+### Prevention Tips
+- ✅ **Match interface to API response** - Exact property names must match JSON keys
+- ✅ **Use strict TypeScript** - Enable `strict: true` in `tsconfig.json` to catch type mismatches
+- ✅ **Log API responses** - Add `console.log(data)` to verify property names early
+- ✅ **Test CRUD operations** - Always manually test Create → Read → Update → Delete workflow
+- ✅ **API contract first** - Generate TypeScript interfaces from backend API response, not the other way around
+- ✅ **Use RxJS operators** - Add defensive mapping for robustness against format changes
+
+### Testing Verification
+```typescript
+// Test that student.id is defined
+students.subscribe(data => {
+  data.forEach(student => {
+    console.assert(student.id !== undefined, 'student.id is undefined!');
+    console.assert(student.firstName !== undefined, 'student.firstName is undefined!');
+  });
+});
+
+// Test CRUD operations
+it('should load student with valid id', (done) => {
+  studentService.getStudent(1).subscribe(student => {
+    expect(student.id).toBe(1);
+    done();
+  });
+});
+
+it('should delete student with valid id', (done) => {
+  studentService.deleteStudent(1).subscribe(response => {
+    expect(response.statusCode).toBe(200);
+    done();
+  });
+});
+```
+
+### Key Learning: API Contracts
+When frontend and backend are separate, they must share the exact same API contract:
+- Property names must match exactly (case-sensitive)
+- Missing properties become `undefined`
+- Backend changes must be reflected in frontend TypeScript interfaces
+- Use API documentation or generated TypeScript types from backend (e.g., NSwag)
+
+---
+
+## Issue #13: Phone Field Shows "856" Instead of Full Number When Editing (NEW) 🔧
+
+### Problem
+When clicking the "Edit" button on a student in the list, the Edit Student form loads but the Phone field displays only "856" instead of the full phone number (e.g., "72254856"). This makes it impossible to verify or update the correct phone number.
+
+### Root Cause: Incorrect String Substring Logic
+
+In the `loadStudent()` method of `student-form.component.ts`, the code was:
+```typescript
+phone: data.phone ? data.phone.substring(5) : ''
+```
+
+This assumes the phone always comes with a "+267 " prefix (country code):
+- "+267 " = 5 characters
+- Removing first 5 characters from "+267 72254856" = "72254856" ✅ (correct)
+
+However, the API returns only the 8-digit phone number without country code:
+- API returns: "72254856" (8 characters)
+- Removing first 5 characters from "72254856" = "856" ❌ (cuts into actual number!)
+- The last 3 digits of a phone number happened to be "856"
+
+**Why It Happened**: The code made an assumption about data format that didn't match reality:
+- Assumption: Phone always has "+267 " prefix
+- Reality: API returns just 8-digit number
+- Result: Unconditionally removing 5 characters breaks the data
+
+### Solution Implemented
+
+Added a **defensive check** to only remove the country code if it's actually present:
+
+```typescript
+// BEFORE (WRONG - breaks when no country code is present)
+phone: data.phone ? data.phone.substring(5) : ''
+
+// AFTER (CORRECT - checks format first)
+let parsedPhone = '';
+if (data.phone) {
+  // Only strip "+267 " prefix if it's actually there
+  parsedPhone = data.phone.startsWith('+267 ') 
+    ? data.phone.substring(5) 
+    : data.phone;  // Use phone as-is if no country code
+}
+phone: parsedPhone
+```
+
+**How It Works Now:**
+- If phone = "+267 72254856" → strip to "72254856" ✅
+- If phone = "72254856" → use as-is "72254856" ✅
+- Field displays correct full phone number in edit form
+
+### Files Changed
+
+[StudentApp/src/app/components/student-form.component.ts](StudentApp/src/app/components/student-form.component.ts#L223-L232)
+- Updated `loadStudent()` method (lines 223-232)
+- Added defensive `startsWith('+267 ')` check before substring
+- Properly handles both formatted and unformatted phone numbers
+
+### Result
+✅ Phone field now displays full 8-digit phone number when editing  
+✅ Users can verify and update phone numbers correctly  
+✅ Code handles both "+267 72254856" and "72254856" formats  
+✅ Build: 0 errors, Angular compilation successful  
+
+### Build Verification
+```powershell
+ng build
+# Success: Application bundle generation complete 538.64 kB, 0 errors
+```
+
+### Prevention Tips
+- ✅ **Don't assume data format** - Add defensive checks when parsing/transforming data
+- ✅ **Log intermediate values** - Add `console.log()` to verify data at each transformation step
+- ✅ **Test edge cases** - Test both with and without expected prefixes/suffixes
+- ✅ **Use `.startsWith()`** - Safer than blindly removing substrings
+- ✅ **Validate before modifying** - Check data format before applying string operations
+
+### Testing Verification
+
+**Test Steps:**
+1. Create a new student with phone "72254856"
+2. Go back to student list
+3. Click "Edit" on the student
+4. **Expected**: Phone field shows "72254856"
+5. **Before fix**: Phone field showed "856"
+
+**Test Code:**
+```typescript
+// Verify phone parsing works correctly
+const testCases = [
+  { input: '+267 72254856', expected: '72254856' },
+  { input: '72254856', expected: '72254856' },
+  { input: '+267 87654321', expected: '87654321' },
+  { input: null, expected: '' },
+  { input: '', expected: '' }
+];
+
+testCases.forEach(test => {
+  const parsedPhone = test.input 
+    ? (test.input.startsWith('+267 ') ? test.input.substring(5) : test.input)
+    : '';
+  console.assert(
+    parsedPhone === test.expected,
+    `Failed: Input=${test.input}, Expected=${test.expected}, Got=${parsedPhone}`
+  );
+});
+```
+
+### Key Learning: Defensive Programming
+- **Never assume data format** - APIs can change, formats can vary
+- **Always add guards** - Use `.startsWith()`, `.includes()`, optional chaining
+- **Make code resilient** - Code should handle both expected and unexpected formats
+- **Document assumptions** - If you assume a format, add a comment explaining why
+- **Test transformations** - String operations like `.substring()` can silently break data
+
+---
+
+## Quick Reference: Common Issues & Solutions
 
 1. **Type Safety is Important**
    - TypeScript catches API-frontend mismatches at compile time

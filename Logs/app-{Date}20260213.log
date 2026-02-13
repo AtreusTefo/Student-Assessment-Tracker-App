@@ -1,0 +1,437 @@
+2026-02-13T09:05:28.7604322+02:00 [INF] ╔════════════════════════════════════════════════════════════╗
+2026-02-13T09:05:28.8460843+02:00 [INF] ║   Student Assessment Tracker - Application Started        ║
+2026-02-13T09:05:28.8484015+02:00 [INF] ║   🚀 Running on: http://localhost:5000                    ║
+2026-02-13T09:05:28.8494240+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                  ║
+2026-02-13T09:05:28.8501206+02:00 [INF] ║   ✨ Autocomplete enabled on all forms                    ║
+2026-02-13T09:05:28.8518098+02:00 [INF] ╚════════════════════════════════════════════════════════════╝
+2026-02-13T09:08:04.9750074+02:00 [INF] HTTP GET /index.html responded 200 in 1804.0980 ms
+2026-02-13T09:08:05.1078939+02:00 [INF] HTTP GET /main-3YCCFNNA.js responded 304 in 3.9802 ms
+2026-02-13T09:08:05.3560699+02:00 [INF] HTTP GET /styles-5INURTSO.css responded 304 in 0.3416 ms
+2026-02-13T09:08:32.8982922+02:00 [INF] Fetching all students with sort order: 
+2026-02-13T09:08:36.0872040+02:00 [INF] Successfully retrieved 0 students
+2026-02-13T09:08:36.4352771+02:00 [INF] HTTP GET /api/students responded 200 in 30454.2266 ms
+2026-02-13T11:50:47.0210158+02:00 [INF] ╔════════════════════════════════════════════════════════════╗
+2026-02-13T11:50:47.1340098+02:00 [INF] ║   Student Assessment Tracker - Application Started        ║
+2026-02-13T11:50:47.1360186+02:00 [INF] ║   🚀 Running on: http://localhost:5000                    ║
+2026-02-13T11:50:47.1366911+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                  ║
+2026-02-13T11:50:47.1373582+02:00 [INF] ║   ✨ Autocomplete enabled on all forms                    ║
+2026-02-13T11:50:47.1380138+02:00 [INF] ╚════════════════════════════════════════════════════════════╝
+2026-02-13T12:15:27.7100361+02:00 [INF] ╔════════════════════════════════════════════════════════════╗
+2026-02-13T12:15:27.8373986+02:00 [INF] ║   Student Assessment Tracker - Application Started        ║
+2026-02-13T12:15:27.8396228+02:00 [INF] ║   🚀 Running on: http://localhost:5000                    ║
+2026-02-13T12:15:27.8403018+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                  ║
+2026-02-13T12:15:27.8409703+02:00 [INF] ║   ✨ Autocomplete enabled on all forms                    ║
+2026-02-13T12:15:27.8416285+02:00 [INF] ╚════════════════════════════════════════════════════════════╝
+2026-02-13T12:16:58.7114508+02:00 [INF] HTTP GET /index.html responded 200 in 1976.1183 ms
+2026-02-13T12:17:00.2685151+02:00 [INF] Fetching all students with sort order: 
+2026-02-13T12:17:00.7742636+02:00 [INF] Successfully retrieved 0 students
+2026-02-13T12:17:00.8539289+02:00 [INF] HTTP GET /api/students responded 200 in 1659.9220 ms
+2026-02-13T12:43:33.2098062+02:00 [INF] ╔═══════════════════════════════════════════════════════════════════════════════╗
+2026-02-13T12:43:33.2461580+02:00 [INF] ║         Student Assessment Tracker - Multi-Layered Architecture              ║
+2026-02-13T12:43:33.2481786+02:00 [INF] ║                                                                               ║
+2026-02-13T12:43:33.2490123+02:00 [INF] ║   🚀 Running on: http://localhost:5000                                       ║
+2026-02-13T12:43:33.2498951+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                                     ║
+2026-02-13T12:43:33.2506086+02:00 [INF] ║   🏗️  Architecture: Domain → Infrastructure → Application → Presentation   ║
+2026-02-13T12:43:33.2513055+02:00 [INF] ║                                                                               ║
+2026-02-13T12:43:33.2519814+02:00 [INF] ║   ✅ Dependency Injection: Configured                                        ║
+2026-02-13T12:43:33.2526781+02:00 [INF] ║   ✅ FluentValidation: Active                                                ║
+2026-02-13T12:43:33.2533650+02:00 [INF] ║   ✅ AutoMapper: Configured                                                  ║
+2026-02-13T12:43:33.2540617+02:00 [INF] ║   ✅ CORS: Enabled for Angular frontend                                      ║
+2026-02-13T12:43:33.2547577+02:00 [INF] ║   ✅ Serilog: Logging active                                                 ║
+2026-02-13T12:43:33.2554416+02:00 [INF] ╚═══════════════════════════════════════════════════════════════════════════════╝
+2026-02-13T12:44:06.1371160+02:00 [ERR] HTTP GET /api/students responded 500 in 82.0729 ms
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+StudentAssessmentTracker.Presentation.Controllers.StudentsController.GetAllStudents (StudentAssessmentTracker)
+StudentAssessmentTracker.Controllers.StudentsController.GetAll (StudentAssessmentTracker)
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+2026-02-13T12:44:06.4953099+02:00 [ERR] Connection id "0HNJATJ7O4OAV", Request id "0HNJATJ7O4OAV:00000001": An unhandled exception was thrown by the application.
+Microsoft.AspNetCore.Routing.Matching.AmbiguousMatchException: The request matched multiple endpoints. Matches: 
+
+StudentAssessmentTracker.Presentation.Controllers.StudentsController.GetAllStudents (StudentAssessmentTracker)
+StudentAssessmentTracker.Controllers.StudentsController.GetAll (StudentAssessmentTracker)
+Fallback {*path:nonfile}
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ReportAmbiguity(Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.ProcessFinalCandidates(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DefaultEndpointSelector.Select(HttpContext httpContext, Span`1 candidateState)
+   at Microsoft.AspNetCore.Routing.Matching.DfaMatcher.MatchAsync(HttpContext httpContext)
+   at Microsoft.AspNetCore.Routing.EndpointRoutingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.StaticFiles.StaticFileMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.StaticFiles.DefaultFilesMiddleware.Invoke(HttpContext context)
+   at Serilog.AspNetCore.RequestLoggingMiddleware.Invoke(HttpContext httpContext)
+   at Microsoft.AspNetCore.Authentication.AuthenticationMiddleware.Invoke(HttpContext context)
+   at Microsoft.AspNetCore.Server.Kestrel.Core.Internal.Http.HttpProtocol.ProcessRequests[TContext](IHttpApplication`1 application)
+2026-02-13T12:45:43.3474435+02:00 [INF] ╔═══════════════════════════════════════════════════════════════════════════════╗
+2026-02-13T12:45:43.3821626+02:00 [INF] ║         Student Assessment Tracker - Multi-Layered Architecture              ║
+2026-02-13T12:45:43.3841525+02:00 [INF] ║                                                                               ║
+2026-02-13T12:45:43.3852702+02:00 [INF] ║   🚀 Running on: http://localhost:5000                                       ║
+2026-02-13T12:45:43.3860942+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                                     ║
+2026-02-13T12:45:43.3868537+02:00 [INF] ║   🏗️  Architecture: Domain → Infrastructure → Application → Presentation   ║
+2026-02-13T12:45:43.3876734+02:00 [INF] ║                                                                               ║
+2026-02-13T12:45:43.3885077+02:00 [INF] ║   ✅ Dependency Injection: Configured                                        ║
+2026-02-13T12:45:43.3893249+02:00 [INF] ║   ✅ FluentValidation: Active                                                ║
+2026-02-13T12:45:43.3907215+02:00 [INF] ║   ✅ AutoMapper: Configured                                                  ║
+2026-02-13T12:45:43.3915091+02:00 [INF] ║   ✅ CORS: Enabled for Angular frontend                                      ║
+2026-02-13T12:45:43.3922411+02:00 [INF] ║   ✅ Serilog: Logging active                                                 ║
+2026-02-13T12:45:43.3929856+02:00 [INF] ╚═══════════════════════════════════════════════════════════════════════════════╝
+2026-02-13T12:46:14.9387871+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T12:46:14.9435070+02:00 [INF] Fetching all students
+2026-02-13T12:46:15.7723881+02:00 [INF] HTTP GET /api/students responded 200 in 1956.3732 ms
+2026-02-13T12:46:26.8839894+02:00 [INF] CreateStudent endpoint called
+2026-02-13T12:46:26.8869507+02:00 [INF] Creating new student: John Doe
+2026-02-13T12:46:27.0625025+02:00 [INF] Student created successfully with ID: 1
+2026-02-13T12:46:27.3081761+02:00 [INF] HTTP POST /api/students responded 201 in 736.8412 ms
+2026-02-13T12:54:10.5112592+02:00 [INF] ╔═══════════════════════════════════════════════════════════════════════════════╗
+2026-02-13T12:54:10.5520216+02:00 [INF] ║         Student Assessment Tracker - Multi-Layered Architecture              ║
+2026-02-13T12:54:10.5541383+02:00 [INF] ║                                                                               ║
+2026-02-13T12:54:10.5548237+02:00 [INF] ║   🚀 Running on: http://localhost:5000                                       ║
+2026-02-13T12:54:10.5554930+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                                     ║
+2026-02-13T12:54:10.5562128+02:00 [INF] ║   🏗️  Architecture: Domain → Infrastructure → Application → Presentation   ║
+2026-02-13T12:54:10.5569276+02:00 [INF] ║                                                                               ║
+2026-02-13T12:54:10.5577433+02:00 [INF] ║   ✅ Dependency Injection: Configured                                        ║
+2026-02-13T12:54:10.5588668+02:00 [INF] ║   ✅ FluentValidation: Active                                                ║
+2026-02-13T12:54:10.5600172+02:00 [INF] ║   ✅ AutoMapper: Configured                                                  ║
+2026-02-13T12:54:10.5607800+02:00 [INF] ║   ✅ CORS: Enabled for Angular frontend                                      ║
+2026-02-13T12:54:10.5615013+02:00 [INF] ║   ✅ Serilog: Logging active                                                 ║
+2026-02-13T12:54:10.5625895+02:00 [INF] ╚═══════════════════════════════════════════════════════════════════════════════╝
+2026-02-13T12:54:55.8011765+02:00 [INF] HTTP GET /index.html responded 200 in 234.9861 ms
+2026-02-13T12:54:57.0001313+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T12:54:57.0029156+02:00 [INF] Fetching all students
+2026-02-13T12:54:57.4365325+02:00 [INF] HTTP GET /api/students responded 200 in 1284.3989 ms
+2026-02-13T12:59:26.4271623+02:00 [INF] ╔═══════════════════════════════════════════════════════════════════════════════╗
+2026-02-13T12:59:26.4627492+02:00 [INF] ║         Student Assessment Tracker - Multi-Layered Architecture              ║
+2026-02-13T12:59:26.4647217+02:00 [INF] ║                                                                               ║
+2026-02-13T12:59:26.4654026+02:00 [INF] ║   🚀 Running on: http://localhost:5000                                       ║
+2026-02-13T12:59:26.4660728+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                                     ║
+2026-02-13T12:59:26.4668072+02:00 [INF] ║   🏗️  Architecture: Domain → Infrastructure → Application → Presentation   ║
+2026-02-13T12:59:26.4674813+02:00 [INF] ║                                                                               ║
+2026-02-13T12:59:26.4681481+02:00 [INF] ║   ✅ Dependency Injection: Configured                                        ║
+2026-02-13T12:59:26.4688951+02:00 [INF] ║   ✅ FluentValidation: Active                                                ║
+2026-02-13T12:59:26.4695641+02:00 [INF] ║   ✅ AutoMapper: Configured                                                  ║
+2026-02-13T12:59:26.4702418+02:00 [INF] ║   ✅ CORS: Enabled for Angular frontend                                      ║
+2026-02-13T12:59:26.4709021+02:00 [INF] ║   ✅ Serilog: Logging active                                                 ║
+2026-02-13T12:59:26.4715664+02:00 [INF] ╚═══════════════════════════════════════════════════════════════════════════════╝
+2026-02-13T13:00:41.1267331+02:00 [INF] ╔═══════════════════════════════════════════════════════════════════════════════╗
+2026-02-13T13:00:41.1693465+02:00 [INF] ║         Student Assessment Tracker - Multi-Layered Architecture              ║
+2026-02-13T13:00:41.1717704+02:00 [INF] ║                                                                               ║
+2026-02-13T13:00:41.1728685+02:00 [INF] ║   🚀 Running on: http://localhost:5000                                       ║
+2026-02-13T13:00:41.1736168+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                                     ║
+2026-02-13T13:00:41.1745089+02:00 [INF] ║   🏗️  Architecture: Domain → Infrastructure → Application → Presentation   ║
+2026-02-13T13:00:41.1754740+02:00 [INF] ║                                                                               ║
+2026-02-13T13:00:41.1766148+02:00 [INF] ║   ✅ Dependency Injection: Configured                                        ║
+2026-02-13T13:00:41.1776641+02:00 [INF] ║   ✅ FluentValidation: Active                                                ║
+2026-02-13T13:00:41.1787990+02:00 [INF] ║   ✅ AutoMapper: Configured                                                  ║
+2026-02-13T13:00:41.1795459+02:00 [INF] ║   ✅ CORS: Enabled for Angular frontend                                      ║
+2026-02-13T13:00:41.1803214+02:00 [INF] ║   ✅ Serilog: Logging active                                                 ║
+2026-02-13T13:00:41.1814114+02:00 [INF] ╚═══════════════════════════════════════════════════════════════════════════════╝
+2026-02-13T13:01:26.5685315+02:00 [INF] HTTP GET /index.html responded 200 in 7.8874 ms
+2026-02-13T13:01:27.3993281+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T13:01:27.4024174+02:00 [INF] Fetching all students
+2026-02-13T13:01:27.8299207+02:00 [INF] HTTP GET /api/students responded 200 in 1075.6939 ms
+2026-02-13T13:01:37.3775490+02:00 [INF] HTTP GET /index.html responded 200 in 15.4839 ms
+2026-02-13T13:01:37.4041855+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T13:01:37.4066971+02:00 [INF] Fetching all students
+2026-02-13T13:01:37.4315814+02:00 [INF] HTTP GET /api/students responded 200 in 31.2369 ms
+2026-02-13T14:09:13.0540927+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T14:09:13.2272697+02:00 [INF] Fetching all students
+2026-02-13T14:09:15.3201641+02:00 [INF] HTTP GET /api/students responded 200 in 2846.0999 ms
+2026-02-13T14:09:19.2719533+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T14:09:19.2743800+02:00 [INF] Fetching all students
+2026-02-13T14:09:19.2757952+02:00 [INF] HTTP GET /api/students responded 200 in 4.3541 ms
+2026-02-13T14:34:29.5562989+02:00 [INF] ╔═══════════════════════════════════════════════════════════════════════════════╗
+2026-02-13T14:34:29.6950341+02:00 [INF] ║         Student Assessment Tracker - Multi-Layered Architecture              ║
+2026-02-13T14:34:29.6971852+02:00 [INF] ║                                                                               ║
+2026-02-13T14:34:29.6979230+02:00 [INF] ║   🚀 Running on: http://localhost:5000                                       ║
+2026-02-13T14:34:29.6986486+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                                     ║
+2026-02-13T14:34:29.6993477+02:00 [INF] ║   🏗️  Architecture: Domain → Infrastructure → Application → Presentation   ║
+2026-02-13T14:34:29.7000974+02:00 [INF] ║                                                                               ║
+2026-02-13T14:34:29.7007954+02:00 [INF] ║   ✅ Dependency Injection: Configured                                        ║
+2026-02-13T14:34:29.7016736+02:00 [INF] ║   ✅ FluentValidation: Active                                                ║
+2026-02-13T14:34:29.7026606+02:00 [INF] ║   ✅ AutoMapper: Configured                                                  ║
+2026-02-13T14:34:29.7037548+02:00 [INF] ║   ✅ CORS: Enabled for Angular frontend                                      ║
+2026-02-13T14:34:29.7044856+02:00 [INF] ║   ✅ Serilog: Logging active                                                 ║
+2026-02-13T14:34:29.7052070+02:00 [INF] ╚═══════════════════════════════════════════════════════════════════════════════╝
+2026-02-13T14:34:42.4930678+02:00 [INF] HTTP GET /index.html responded 200 in 1984.6728 ms
+2026-02-13T14:34:45.3856150+02:00 [INF] HTTP GET /styles-C3FXBD2W.css responded 200 in 38.8178 ms
+2026-02-13T14:34:46.6384701+02:00 [INF] HTTP GET /main-OMT4KO3T.js responded 200 in 1881.9664 ms
+2026-02-13T14:34:52.5496495+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T14:34:52.5805160+02:00 [INF] Fetching all students
+2026-02-13T14:34:54.0525920+02:00 [INF] HTTP GET /api/students responded 200 in 4074.0461 ms
+2026-02-13T14:35:55.8183454+02:00 [INF] HTTP GET /index.html responded 200 in 1.0948 ms
+2026-02-13T14:36:00.9263559+02:00 [INF] HTTP GET /main-OMT4KO3T.js responded 304 in 52.6091 ms
+2026-02-13T14:36:29.4782358+02:00 [INF] HTTP GET /styles-C3FXBD2W.css responded 304 in 0.7938 ms
+2026-02-13T14:36:29.7476338+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T14:36:29.7489419+02:00 [INF] Fetching all students
+2026-02-13T14:36:29.8017794+02:00 [INF] HTTP GET /api/students responded 200 in 56.6963 ms
+2026-02-13T14:37:42.4607603+02:00 [INF] HTTP GET /index.html responded 200 in 1.0280 ms
+2026-02-13T14:37:44.6806375+02:00 [INF] HTTP GET /main-OMT4KO3T.js responded 200 in 336.3032 ms
+2026-02-13T14:37:44.6835122+02:00 [INF] HTTP GET /styles-C3FXBD2W.css responded 200 in 1.4091 ms
+2026-02-13T14:37:47.8990294+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T14:37:47.9003321+02:00 [INF] Fetching all students
+2026-02-13T14:37:47.9376475+02:00 [INF] HTTP GET /api/students responded 200 in 43.8927 ms
+2026-02-13T14:37:49.6864627+02:00 [INF] HTTP GET /favicon.png responded 200 in 1448.1395 ms
+2026-02-13T14:38:11.6532244+02:00 [INF] CreateStudent endpoint called
+2026-02-13T14:38:11.6669099+02:00 [INF] Creating new student: Atreus Ramokate
+2026-02-13T14:38:11.8952185+02:00 [INF] Student created successfully with ID: 1
+2026-02-13T14:38:12.0537922+02:00 [INF] HTTP POST /api/students responded 201 in 928.2614 ms
+2026-02-13T14:38:12.0878650+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T14:38:12.0888868+02:00 [INF] Fetching all students
+2026-02-13T14:38:12.0985776+02:00 [INF] HTTP GET /api/students responded 200 in 11.0589 ms
+2026-02-13T14:39:08.1366518+02:00 [INF] CreateStudent endpoint called
+2026-02-13T14:39:08.1846169+02:00 [INF] Creating new student: Tefo Atreus
+2026-02-13T14:39:08.2465535+02:00 [INF] Student created successfully with ID: 2
+2026-02-13T14:39:08.2907505+02:00 [INF] HTTP POST /api/students responded 201 in 160.7988 ms
+2026-02-13T14:39:08.3244722+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T14:39:08.3261132+02:00 [INF] Fetching all students
+2026-02-13T14:39:08.3296436+02:00 [INF] HTTP GET /api/students responded 200 in 5.8298 ms
+2026-02-13T14:39:12.9144387+02:00 [INF] HTTP GET /api/students/NaN responded 400 in 374.7961 ms
+2026-02-13T14:39:21.7321071+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T14:39:21.7336294+02:00 [INF] Fetching all students
+2026-02-13T14:39:21.7363484+02:00 [INF] HTTP GET /api/students responded 200 in 4.8856 ms
+2026-02-13T14:39:23.3806159+02:00 [INF] HTTP GET /api/students/NaN responded 400 in 1.7050 ms
+2026-02-13T14:39:30.4159351+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T14:39:30.4173028+02:00 [INF] Fetching all students
+2026-02-13T14:39:30.4194451+02:00 [INF] HTTP GET /api/students responded 200 in 3.9830 ms
+2026-02-13T14:39:40.4001379+02:00 [INF] HTTP GET /api/students/NaN responded 400 in 2.5571 ms
+2026-02-13T14:40:31.0510743+02:00 [INF] HTTP GET /index.html responded 200 in 1.7459 ms
+2026-02-13T14:40:31.3066434+02:00 [INF] HTTP GET /main-OMT4KO3T.js responded 304 in 0.3594 ms
+2026-02-13T14:40:31.3087828+02:00 [INF] HTTP GET /styles-C3FXBD2W.css responded 304 in 0.6306 ms
+2026-02-13T14:40:31.3721877+02:00 [INF] HTTP GET /api/students/NaN responded 400 in 0.9226 ms
+2026-02-13T14:40:50.6936233+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T14:40:50.6950960+02:00 [INF] Fetching all students
+2026-02-13T14:40:50.6970073+02:00 [INF] HTTP GET /api/students responded 200 in 3.8834 ms
+2026-02-13T14:50:42.2495846+02:00 [INF] ╔═══════════════════════════════════════════════════════════════════════════════╗
+2026-02-13T14:50:42.3040106+02:00 [INF] ║         Student Assessment Tracker - Multi-Layered Architecture              ║
+2026-02-13T14:50:42.3060450+02:00 [INF] ║                                                                               ║
+2026-02-13T14:50:42.3068676+02:00 [INF] ║   🚀 Running on: http://localhost:5000                                       ║
+2026-02-13T14:50:42.3076863+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                                     ║
+2026-02-13T14:50:42.3084072+02:00 [INF] ║   🏗️  Architecture: Domain → Infrastructure → Application → Presentation   ║
+2026-02-13T14:50:42.3091340+02:00 [INF] ║                                                                               ║
+2026-02-13T14:50:42.3099059+02:00 [INF] ║   ✅ Dependency Injection: Configured                                        ║
+2026-02-13T14:50:42.3111967+02:00 [INF] ║   ✅ FluentValidation: Active                                                ║
+2026-02-13T14:50:42.3123732+02:00 [INF] ║   ✅ AutoMapper: Configured                                                  ║
+2026-02-13T14:50:42.3133456+02:00 [INF] ║   ✅ CORS: Enabled for Angular frontend                                      ║
+2026-02-13T14:50:42.3145345+02:00 [INF] ║   ✅ Serilog: Logging active                                                 ║
+2026-02-13T14:50:42.3158650+02:00 [INF] ╚═══════════════════════════════════════════════════════════════════════════════╝
+2026-02-13T14:51:19.4656988+02:00 [INF] HTTP GET /index.html responded 200 in 1861.2818 ms
+2026-02-13T14:51:19.6424654+02:00 [INF] HTTP GET /styles-C3FXBD2W.css responded 200 in 2.9059 ms
+2026-02-13T14:51:20.5794419+02:00 [INF] HTTP GET /main-XC55KR7B.js responded 200 in 939.8881 ms
+2026-02-13T14:51:23.3363078+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T14:51:23.3672991+02:00 [INF] Fetching all students
+2026-02-13T14:51:24.3586746+02:00 [INF] HTTP GET /api/students responded 200 in 3706.0872 ms
+2026-02-13T14:51:40.7648852+02:00 [INF] CreateStudent endpoint called
+2026-02-13T14:51:40.7843975+02:00 [INF] Creating new student: Atreus Ramokate
+2026-02-13T14:51:40.9561863+02:00 [INF] Student created successfully with ID: 1
+2026-02-13T14:51:41.0431836+02:00 [INF] HTTP POST /api/students responded 201 in 621.6935 ms
+2026-02-13T14:51:41.0846426+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T14:51:41.0859954+02:00 [INF] Fetching all students
+2026-02-13T14:51:41.1280079+02:00 [INF] HTTP GET /api/students responded 200 in 47.0002 ms
+2026-02-13T14:52:02.3440094+02:00 [INF] HTTP DELETE /api/students/undefined responded 400 in 217.2948 ms
+2026-02-13T15:04:12.3288075+02:00 [INF] ╔═══════════════════════════════════════════════════════════════════════════════╗
+2026-02-13T15:04:12.3639462+02:00 [INF] ║         Student Assessment Tracker - Multi-Layered Architecture              ║
+2026-02-13T15:04:12.3658803+02:00 [INF] ║                                                                               ║
+2026-02-13T15:04:12.3678921+02:00 [INF] ║   🚀 Running on: http://localhost:5000                                       ║
+2026-02-13T15:04:12.3688675+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                                     ║
+2026-02-13T15:04:12.3695612+02:00 [INF] ║   🏗️  Architecture: Domain → Infrastructure → Application → Presentation   ║
+2026-02-13T15:04:12.3703388+02:00 [INF] ║                                                                               ║
+2026-02-13T15:04:12.3956392+02:00 [INF] ║   ✅ Dependency Injection: Configured                                        ║
+2026-02-13T15:04:12.3995642+02:00 [INF] ║   ✅ FluentValidation: Active                                                ║
+2026-02-13T15:04:12.4015527+02:00 [INF] ║   ✅ AutoMapper: Configured                                                  ║
+2026-02-13T15:04:12.4024064+02:00 [INF] ║   ✅ CORS: Enabled for Angular frontend                                      ║
+2026-02-13T15:04:12.4032595+02:00 [INF] ║   ✅ Serilog: Logging active                                                 ║
+2026-02-13T15:04:12.4040051+02:00 [INF] ╚═══════════════════════════════════════════════════════════════════════════════╝
+2026-02-13T15:04:22.9446821+02:00 [INF] HTTP GET /index.html responded 200 in 113.5963 ms
+2026-02-13T15:04:23.0762047+02:00 [INF] HTTP GET /styles-C3FXBD2W.css responded 200 in 32.3249 ms
+2026-02-13T15:04:23.1821216+02:00 [INF] HTTP GET /main-DOAUYFWN.js responded 200 in 138.2315 ms
+2026-02-13T15:04:24.4790539+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T15:04:24.4813562+02:00 [INF] Fetching all students
+2026-02-13T15:04:25.0408867+02:00 [INF] HTTP GET /api/students responded 200 in 1770.3909 ms
+2026-02-13T15:04:36.2095384+02:00 [INF] CreateStudent endpoint called
+2026-02-13T15:04:36.2203852+02:00 [INF] Creating new student: Atreus Ramokate
+2026-02-13T15:04:36.4193681+02:00 [INF] Student created successfully with ID: 1
+2026-02-13T15:04:36.4564781+02:00 [INF] HTTP POST /api/students responded 201 in 339.5504 ms
+2026-02-13T15:04:36.4788932+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T15:04:36.4798884+02:00 [INF] Fetching all students
+2026-02-13T15:04:36.5331674+02:00 [INF] HTTP GET /api/students responded 200 in 57.3131 ms
+2026-02-13T15:05:31.2142933+02:00 [INF] GetStudent endpoint called with ID: 1
+2026-02-13T15:05:31.2168365+02:00 [INF] Fetching student with ID: 1
+2026-02-13T15:05:31.7960505+02:00 [INF] HTTP GET /api/students/1 responded 200 in 592.3154 ms
+2026-02-13T15:05:35.5341876+02:00 [INF] GetStudent endpoint called with ID: 1
+2026-02-13T15:05:35.5375556+02:00 [INF] Fetching student with ID: 1
+2026-02-13T15:05:35.5438529+02:00 [INF] HTTP GET /api/students/1 responded 200 in 15.5257 ms
+2026-02-13T15:05:46.3791160+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T15:05:46.3819647+02:00 [INF] Fetching all students
+2026-02-13T15:05:46.3856307+02:00 [INF] HTTP GET /api/students responded 200 in 7.5481 ms
+2026-02-13T15:05:48.2397712+02:00 [INF] GetStudent endpoint called with ID: 1
+2026-02-13T15:05:48.2414529+02:00 [INF] Fetching student with ID: 1
+2026-02-13T15:05:48.2451863+02:00 [INF] HTTP GET /api/students/1 responded 200 in 6.3096 ms
+2026-02-13T15:05:50.7671469+02:00 [INF] GetStudent endpoint called with ID: 1
+2026-02-13T15:05:50.7686568+02:00 [INF] Fetching student with ID: 1
+2026-02-13T15:05:50.7710830+02:00 [INF] HTTP GET /api/students/1 responded 200 in 4.7745 ms
+2026-02-13T15:05:56.6892989+02:00 [INF] UpdateStudent endpoint called with ID: 1
+2026-02-13T15:05:56.6915094+02:00 [INF] Updating student with ID: 1
+2026-02-13T15:05:56.7004733+02:00 [INF] Student with ID 1 updated successfully
+2026-02-13T15:05:56.7021948+02:00 [INF] HTTP PUT /api/students/1 responded 200 in 30.4466 ms
+2026-02-13T15:05:56.7277722+02:00 [INF] GetStudent endpoint called with ID: 1
+2026-02-13T15:05:56.7296808+02:00 [INF] Fetching student with ID: 1
+2026-02-13T15:05:56.7364272+02:00 [INF] HTTP GET /api/students/1 responded 200 in 10.8598 ms
+2026-02-13T15:05:59.1183339+02:00 [INF] GetStudent endpoint called with ID: 1
+2026-02-13T15:05:59.1202592+02:00 [INF] Fetching student with ID: 1
+2026-02-13T15:05:59.1225913+02:00 [INF] HTTP GET /api/students/1 responded 200 in 5.1925 ms
+2026-02-13T15:13:14.0829143+02:00 [INF] ╔═══════════════════════════════════════════════════════════════════════════════╗
+2026-02-13T15:13:14.1243384+02:00 [INF] ║         Student Assessment Tracker - Multi-Layered Architecture              ║
+2026-02-13T15:13:14.1268624+02:00 [INF] ║                                                                               ║
+2026-02-13T15:13:14.1279764+02:00 [INF] ║   🚀 Running on: http://localhost:5000                                       ║
+2026-02-13T15:13:14.1291907+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                                     ║
+2026-02-13T15:13:14.1300933+02:00 [INF] ║   🏗️  Architecture: Domain → Infrastructure → Application → Presentation   ║
+2026-02-13T15:13:14.1309696+02:00 [INF] ║                                                                               ║
+2026-02-13T15:13:14.1321560+02:00 [INF] ║   ✅ Dependency Injection: Configured                                        ║
+2026-02-13T15:13:14.1334743+02:00 [INF] ║   ✅ FluentValidation: Active                                                ║
+2026-02-13T15:13:14.1342858+02:00 [INF] ║   ✅ AutoMapper: Configured                                                  ║
+2026-02-13T15:13:14.1351160+02:00 [INF] ║   ✅ CORS: Enabled for Angular frontend                                      ║
+2026-02-13T15:13:14.1362025+02:00 [INF] ║   ✅ Serilog: Logging active                                                 ║
+2026-02-13T15:13:14.1372133+02:00 [INF] ╚═══════════════════════════════════════════════════════════════════════════════╝
+2026-02-13T15:13:49.6236802+02:00 [INF] HTTP GET /index.html responded 200 in 86.4417 ms
+2026-02-13T15:13:49.9501836+02:00 [INF] HTTP GET /styles-C3FXBD2W.css responded 200 in 9.6960 ms
+2026-02-13T15:13:50.1371637+02:00 [INF] HTTP GET /main-HHUCCQBA.js responded 200 in 196.6705 ms
+2026-02-13T15:13:50.5395013+02:00 [INF] GetStudent endpoint called with ID: 1
+2026-02-13T15:13:50.5424284+02:00 [INF] Fetching student with ID: 1
+2026-02-13T15:13:50.9271756+02:00 [WRN] Student with ID 1 not found
+2026-02-13T15:13:50.9295253+02:00 [WRN] Student with ID 1 not found
+2026-02-13T15:13:51.2577494+02:00 [INF] HTTP GET /api/students/1 responded 404 in 958.0942 ms
+2026-02-13T15:14:18.9160393+02:00 [INF] HTTP PUT /api/students/0 responded 400 in 784.3741 ms
+2026-02-13T15:14:36.2989557+02:00 [INF] HTTP PUT /api/students/0 responded 400 in 7.2245 ms
+2026-02-13T15:14:36.9016292+02:00 [INF] HTTP PUT /api/students/0 responded 400 in 2.8118 ms
+2026-02-13T15:19:05.3160239+02:00 [INF] ╔═══════════════════════════════════════════════════════════════════════════════╗
+2026-02-13T15:19:05.3611888+02:00 [INF] ║         Student Assessment Tracker - Multi-Layered Architecture              ║
+2026-02-13T15:19:05.3641382+02:00 [INF] ║                                                                               ║
+2026-02-13T15:19:05.3658144+02:00 [INF] ║   🚀 Running on: http://localhost:5000                                       ║
+2026-02-13T15:19:05.3670964+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                                     ║
+2026-02-13T15:19:05.3683900+02:00 [INF] ║   🏗️  Architecture: Domain → Infrastructure → Application → Presentation   ║
+2026-02-13T15:19:05.4391871+02:00 [INF] ║                                                                               ║
+2026-02-13T15:19:05.4444325+02:00 [INF] ║   ✅ Dependency Injection: Configured                                        ║
+2026-02-13T15:19:05.4473830+02:00 [INF] ║   ✅ FluentValidation: Active                                                ║
+2026-02-13T15:19:05.4498698+02:00 [INF] ║   ✅ AutoMapper: Configured                                                  ║
+2026-02-13T15:19:05.4524183+02:00 [INF] ║   ✅ CORS: Enabled for Angular frontend                                      ║
+2026-02-13T15:19:05.4541056+02:00 [INF] ║   ✅ Serilog: Logging active                                                 ║
+2026-02-13T15:19:05.4548248+02:00 [INF] ╚═══════════════════════════════════════════════════════════════════════════════╝
+2026-02-13T15:19:12.3777479+02:00 [INF] HTTP GET /index.html responded 200 in 264.9854 ms
+2026-02-13T15:19:12.7698889+02:00 [INF] HTTP GET /styles-C3FXBD2W.css responded 200 in 3.8921 ms
+2026-02-13T15:19:13.1717841+02:00 [INF] HTTP GET /main-JBIZATNG.js responded 200 in 415.9969 ms
+2026-02-13T15:19:13.5452059+02:00 [INF] GetStudent endpoint called with ID: 1
+2026-02-13T15:19:13.5483053+02:00 [INF] Fetching student with ID: 1
+2026-02-13T15:19:14.2369814+02:00 [WRN] Student with ID 1 not found
+2026-02-13T15:19:14.2389054+02:00 [WRN] Student with ID 1 not found
+2026-02-13T15:19:14.2517746+02:00 [INF] HTTP GET /api/students/1 responded 404 in 940.4411 ms
+2026-02-13T15:19:25.3448802+02:00 [INF] UpdateStudent endpoint called with ID: 0
+2026-02-13T15:19:25.3470506+02:00 [INF] Updating student with ID: 0
+2026-02-13T15:19:25.4702639+02:00 [WRN] Student with ID 0 not found for update
+2026-02-13T15:19:25.4725861+02:00 [WRN] Student with ID 0 not found
+2026-02-13T15:19:25.4756433+02:00 [INF] HTTP PUT /api/students/0 responded 404 in 178.1706 ms
+2026-02-13T15:21:44.0320341+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T15:21:44.0340157+02:00 [INF] Fetching all students
+2026-02-13T15:21:44.2048066+02:00 [INF] HTTP GET /api/students responded 200 in 190.5833 ms
+2026-02-13T15:22:24.7855736+02:00 [INF] CreateStudent endpoint called
+2026-02-13T15:22:24.7877808+02:00 [INF] Creating new student: Atreus Ramokate
+2026-02-13T15:22:25.5502395+02:00 [INF] Student created successfully with ID: 1
+2026-02-13T15:22:25.5987981+02:00 [INF] HTTP POST /api/students responded 201 in 965.8986 ms
+2026-02-13T15:22:25.6285486+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T15:22:25.6311556+02:00 [INF] Fetching all students
+2026-02-13T15:22:25.6600458+02:00 [INF] HTTP GET /api/students responded 200 in 32.5527 ms
+2026-02-13T15:22:36.6832107+02:00 [INF] GetStudent endpoint called with ID: 1
+2026-02-13T15:22:36.6854429+02:00 [INF] Fetching student with ID: 1
+2026-02-13T15:22:36.7081797+02:00 [INF] HTTP GET /api/students/1 responded 200 in 27.1205 ms
+2026-02-13T15:22:40.1296614+02:00 [INF] GetStudent endpoint called with ID: 1
+2026-02-13T15:22:40.1318936+02:00 [INF] Fetching student with ID: 1
+2026-02-13T15:22:40.1371088+02:00 [INF] HTTP GET /api/students/1 responded 200 in 9.0249 ms
+2026-02-13T15:22:48.4025335+02:00 [INF] UpdateStudent endpoint called with ID: 1
+2026-02-13T15:22:48.4042033+02:00 [INF] Updating student with ID: 1
+2026-02-13T15:22:48.4100417+02:00 [INF] Student with ID 1 updated successfully
+2026-02-13T15:22:48.4116359+02:00 [INF] HTTP PUT /api/students/1 responded 200 in 11.5462 ms
+2026-02-13T15:22:48.4377902+02:00 [INF] GetStudent endpoint called with ID: 1
+2026-02-13T15:22:48.4395552+02:00 [INF] Fetching student with ID: 1
+2026-02-13T15:22:48.4430465+02:00 [INF] HTTP GET /api/students/1 responded 200 in 5.9405 ms
+2026-02-13T15:23:05.2764345+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T15:23:05.2781039+02:00 [INF] Fetching all students
+2026-02-13T15:23:05.2803490+02:00 [INF] HTTP GET /api/students responded 200 in 4.5300 ms
+2026-02-13T15:27:23.5784474+02:00 [INF] ╔═══════════════════════════════════════════════════════════════════════════════╗
+2026-02-13T15:27:23.6139550+02:00 [INF] ║         Student Assessment Tracker - Multi-Layered Architecture              ║
+2026-02-13T15:27:23.6157379+02:00 [INF] ║                                                                               ║
+2026-02-13T15:27:23.6172617+02:00 [INF] ║   🚀 Running on: http://localhost:5000                                       ║
+2026-02-13T15:27:23.6185769+02:00 [INF] ║   📊 API Base: http://localhost:5000/api                                     ║
+2026-02-13T15:27:23.6193782+02:00 [INF] ║   🏗️  Architecture: Domain → Infrastructure → Application → Presentation   ║
+2026-02-13T15:27:23.6203779+02:00 [INF] ║                                                                               ║
+2026-02-13T15:27:23.6219078+02:00 [INF] ║   ✅ Dependency Injection: Configured                                        ║
+2026-02-13T15:27:23.6246442+02:00 [INF] ║   ✅ FluentValidation: Active                                                ║
+2026-02-13T15:27:23.6258727+02:00 [INF] ║   ✅ AutoMapper: Configured                                                  ║
+2026-02-13T15:27:23.6267078+02:00 [INF] ║   ✅ CORS: Enabled for Angular frontend                                      ║
+2026-02-13T15:27:23.6279012+02:00 [INF] ║   ✅ Serilog: Logging active                                                 ║
+2026-02-13T15:27:23.6295486+02:00 [INF] ╚═══════════════════════════════════════════════════════════════════════════════╝
+2026-02-13T15:27:29.3919110+02:00 [INF] HTTP GET /index.html responded 200 in 10.9055 ms
+2026-02-13T15:27:29.5911235+02:00 [INF] HTTP GET /styles-C3FXBD2W.css responded 304 in 0.6955 ms
+2026-02-13T15:27:29.5911240+02:00 [INF] HTTP GET /main-JBIZATNG.js responded 304 in 0.6846 ms
+2026-02-13T15:27:30.0106409+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T15:27:30.0131985+02:00 [INF] Fetching all students
+2026-02-13T15:27:30.4797744+02:00 [INF] HTTP GET /api/students responded 200 in 775.8867 ms
+2026-02-13T15:27:50.6279688+02:00 [INF] HTTP GET /index.html responded 200 in 1.7836 ms
+2026-02-13T15:28:48.5458773+02:00 [INF] CreateStudent endpoint called
+2026-02-13T15:28:48.5480221+02:00 [INF] Creating new student: Morgan Nareetsile
+2026-02-13T15:28:48.6682606+02:00 [INF] Student created successfully with ID: 1
+2026-02-13T15:28:48.6923858+02:00 [INF] HTTP POST /api/students responded 201 in 211.6566 ms
+2026-02-13T15:28:48.7274240+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T15:28:48.7292919+02:00 [INF] Fetching all students
+2026-02-13T15:28:48.7954289+02:00 [INF] HTTP GET /api/students responded 200 in 76.5708 ms
+2026-02-13T15:28:51.4780226+02:00 [INF] GetStudent endpoint called with ID: 1
+2026-02-13T15:28:51.4800249+02:00 [INF] Fetching student with ID: 1
+2026-02-13T15:28:51.5216235+02:00 [INF] HTTP GET /api/students/1 responded 200 in 52.4952 ms
+2026-02-13T15:28:57.4438926+02:00 [INF] GetStudent endpoint called with ID: 1
+2026-02-13T15:28:57.4472976+02:00 [INF] Fetching student with ID: 1
+2026-02-13T15:28:57.4530583+02:00 [INF] HTTP GET /api/students/1 responded 200 in 13.9294 ms
+2026-02-13T15:29:06.6274615+02:00 [INF] UpdateStudent endpoint called with ID: 1
+2026-02-13T15:29:06.6295737+02:00 [INF] Updating student with ID: 1
+2026-02-13T15:29:06.6348529+02:00 [INF] Student with ID 1 updated successfully
+2026-02-13T15:29:06.6377133+02:00 [INF] HTTP PUT /api/students/1 responded 200 in 26.9931 ms
+2026-02-13T15:29:06.6604136+02:00 [INF] GetStudent endpoint called with ID: 1
+2026-02-13T15:29:06.6624622+02:00 [INF] Fetching student with ID: 1
+2026-02-13T15:29:06.6670953+02:00 [INF] HTTP GET /api/students/1 responded 200 in 7.2635 ms
+2026-02-13T15:29:13.6776875+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T15:29:13.6793364+02:00 [INF] Fetching all students
+2026-02-13T15:29:13.6820410+02:00 [INF] HTTP GET /api/students responded 200 in 4.7867 ms
+2026-02-13T15:46:52.9347186+02:00 [INF] GetStudent endpoint called with ID: 1
+2026-02-13T15:46:52.9365769+02:00 [INF] Fetching student with ID: 1
+2026-02-13T15:46:52.9401541+02:00 [INF] HTTP GET /api/students/1 responded 200 in 6.9744 ms
+2026-02-13T15:47:01.3261495+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T15:47:01.3280075+02:00 [INF] Fetching all students
+2026-02-13T15:47:01.3304468+02:00 [INF] HTTP GET /api/students responded 200 in 5.0676 ms
+2026-02-13T15:47:03.8743048+02:00 [INF] GetStudent endpoint called with ID: 1
+2026-02-13T15:47:03.8775121+02:00 [INF] Fetching student with ID: 1
+2026-02-13T15:47:03.8823330+02:00 [INF] HTTP GET /api/students/1 responded 200 in 8.8691 ms
+2026-02-13T15:47:06.1011598+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T15:47:06.1028256+02:00 [INF] Fetching all students
+2026-02-13T15:47:06.1062040+02:00 [INF] HTTP GET /api/students responded 200 in 6.0502 ms
+2026-02-13T15:47:08.4946529+02:00 [INF] GetStudent endpoint called with ID: 1
+2026-02-13T15:47:08.4978452+02:00 [INF] Fetching student with ID: 1
+2026-02-13T15:47:08.5034335+02:00 [INF] HTTP GET /api/students/1 responded 200 in 11.0452 ms
+2026-02-13T15:47:10.2322152+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T15:47:10.2335885+02:00 [INF] Fetching all students
+2026-02-13T15:47:10.2372441+02:00 [INF] HTTP GET /api/students responded 200 in 5.6891 ms
+2026-02-13T15:47:11.4105570+02:00 [INF] GetStudent endpoint called with ID: 1
+2026-02-13T15:47:11.4134489+02:00 [INF] Fetching student with ID: 1
+2026-02-13T15:47:11.4176554+02:00 [INF] HTTP GET /api/students/1 responded 200 in 8.5936 ms
+2026-02-13T15:47:13.2750740+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T15:47:13.2769296+02:00 [INF] Fetching all students
+2026-02-13T15:47:13.2793186+02:00 [INF] HTTP GET /api/students responded 200 in 4.8094 ms
+2026-02-13T15:47:43.6162243+02:00 [INF] GetStudent endpoint called with ID: 1
+2026-02-13T15:47:43.6176316+02:00 [INF] Fetching student with ID: 1
+2026-02-13T15:47:43.6230670+02:00 [INF] HTTP GET /api/students/1 responded 200 in 7.7703 ms
+2026-02-13T15:47:46.2310321+02:00 [INF] GetAllStudents endpoint called
+2026-02-13T15:47:46.2327143+02:00 [INF] Fetching all students
+2026-02-13T15:47:46.2351726+02:00 [INF] HTTP GET /api/students responded 200 in 4.5980 ms
