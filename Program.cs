@@ -45,6 +45,30 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) =>
 builder.Services.AddControllers();
 
 // ============================================================================
+// SWAGGER/OPENAPI DOCUMENTATION
+// ============================================================================
+builder.Services.AddSwaggerGen(options =>
+{
+    options.SwaggerDoc("v1", new Microsoft.OpenApi.Models.OpenApiInfo
+    {
+        Title = "Student Assessment Tracker API",
+        Version = "v1",
+        Description = "REST API for Student Assessment Tracking System",
+        Contact = new Microsoft.OpenApi.Models.OpenApiContact
+        {
+            Name = "Development Team"
+        }
+    });
+
+    // Include XML documentation
+    var xmlFile = Path.Combine(AppContext.BaseDirectory, "StudentAssessmentTracker.xml");
+    if (File.Exists(xmlFile))
+    {
+        options.IncludeXmlComments(xmlFile);
+    }
+});
+
+// ============================================================================
 // CORS CONFIGURATION
 // ============================================================================
 builder.Services.AddCors(options =>
@@ -96,6 +120,22 @@ app.UseSerilogRequestLogging();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 app.UseRouting();
+
+// ============================================================================
+// SWAGGER AND SCALAR API DOCUMENTATION
+// ============================================================================
+app.UseSwagger(options =>
+{
+    options.RouteTemplate = "swagger/{documentName}/swagger.json";
+});
+
+// Map Swagger UI as main documentation interface
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Student Assessment Tracker API v1");
+    options.RoutePrefix = "swagger";
+});
+
 app.UseCors("AllowAngular");
 app.UseAuthorization();
 
@@ -110,6 +150,7 @@ Log.Information("║         Student Assessment Tracker - Multi-Layered Architec
 Log.Information("║                                                                               ║");
 Log.Information("║   🚀 Running on: http://localhost:5000                                       ║");
 Log.Information("║   📊 API Base: http://localhost:5000/api                                     ║");
+Log.Information("║   📚 Swagger UI: http://localhost:5000/swagger                                ║");
 Log.Information("║   🏗️  Architecture: Domain → Infrastructure → Application → Presentation   ║");
 Log.Information("║                                                                               ║");
 Log.Information("║   ✅ Dependency Injection: Configured                                        ║");
@@ -117,6 +158,8 @@ Log.Information("║   ✅ FluentValidation: Active                             
 Log.Information("║   ✅ AutoMapper: Configured                                                  ║");
 Log.Information("║   ✅ CORS: Enabled for Angular frontend                                      ║");
 Log.Information("║   ✅ Serilog: Logging active                                                 ║");
+Log.Information("║   ✅ Swagger UI: Configured at /swagger                                      ║");
+Log.Information("║                                                                               ║");
 Log.Information("╚═══════════════════════════════════════════════════════════════════════════════╝");
 
 app.Run();

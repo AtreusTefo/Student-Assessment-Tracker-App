@@ -25,10 +25,14 @@ namespace StudentAssessmentTracker.Presentation.Controllers
         }
 
         /// <summary>
-        /// GET /api/students
-        /// Retrieves all students
+        /// Retrieves all students from the database
         /// </summary>
+        /// <returns>A collection of StudentDto objects containing student information</returns>
+        /// <response code="200">Successfully retrieved all students</response>
+        /// <response code="500">Internal server error while fetching students</response>
         [HttpGet]
+        [ProducesResponseType(typeof(IEnumerable<StudentDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<IEnumerable<StudentDto>>> GetAllStudents()
         {
             try
@@ -45,10 +49,17 @@ namespace StudentAssessmentTracker.Presentation.Controllers
         }
 
         /// <summary>
-        /// GET /api/students/{id}
-        /// Retrieves a specific student by ID
+        /// Retrieves a specific student by their ID
         /// </summary>
+        /// <param name="id">The unique identifier of the student to retrieve</param>
+        /// <returns>A StudentDto object containing the requested student's information</returns>
+        /// <response code="200">Successfully retrieved the student</response>
+        /// <response code="404">Student with the specified ID was not found</response>
+        /// <response code="500">Internal server error while fetching the student</response>
         [HttpGet("{id}")]
+        [ProducesResponseType(typeof(StudentDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<StudentDto>> GetStudent(int id)
         {
             try
@@ -70,10 +81,17 @@ namespace StudentAssessmentTracker.Presentation.Controllers
         }
 
         /// <summary>
-        /// POST /api/students
-        /// Creates a new student
+        /// Creates a new student record
         /// </summary>
+        /// <param name="dto">The CreateStudentDto object containing student data to create</param>
+        /// <returns>The newly created StudentDto with assigned ID</returns>
+        /// <response code="201">Student successfully created</response>
+        /// <response code="400">Invalid request data or validation failed</response>
+        /// <response code="500">Internal server error while creating the student</response>
         [HttpPost]
+        [ProducesResponseType(typeof(StudentDto), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<ActionResult<StudentDto>> CreateStudent([FromBody] CreateStudentDto dto)
         {
             try
@@ -95,10 +113,20 @@ namespace StudentAssessmentTracker.Presentation.Controllers
         }
 
         /// <summary>
-        /// PUT /api/students/{id}
-        /// Updates an existing student
+        /// Updates an existing student's information
         /// </summary>
+        /// <param name="id">The unique identifier of the student to update</param>
+        /// <param name="dto">The UpdateStudentDto object containing updated student data</param>
+        /// <returns>The updated StudentDto object</returns>
+        /// <response code="200">Student successfully updated</response>
+        /// <response code="400">Invalid request data or validation failed</response>
+        /// <response code="404">Student with the specified ID was not found</response>
+        /// <response code="500">Internal server error while updating the student</response>
         [HttpPut("{id}")]
+        [ProducesResponseType(typeof(StudentDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> UpdateStudent(int id, [FromBody] UpdateStudentDto dto)
         {
             try
@@ -125,10 +153,17 @@ namespace StudentAssessmentTracker.Presentation.Controllers
         }
 
         /// <summary>
-        /// DELETE /api/students/{id}
-        /// Deletes a student by ID
+        /// Deletes a student from the database
         /// </summary>
+        /// <param name="id">The unique identifier of the student to delete</param>
+        /// <returns>No content - indicates successful deletion</returns>
+        /// <response code="204">Student successfully deleted</response>
+        /// <response code="404">Student with the specified ID was not found</response>
+        /// <response code="500">Internal server error while deleting the student</response>
         [HttpDelete("{id}")]
+        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DeleteStudent(int id)
         {
             try
