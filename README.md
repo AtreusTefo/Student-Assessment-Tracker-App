@@ -1,36 +1,75 @@
 # Student Assessment Tracker
 
-Student Assessment Tracker is a **full-stack web application** built with **ASP.NET Core 8** backend and **Angular 18** frontend. It provides an intuitive interface to manage and track student assessments, allowing teachers to add, edit, delete, and view student scores with automatic calculations for totals, averages, percentages, and performance levels.
+Student Assessment Tracker is a **full-stack web application** built with **ASP.NET Core 8** backend and **Angular 18** frontend following **Clean Architecture** principles. It provides an intuitive interface to manage and track student assessments, allowing teachers to add, edit, delete, and view student scores with automatic calculations for totals, averages, percentages, and performance levels.
 
-## Architecture Overview
+## 🏗️ Architecture Overview
 
-This system uses a **modern full-stack architecture**:
+This system follows **Clean Architecture with Separation of Concerns (SoC)** pattern, ensuring the backend API and frontend are completely decoupled and independently deployable.
 
-**Backend** – ASP.NET Core 8 REST API
-- Entity Framework Core (In-Memory Database)
+### Project Structure
+
+```
+StudentAssessmentTracker/                  ← Solution Root
+│
+├── StudentAssessmentTrackerAPI/           ← Backend API (Clean Architecture)
+│   ├── Domain/                            (Core business logic)
+│   ├── Application/                       (Use cases & services)
+│   ├── Infrastructure/                    (Data access & external dependencies)
+│   ├── Presentation/                      (REST API controllers)
+│   └── Program.cs
+│
+├── StudentApp/                            ← Frontend Angular 18 SPA
+│   └── src/app/
+│
+├── docs/                                  ← Documentation
+└── ARCHITECTURE.md                        ← Detailed architecture guide
+```
+
+**Backend** – ASP.NET Core 8 Web API (Clean Architecture)
+- **Domain Layer**: Entities with business rules
+- **Application Layer**: Services, DTOs, Validators, AutoMapper
+- **Infrastructure Layer**: EF Core, Repositories
+- **Presentation Layer**: REST API Controllers
 - FluentValidation for input validation
-- AutoMapper for DTO mapping
-- CORS enabled for frontend communication
+- Serilog for structured logging
+- Swagger for API documentation
 
 **Frontend** – Angular 18 (Standalone Components)
 - Reactive forms with comprehensive validation
 - RxJS Observables for async operations
-- Angular routing for navigation
-- Responsive UI with CSS styling
+- Angular routing with guards
+- HTTP communication with backend API
+- Responsive UI with modern CSS
 
-**Why This Stack:**
-- **Separation of Concerns**: Backend handles business logic, frontend handles presentation
-- **Scalability**: Easy to extend backend APIs or add new frontend features
-- **Best Practices**: Enterprise-grade patterns (DTOs, AutoMapper, FluentValidation)
-- **Modern Framework**: Angular provides powerful tools for building dynamic interfaces
-- **Type Safety**: Both languages use strong typing for reliability
+**Why Clean Architecture:**
+- ✅ **Separation of Concerns**: Each layer has a single responsibility
+- ✅ **Independence**: Frontend and backend are fully decoupled
+- ✅ **Testability**: Each layer can be tested in isolation
+- ✅ **Maintainability**: Clear structure makes code easy to understand
+- ✅ **Scalability**: Layers can scale independently
+- ✅ **Flexibility**: Easy to swap implementations without affecting other layers
+
+📚 **For detailed architecture information, see [ARCHITECTURE.md](ARCHITECTURE.md)**
 
 ## Technology Stack
 
-- **Backend**: ASP.NET Core 8, Entity Framework Core, FluentValidation, AutoMapper
-- **Frontend**: Angular 18, TypeScript, RxJS, FormsModule
-- **Database**: In-Memory (Entity Framework Core)
-- **Build Tools**: npm, Angular CLI, .NET CLI
+### Backend (StudentAssessmentTrackerAPI/)
+- **Runtime**: .NET 8.0
+- **Framework**: ASP.NET Core Web API
+- **ORM**: Entity Framework Core 8.0
+- **Database**: In-Memory (Development)
+- **Validation**: FluentValidation 12.1
+- **Mapping**: AutoMapper 12.0
+- **Logging**: Serilog 8.0
+- **API Docs**: Swashbuckle (Swagger)
+
+### Frontend (StudentApp/)
+- **Framework**: Angular 18
+- **Language**: TypeScript 5
+- **Reactive**: RxJS
+- **HTTP**: Angular HttpClient
+- **Routing**: Angular Router
+- **Build**: Angular CLI
 
 ## Database
 
@@ -81,8 +120,39 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 ## Project Structure
 
 ```
-StudentAssessmentTracker/
-├── StudentApp/                          # Angular Frontend
+StudentAssessmentTracker/                       ← Solution Root
+│
+├── StudentAssessmentTrackerAPI/                ← Backend API Project
+│   ├── Domain/                                 (Core business logic)
+│   │   ├── Entities/
+│   │   │   └── Student.cs
+│   │   └── Interfaces/
+│   │       └── IRepository.cs
+│   │
+│   ├── Application/                            (Use cases & orchestration)
+│   │   ├── DTOs/
+│   │   │   └── StudentDto.cs
+│   │   ├── Services/
+│   │   │   └── StudentService.cs
+│   │   ├── Validators/
+│   │   │   └── StudentValidator.cs
+│   │   └── Mappings/
+│   │       └── MappingProfile.cs
+│   │
+│   ├── Infrastructure/                         (Data access)
+│   │   ├── Data/
+│   │   │   └── ApplicationDbContext.cs
+│   │   └── Repositories/
+│   │       └── StudentRepository.cs
+│   │
+│   ├── Presentation/                           (REST API)
+│   │   └── Controllers/
+│   │       └── StudentsController.cs
+│   │
+│   ├── Program.cs                              (Entry point)
+│   └── appsettings.json                        (Configuration)
+│
+├── StudentApp/                                 ← Angular Frontend
 │   ├── src/
 │   │   ├── app/
 │   │   │   ├── components/
@@ -91,63 +161,58 @@ StudentAssessmentTracker/
 │   │   │   │   └── student-detail.component.ts
 │   │   │   ├── services/
 │   │   │   │   └── student.service.ts
+│   │   │   ├── models/
+│   │   │   │   └── student.model.ts
 │   │   │   └── app.routes.ts
 │   │   └── main.ts
 │   ├── angular.json
 │   ├── package.json
-│   └── dist/                            # Built Angular app
+│   ├── proxy.conf.json                         (Dev proxy to API)
+│   └── dist/                                   (Build output)
 │
-├── Controllers/                         # ASP.NET Core Backend
-│   └── StudentsController.cs
-├── Models/
-│   └── Student.cs
-├── DTO/
-│   └── StudentDto.cs
-├── Data/
-│   └── ApplicationDbContext.cs
-├── Validators/
-│   └── StudentValidator.cs
-├── Mappings/
-│   └── MappingProfile.cs
-├── wwwroot/                             # Static files (Angular build output)
-│   ├── index.html
-│   ├── main-*.js
-│   ├── styles-*.css
-│   └── favicon.ico
-├── Program.cs                           # Application startup configuration
-├── StudentAssessmentTracker.csproj
-└── README.md
+├── docs/                                       ← Documentation
+│   ├── API_SETUP_TESTING_GUIDE.md
+│   ├── DEVELOPER_GUIDE.md
+│   └── POSTMAN_TESTING_GUIDE.md
+│
+├── ARCHITECTURE.md                             ← Architecture details
+├── README.md                                   ← This file
+└── StudentAssessmentTracker.sln                ← Visual Studio Solution
 ```
 
 ## Setup Instructions
 
 ### Prerequisites
-- .NET 8 SDK
-- Node.js 18+ with npm
-- VS Code or Visual Studio
+- .NET 8 SDK ([Download](https://dotnet.microsoft.com/download))
+- Node.js 18+ with npm ([Download](https://nodejs.org/))
+- VS Code or Visual Studio 2022
 
-### Backend Setup
+### Backend Setup (API)
 
-1. **Install .NET dependencies**
+1. **Navigate to the API project**
    ```bash
-   dotnet restore
+   cd StudentAssessmentTrackerAPI
    ```
 
-2. **Build the project**
+2. **Restore .NET packages**
+   ```bash
+   dotnet restore
+3. **Build the project**
    ```bash
    dotnet build
    ```
 
-3. **Run the application**
+4. **Run the API**
    ```bash
    dotnet run
    ```
    
-   The application will start on `http://localhost:5000`
+   The API will start on:
+   - HTTP: `http://localhost:5000`
+   - HTTPS: `https://localhost:5001`
+   - Swagger: `http://localhost:5000/swagger`
 
-### Frontend Setup
-
-The Angular frontend is pre-built and included in the `wwwroot/` directory. If you need to rebuild or modify the frontend:
+### Frontend Setup (Angular)
 
 1. **Navigate to the StudentApp directory**
    ```bash
@@ -159,23 +224,21 @@ The Angular frontend is pre-built and included in the `wwwroot/` directory. If y
    npm install
    ```
 
-3. **Regenerate favicon assets (after logo/icon updates)**
+3. **Run the Angular development server**
    ```bash
-   npm run generate:favicon
+   npm start
    ```
+   
+   The application will start on `http://localhost:4200`
+   
+   > **Note:** The Angular app uses a proxy configuration to forward API requests to the backend at `https://localhost:5001`
 
-   This regenerates:
-   - `favicon.ico`
-   - `favicon-16x16.png`
-   - `favicon-32x32.png`
-   - `favicon-64x64.png`
-   - `apple-touch-icon.png`
-   - `favicon.png`
-
-4. **Build the Angular application**
+4. **Build for production** (optional)
    ```bash
    npm run build
    ```
+   
+   Output will be in `dist/StudentApp/browser/`
    
    This creates optimized files in `dist/StudentApp/browser/`
 
