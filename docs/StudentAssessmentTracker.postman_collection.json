@@ -1,8 +1,8 @@
 {
   "info": {
-    "_postman_id": "student-assessment-api",
+    "_postman_id": "a3f2c1d4-b5e6-4789-abcd-ef1234567890",
     "name": "Student Assessment Tracker API",
-    "description": "Complete API testing collection for Student Assessment Tracker application. Includes endpoints for student management with full CRUD operations.",
+    "description": "Complete API testing collection for Student Assessment Tracker application.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
@@ -13,19 +13,14 @@
           "name": "Get All Students",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
-              "raw": "{{base_url}}/api/students",
-              "host": ["{{base_url}}"],
+              "raw": "http://127.0.0.1:5000/api/students",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "5000",
               "path": ["api", "students"]
-            },
-            "description": "Retrieves a list of all students in the database.\n\nResponse: Array of StudentDto objects"
+            }
           },
           "response": []
         },
@@ -33,19 +28,14 @@
           "name": "Get Student by ID",
           "request": {
             "method": "GET",
-            "header": [
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
-              }
-            ],
+            "header": [],
             "url": {
-              "raw": "{{base_url}}/api/students/1",
-              "host": ["{{base_url}}"],
+              "raw": "http://127.0.0.1:5000/api/students/1",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "5000",
               "path": ["api", "students", "1"]
-            },
-            "description": "Retrieves a specific student by their ID.\n\nPath Parameters:\n- id: The student ID (integer)\n\nResponse: StudentDto object"
+            }
           },
           "response": []
         },
@@ -56,25 +46,25 @@
             "header": [
               {
                 "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
+                "value": "application/json"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"12345678\",\n  \"grade\": \"A\",\n  \"assessment1\": 18,\n  \"assessment2\": 19,\n  \"assessment3\": 17\n}"
+              "raw": "{\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"12345678\",\n  \"grade\": \"A\",\n  \"assessment1\": 18,\n  \"assessment2\": 19,\n  \"assessment3\": 17\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
-              "raw": "{{base_url}}/api/students",
-              "host": ["{{base_url}}"],
+              "raw": "http://127.0.0.1:5000/api/students",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "5000",
               "path": ["api", "students"]
-            },
-            "description": "Creates a new student record.\n\nRequest Body: CreateStudentDto\n- firstName (string, required): Student's first name (2-50 chars, letters/spaces/hyphens only)\n- lastName (string, required): Student's last name (2-50 chars, letters/spaces/hyphens only)\n- email (string, required): Student's email address\n- phone (string, required): Student's phone number (EXACTLY 8 DIGITS, e.g., \"12345678\")\n- grade (string, required): Student's grade (1-10 characters, e.g., \"A\", \"A+\", \"Grade 1\")\n- assessment1 (decimal, required): Assessment 1 score (0-20 range)\n- assessment2 (decimal, required): Assessment 2 score (0-20 range)\n- assessment3 (decimal, required): Assessment 3 score (0-20 range)\n\nResponse: Created StudentDto with assigned ID (201 Created)"
+            }
           },
           "response": []
         },
@@ -85,25 +75,25 @@
             "header": [
               {
                 "key": "Content-Type",
-                "value": "application/json",
-                "type": "text"
-              },
-              {
-                "key": "Accept",
-                "value": "application/json",
-                "type": "text"
+                "value": "application/json"
               }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"email\": \"jane.smith@example.com\",\n  \"phone\": \"87654321\",\n  \"grade\": \"A+\",\n  \"assessment1\": 20,\n  \"assessment2\": 20,\n  \"assessment3\": 19\n}"
+              "raw": "{\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"email\": \"jane.smith@example.com\",\n  \"phone\": \"87654321\",\n  \"grade\": \"A+\",\n  \"assessment1\": 20,\n  \"assessment2\": 20,\n  \"assessment3\": 19\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
             },
             "url": {
-              "raw": "{{base_url}}/api/students/1",
-              "host": ["{{base_url}}"],
+              "raw": "http://127.0.0.1:5000/api/students/1",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "5000",
               "path": ["api", "students", "1"]
-            },
-            "description": "Updates an existing student's information.\n\nPath Parameters:\n- id: The student ID (integer)\n\nRequest Body: UpdateStudentDto (same schema as CreateStudentDto)\n- firstName (string, required): Student's first name (2-50 chars, letters/spaces/hyphens only)\n- lastName (string, required): Student's last name (2-50 chars, letters/spaces/hyphens only)\n- email (string, required): Student's email address\n- phone (string, required): Student's phone number (EXACTLY 8 DIGITS, e.g., \"87654321\")\n- grade (string, required): Student's grade (1-10 characters)\n- assessment1 (decimal, required): Assessment 1 score (0-20 range)\n- assessment2 (decimal, required): Assessment 2 score (0-20 range)\n- assessment3 (decimal, required): Assessment 3 score (0-20 range)\n\nResponse: Updated StudentDto object (200 OK)"
+            }
           },
           "response": []
         },
@@ -113,62 +103,16 @@
             "method": "DELETE",
             "header": [],
             "url": {
-              "raw": "{{base_url}}/api/students/1",
-              "host": ["{{base_url}}"],
+              "raw": "http://127.0.0.1:5000/api/students/1",
+              "protocol": "http",
+              "host": ["127", "0", "0", "1"],
+              "port": "5000",
               "path": ["api", "students", "1"]
-            },
-            "description": "Deletes a student from the database.\n\nPath Parameters:\n- id: The student ID (integer)\n\nResponse: 204 No Content (successful deletion)"
+            }
           },
           "response": []
         }
       ]
-    },
-    {
-      "name": "API Documentation",
-      "item": [
-        {
-          "name": "Scalar API Reference",
-          "request": {
-            "method": "GET",
-            "header": [],
-            "url": {
-              "raw": "{{base_url}}/scalar/v1",
-              "host": ["{{base_url}}"],
-              "path": ["scalar", "v1"]
-            },
-            "description": "Opens the interactive Scalar API documentation UI.\nThis provides a modern, user-friendly interface for exploring and testing the API endpoints."
-          },
-          "response": []
-        }
-      ]
-    }
-  ],
-  "variable": [
-    {
-      "key": "base_url",
-      "value": "http://localhost:5000",
-      "type": "string",
-      "description": "Base URL for the Student Assessment Tracker API. Update this if your server runs on a different host/port."
-    }
-  ],
-  "event": [
-    {
-      "listen": "prerequest",
-      "script": {
-        "type": "text/javascript",
-        "exec": [
-          ""
-        ]
-      }
-    },
-    {
-      "listen": "test",
-      "script": {
-        "type": "text/javascript",
-        "exec": [
-          ""
-        ]
-      }
     }
   ]
 }

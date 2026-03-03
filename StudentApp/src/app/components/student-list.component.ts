@@ -1,12 +1,21 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
 import { Router, NavigationEnd, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { StudentService, StudentListDto } from '../services/student.service';
+import { StudentListDto } from '../core/models';
+import { StudentStateService } from '../core/services/state';
+import { StudentBusinessService } from '../features/students/services/student-business.service';
 import { Subject } from 'rxjs';
 import { takeUntil, filter } from 'rxjs/operators';
 
 // Import DataTables
 import DataTable from 'datatables.net-dt';
+
+/**
+ * PRESENTATION LAYER - Student List Component
+ * Responsible ONLY for UI presentation and user interactions
+ * Delegates all business logic to StudentBusinessService
+ * Subscribes to StudentStateService for reactive data
+ */
 
 @Component({
   selector: 'app-student-list',
@@ -502,9 +511,12 @@ import DataTable from 'datatables.net-dt';
 export class StudentListComponent implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('studentsTable') table!: ElementRef;
   
+  // Reactive state from state service
   students: StudentListDto[] = [];
-  loading = true;
+  loading = false;
   error: string | null = null;
+  
+  // Component state (not shared)
   showConfirmDialog = false;
   studentToDelete: number | null = null;
   
@@ -512,12 +524,44 @@ export class StudentListComponent implements OnInit, AfterViewInit, OnDestroy {
   private destroy$ = new Subject<void>();
 
   constructor(
-    private studentService: StudentService,
+    private studentBusiness: StudentBusinessService,
+    private studentState: StudentStateService,
     private router: Router,
     private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
+    // Subscribe to reactive state
+    this.studentState.students$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(students => {
+        this.students = students;
+        this.cdr.markForCheck();
+        
+        // Reinitialize DataTable when data changes
+        setTimeout(() => {
+          this.initializeDataTable();
+        }, 100);
+      });
+    
+    this.studentState.loading$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(loading => {
+        this.loading = loading;
+        this.cdr.markForCheck();
+      });
+    
+    this.studentState.error$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(error => {
+        this.error = error;
+        this.cdr.markForCheck();
+      });
+    
+    // Load students on init
+    this.loadStudents();
+    
+    // Reload on navigation
     // Load students when component initializes
     this.loadStudents();
     
@@ -575,27 +619,12 @@ export class StudentListComponent implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /**
+   * Load students using business service
+   * State is automatically updated via reactive streams
+   */
   loadStudents(): void {
-    this.loading = true;
-    this.error = null;
-    
-    this.studentService.getStudents().subscribe({
-      next: (data) => {
-        this.students = data;
-        this.loading = false;
-        this.cdr.markForCheck();
-        
-        // Reinitialize DataTable with new data
-        setTimeout(() => {
-          this.initializeDataTable();
-        }, 100);
-      },
-      error: (err) => {
-        this.error = 'Failed to load students: ' + (err.error?.title || err.message || 'Unknown error');
-        this.loading = false;
-        this.cdr.markForCheck();
-      }
-    });
+    this.studentBusiness.loadStudents().subscribe();
   }
 
   viewStudent(id: number): void {
@@ -611,16 +640,19 @@ export class StudentListComponent implements OnInit, AfterViewInit, OnDestroy {
     this.showConfirmDialog = true;
   }
 
+  /**
+   * Confirm and execute delete operation
+   * Uses business service for delete logic
+   */
   confirmDelete(): void {
     if (this.studentToDelete !== null) {
-      this.studentService.deleteStudent(this.studentToDelete).subscribe({
+      this.studentBusiness.deleteStudent(this.studentToDelete).subscribe({
         next: () => {
           this.showConfirmDialog = false;
           this.studentToDelete = null;
-          this.loadStudents();
         },
-        error: (err) => {
-          this.error = 'Failed to delete student: ' + (err.message || 'Unknown error');
+        error: () => {
+          // Error already handled by business service and state
           this.showConfirmDialog = false;
           this.studentToDelete = null;
         }

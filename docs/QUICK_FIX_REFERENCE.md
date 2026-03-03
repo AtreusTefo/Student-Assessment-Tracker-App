@@ -1,6 +1,292 @@
 # Quick Fix Reference Guide
 
-## 11 Major Issues Fixed & How to Fix Them Again
+## 25 Major Issues Fixed & How to Fix Them Again
+
+---
+
+## 🚨 CRITICAL ISSUES (March 2, 2026)
+
+### 14. App Won't Start - DI Resolution Failure (EXIT CODE 1)
+**Problem**: Application crashes immediately on startup  
+**Error**: `Unable to resolve service for type... while attempting to activate...`  
+**Fix**: Remove legacy code that's injecting unregistered dependencies
+```powershell
+# Delete legacy folders
+cd StudentAssessmentTrackerAPI
+Remove-Item Controllers, Models, Data, Validators, Mappings -Recurse -Force
+dotnet build
+dotnet run  # Should start successfully
+```
+**Root Cause**: Legacy controllers injecting `Data.ApplicationDbContext` but `Program.cs` only registers `Infrastructure.Data.ApplicationDbContext`  
+**Files**: `StudentAssessmentTrackerAPI/Controllers/*` (delete), `Program.cs` (verify registrations)
+
+---
+
+### 15. Duplicate Class Names Across Namespaces
+**Problem**: Multiple classes with same name in different folders  
+**Examples**: `ApplicationDbContext`, `MappingProfile`, `StudentValidator`  
+**Fix**: Keep only Clean Architecture versions, delete legacy
+```powershell
+# Check for duplicates
+Get-ChildItem -Recurse -Filter *.cs | Select-String "public class ApplicationDbContext"
+# Should return ONLY ONE result
+
+# Remove legacy versions
+Remove-Item Data, Mappings, Validators -Recurse -Force
+```
+**Impact**: AutoMapper/FluentValidation may register wrong class  
+**Prevention**: Delete old code immediately after creating replacement
+
+---
+
+### 16. Missing Feature in Clean Architecture
+**Problem**: Teacher endpoints missing — only existed in legacy code  
+**Fix**: Implement across all 4 layers
+```
+1. Domain/Entities/Teacher.cs         - Entity with business rules
+2. Application/DTOs/TeacherDto.cs     - Request/Response DTOs
+3. Application/Validators/             - FluentValidation rules
+4. Application/Services/               - ITeacherService + implementation
+5. Infrastructure/Data/                - DbSet<Teacher> + config
+6. Application/Mappings/               - AutoMapper profiles
+7. Presentation/Controllers/           - REST API endpoints
+8. Program.cs                          - DI registration
+```
+**Files Created**: 5 new files  
+**Files Updated**: 3 existing files  
+**Prevention**: Feature parity checklist before deleting legacy code
+
+---
+
+---
+
+## 🚨 CRITICAL ISSUES (March 3, 2026)
+
+### 20. Postman: Collection Shows "Empty" After Import
+**Problem**: Postman imports the collection but shows zero requests — "This collection is empty"  
+**Root Cause**: `_postman_id` was a human-readable slug (`"student-assessment-api"`) not a valid UUID — Postman silently discards collections with non-UUID IDs  
+**Fix**: Use a proper UUID for `_postman_id`
+```json
+// WRONG ❌
+"_postman_id": "student-assessment-api"
+
+// CORRECT ✅
+"_postman_id": "a3f2c1d4-b5e6-4789-abcd-ef1234567890"
+```
+**File**: `docs/StudentAssessmentTracker.postman_collection.json`  
+**Prevention**: Always generate a real UUID when creating a Postman collection JSON manually
+
+---
+
+### 21. Postman: Requests Hang Forever at "Sending request..."
+**Problem**: Every Postman request spins indefinitely with no response or error  
+**Root Cause (two layers)**:
+1. URL used `host: ["{{base_url}}"]` — unresolved environment variable silently hangs
+2. `localhost` on Windows 11 resolves to IPv6 `::1` first; API only bound to `127.0.0.1` (IPv4) — connection refused, Postman times out silently  
+
+**Fix**: Use hardcoded `127.0.0.1` in all URLs (not `localhost`, not a variable):
+```json
+// WRONG ❌ — variable as host
+"url": {
+  "host": ["{{base_url}}"],
+  "port": "5000"
+}
+
+// CORRECT ✅ — hardcoded IPv4
+"url": {
+  "protocol": "http",
+  "host": ["127","0","0","1"],
+  "port": "5000",
+  "path": ["api","students"]
+}
+```
+Also bind the API to IPv4 only in `launchSettings.json`:
+```json
+"applicationUrl": "http://127.0.0.1:5000"
+```
+**Files**: `docs/StudentAssessmentTracker.postman_collection.json`, `StudentAssessmentTrackerAPI/Properties/launchSettings.json`  
+**Prevention**: Never use `localhost` in Postman on Windows — always use `127.0.0.1`
+
+---
+
+### 22. Postman: DELETE Returns No Body ("204 No Content")
+**Problem**: DELETE `/api/students/{id}` returns HTTP 204 with no response body — no confirmation visible in Postman  
+**Root Cause**: Controller used `return NoContent()` — HTTP 204 is spec-defined as having no body; Postman was behaving correctly  
+**Fix**: Return 200 OK with a message body instead
+```csharp
+// WRONG ❌
+return NoContent();
+
+// CORRECT ✅
+return Ok(new { message = $"Student with ID {id} successfully deleted" });
+```
+Also update `[ProducesResponseType]`:
+```csharp
+// Before
+[ProducesResponseType(StatusCodes.Status204NoContent)]
+
+// After
+[ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
+```
+**File**: `StudentAssessmentTrackerAPI/Presentation/Controllers/StudentsController.cs`  
+**Prevention**: Use 200 OK + message body for DELETE if consumers need confirmation
+
+---
+
+### 23. Angular Frontend: "Unexpected token '<', <!doctype... is not valid JSON"
+**Problem**: All Angular pages crash immediately — every API call returns HTML instead of JSON  
+**Root Cause (two bugs)**:
+1. `proxy.conf.json` targeted `https://localhost:5001` (non-existent; API is on `http://127.0.0.1:5000`)
+2. `angular.json` had **no `proxyConfig` entry** — the proxy file was never loaded; Angular served its own `index.html` for every `/api/...` request  
+
+**Fix**:
+```json
+// proxy.conf.json — corrected target
+{
+  "/api": {
+    "target": "http://127.0.0.1:5000",
+    "secure": false,
+    "changeOrigin": true,
+    "logLevel": "debug"
+  }
+}
+```
+```json
+// angular.json — add the missing proxyConfig entry
+"serve": {
+  "configurations": {
+    "development": {
+      "proxyConfig": "proxy.conf.json"
+    }
+  }
+}
+```
+**Files**: `StudentApp/proxy.conf.json`, `StudentApp/angular.json`  
+**Prevention**: Verify `proxyConfig` is in `angular.json` and test proxy with a direct browser request to `http://localhost:4200/api/students`
+
+---
+
+### 24. EF Core In-Memory Database: Data Lost on Restart
+**Problem**: All data vanishes every time the API restarts — In-Memory provider stores data in RAM only  
+**Fix**: Migrate to SQL Server LocalDB
+```powershell
+# 1. Install EF CLI tools (once per machine)
+dotnet tool install --global dotnet-ef --version 8.0.0
+
+# 2. Update .csproj — remove InMemory, add SqlServer
+# Remove:  <PackageReference Include="Microsoft.EntityFrameworkCore.InMemory" Version="8.0.0" />
+# Add:
+#   <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.0" />
+#   <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.0">
+#     <PrivateAssets>all</PrivateAssets>
+#   </PackageReference>
+
+# 3. Restore packages
+dotnet restore
+
+# 4. Add connection string to appsettings.Development.json
+# "ConnectionStrings": {
+#   "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=StudentAssessmentTrackerDev;Trusted_Connection=True;MultipleActiveResultSets=true;TrustServerCertificate=True"
+# }
+
+# 5. Update Program.cs: UseSqlServer instead of UseInMemory
+# builder.Services.AddDbContext<ApplicationDbContext>(options =>
+#     options.UseSqlServer(connectionString,
+#         o => o.EnableRetryOnFailure(5, TimeSpan.FromSeconds(10), null)));
+
+# 6. Create and apply migration
+dotnet ef migrations add InitialCreate --project StudentAssessmentTrackerAPI --output-dir Infrastructure/Data/Migrations
+dotnet ef database update --project StudentAssessmentTrackerAPI
+```
+**Database Created**: `StudentAssessmentTrackerDev` on `(localdb)\mssqllocaldb`  
+**Files Changed**: `.csproj`, `appsettings.json`, `appsettings.Development.json`, `ApplicationDbContext.cs`, `Program.cs`  
+**Prevention**: Never use `UseInMemoryDatabase` outside of unit tests
+
+---
+
+### 25. API Won't Start: "address already in use" on Port 5000
+**Problem**: `dotnet run` fails immediately with:
+```
+System.IO.IOException: Failed to bind to address http://127.0.0.1:5000: address already in use
+```
+**Root Cause**: A previous `dotnet run` process from an earlier session is still running in a background terminal  
+**Fix**:
+```powershell
+# Kill all dotnet processes immediately
+Get-Process dotnet -ErrorAction SilentlyContinue | Stop-Process -Force
+
+# Wait for OS TIME_WAIT to clear (2 seconds is usually enough)
+Start-Sleep -Seconds 2
+
+# Restart
+dotnet run
+
+# --- OR: identify the specific PID first ---
+netstat -ano | findstr :5000
+# Find PID in last column, then:
+Stop-Process -Id <PID> -Force
+```
+**Prevention**: Always stop `dotnet run` with `Ctrl+C` before closing a terminal; use `Get-Process dotnet` to check for orphaned processes
+
+---
+
+## 🔧 BUILD/RUNTIME ERRORS
+
+### 17. Method Signature Mismatch - DeleteAsync
+**Problem**: Build error - wrong parameter type  
+**Error**: `cannot convert from 'Teacher' to 'int'`  
+**Fix**: Pass ID, not entity object
+```csharp
+// WRONG ❌
+await _repository.DeleteAsync(teacher);
+
+// CORRECT ✅
+await _repository.DeleteAsync(id);
+```
+**File**: `Application/Services/TeacherService.cs`  
+**Prevention**: Check interface signature (F12) before implementing
+
+---
+
+## 📝 GIT ISSUES
+
+### 18. Rename/Delete Merge Conflict
+**Problem**: Git conflict - file renamed locally but deleted on remote  
+**Error**: `CONFLICT (rename/delete): # Code Citations.md`  
+**Fix**: Choose to keep or delete
+```bash
+# Option 1: Keep file at new location
+git add "docs/# Code Citations.md"
+git commit --no-edit
+
+# Option 2: Accept deletion
+git rm "docs/# Code Citations.md"
+git commit -m "Accept remote deletion"
+```
+**Prevention**: Pull before major reorganizations, communicate with team
+
+---
+
+### 19. Git Rebase Stuck in Interactive Editor
+**Problem**: Terminal stuck in alternate buffer after `git rebase --continue`  
+**Fix**: Abort and use merge strategy instead
+```bash
+# From fresh terminal
+git rebase --abort
+
+# Use merge instead of rebase
+git pull --no-rebase --no-edit origin main
+```
+**Prevention**: Set non-interactive editor
+```bash
+git config --global core.editor "code --wait"
+# or for automation
+$env:GIT_EDITOR = "true"
+```
+
+---
+
+## 🔹 FRONTEND ISSUES (Original 13)
 
 ### 1️⃣ Student List Table Shows Wrong Columns
 **Problem**: Table displays columns that don't exist in the DTO  
@@ -371,41 +657,95 @@ phone: parsedPhone
 
 ## 📋 Diagnostic Checklist
 
-1. **Data not showing?**
+**🚨 App Won't Start (Exit Code 1)?**
+1. ✅ Check for DI resolution errors in terminal output
+2. ✅ Verify all injected types are registered in `Program.cs`
+3. ✅ Remove legacy code that uses unregistered dependencies
+4. ✅ Search for duplicate class names: `Get-ChildItem -Recurse -Filter *.cs | Select-String "public class YourClassName"`
+5. ✅ Run `dotnet clean` then `dotnet build`
+
+**🔨 Build Errors?**
+1. ✅ Read error message for file path and line number
+2. ✅ Check method signatures match interface (F12 to navigate)
+3. ✅ Verify parameter types are correct (e.g., `int id` not `Teacher entity`)
+4. ✅ Check all using statements are correct
+5. ✅ Run `dotnet restore` to refresh NuGet packages
+
+**🌿 Git Issues?**
+1. ✅ **Merge conflict (rename/delete)**: Choose keep or delete → `git add` → `git commit`
+2. ✅ **Stuck rebase**: Open fresh terminal → `git rebase --abort`
+3. ✅ **Avoid interactive editors**: Use `git pull --no-rebase --no-edit origin main`
+4. ✅ **Configure editor**: `git config --global core.editor "code --wait"`
+
+**📦 Missing Features After Migration?**
+1. ✅ List all features in legacy code
+2. ✅ Verify each feature exists in Clean Architecture
+3. ✅ Create feature across all 4 layers: Domain → Infrastructure → Application → Presentation
+4. ✅ Register services in `Program.cs` DI container
+5. ✅ Update AutoMapper profiles and validators
+
+**📊 Data not showing?**
    - ✅ Check API response in browser DevTools (Network tab)
    - ✅ Verify TypeScript types match API response
    - ✅ Add `console.log()` to verify data assignment
    - ✅ Call `cdr.markForCheck()` in async callbacks
 
-2. **Table columns showing wrong data?**
+**🗂️ Table columns showing wrong data?**
    - ✅ Verify template properties exist in DTO
    - ✅ Check service method return type
    - ✅ Rebuild Angular: `npm run build`
 
-3. **Loading message never goes away?**
+**⏳ Loading message never goes away?**
    - ✅ Check backend logs: `dotnet run`
    - ✅ Verify API status code (200, 404, 500?)
    - ✅ Make sure `loading = false` in subscribe error handler
    - ✅ Add `cdr.markForCheck()` in async callbacks
    - ✅ Check browser console for JavaScript errors
 
-4. **Create/Edit not working?**
+**✏️ Create/Edit not working?**
    - ✅ Check form validation (FluentValidation on backend)
    - ✅ Check API response in DevTools Network tab
    - ✅ Look for 400 Bad Request (validation errors)
    - ✅ Show error messages in template: `{{ error }}`
 
+**🔌 Postman collection empty / requests hanging?**
+1. ✅ Verify `_postman_id` is a valid UUID (not a slug)
+2. ✅ Use `127.0.0.1` instead of `localhost` on Windows (IPv6 issue)
+3. ✅ Hardcode URL in collection — don't use `{{base_url}}` variable without an active Postman environment
+4. ✅ Confirm API is actually running: `netstat -ano | findstr :5000`
+
+**🗄️ API "address already in use" on startup?**
+1. ✅ Kill stale processes: `Get-Process dotnet -ErrorAction SilentlyContinue | Stop-Process -Force`
+2. ✅ Wait 2 seconds for TIME_WAIT: `Start-Sleep -Seconds 2`
+3. ✅ Then re-run: `dotnet run`
+
+**💾 Data lost after API restart?**
+1. ✅ Replace `UseInMemoryDatabase` with `UseSqlServer` in `Program.cs`
+2. ✅ Add connection string to `appsettings.Development.json`
+3. ✅ Run `dotnet ef migrations add <Name>` and `dotnet ef database update`
+4. ✅ Verify auto-migrate block in `Program.cs` runs on startup
+
+**🔗 Angular shows HTML instead of JSON (parse error)?**
+1. ✅ Confirm `proxyConfig` is set in `angular.json` under `serve > configurations > development`
+2. ✅ Confirm `proxy.conf.json` target points to `http://127.0.0.1:5000`
+3. ✅ Restart Angular with `--proxy-config proxy.conf.json` or via `ng serve`
+4. ✅ Test proxy: open `http://localhost:4200/api/students` in browser — should return JSON
+
 ---
 
 ## Full Documentation
 
-See **`ERROR_FIXES_DOCUMENTATION.md`** in project root for:
-- Detailed explanations of each issue
+See **`ERROR_FIXES_DOCUMENTATION.md`** in docs folder for:
+- Detailed explanations of all 19 original issues
 - Complete code examples
 - Prevention tips
 - Testing checklist
 - Key learnings
 
+See **`DAILY_REPORT_2026-03-03.md`** for detailed write-up of issues 20–25 (March 3, 2026).
+
 ---
 
+**Last Updated**: March 3, 2026  
+**Total Issues Documented**: 25 (13 frontend + 6 architecture + 6 infrastructure/tooling)  
 **Keep this guide nearby when developing!** 🚀

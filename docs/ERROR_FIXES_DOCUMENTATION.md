@@ -1682,5 +1682,474 @@ If you encounter similar issues or need clarification on any fix:
 
 ---
 
-**Last Updated**: February 10, 2026  
-**Status**: All 11 issues resolved, production-ready
+## Issue #14: DI Resolution Failure - Legacy Controllers Crashing App (CRITICAL)
+
+### Problem
+**Date**: March 2, 2026  
+**Severity**: CRITICAL - Application would not start (exit code 1)
+
+After folder restructuring, the application crashed immediately on startup with DI (Dependency Injection) resolution failure. The error occurred because legacy controllers were still present and trying to inject services that were no longer registered.
+
+### Root Cause
+Legacy controllers (`Controllers/TeacherController.cs` and `Controllers/StudentsController.cs`) were injecting:
+```csharp
+public TeacherControllerLegacy(StudentAssessmentTracker.Data.ApplicationDbContext context)
+```
+
+But `Program.cs` was only registering:
+```csharp
+builder.Services.AddDbContext<StudentAssessmentTracker.Infrastructure.Data.ApplicationDbContext>(...)
+```
+
+The legacy `Data.ApplicationDbContext` was **never registered** in DI, causing immediate crash when ASP.NET tried to construct the controllers during startup.
+
+### Error Message
+```
+Unhandled exception. System.InvalidOperationException: Unable to resolve service for type 
+'StudentAssessmentTracker.Data.ApplicationDbContext' while attempting to activate 
+'StudentAssessmentTracker.Controllers.TeacherControllerLegacy'.
+```
+
+Exit code: 1
+
+### Solution Implemented
+
+**Step 1: Identify All Legacy Code**
+Located legacy folders in `StudentAssessmentTrackerAPI/`:
+- `Controllers/` (TeacherControllerLegacy, StudentsControllerLegacy)
+- `Models/` (Student, Teacher, DTOs)
+- `Data/` (legacy ApplicationDbContext)
+- `Validators/` (StudentValidator, TeacherValidator)
+- `Mappings/` (legacy MappingProfile)
+
+**Step 2: Remove Legacy Code**
+```powershell
+cd StudentAssessmentTrackerAPI
+Remove-Item Controllers, Models, Data, Validators, Mappings -Recurse -Force
+```
+
+**Step 3: Verify Clean Build**
+```powershell
+dotnet build
+# Result: Build succeeded with 0 errors
+```
+
+**Step 4: Verify Runtime**
+```powershell
+dotnet run
+# Result: Application started successfully on http://localhost:5000
+```
+
+### Why This Happened
+After restructuring to Clean Architecture, both legacy code (in root folders) and new clean architecture code (in proper layer folders) coexisted. The `Program.cs` correctly registered only clean architecture dependencies, but ASP.NET controller discovery scanned **all** controllers in the assembly, including legacy ones that required unregistered dependencies.
+
+### Prevention Tips
+1. **Remove old code immediately** after refactoring — don't leave both versions
+2. **Use conditional compilation** (`#if DEBUG`) if you need to keep legacy code temporarily
+3. **Test startup** after any DI configuration changes
+4. **Check exit codes** — non-zero means startup failure
+5. **Use proper namespaces** to avoid confusion between legacy and new code
+
+### Testing Checklist
+- [x] Application starts without errors (exit code 0)
+- [x] Swagger UI loads at `/swagger`
+- [x] All endpoints appear in Swagger documentation
+- [x] DI container resolves all registered services
+- [x] No runtime exceptions in startup logs
+
+---
+
+## Issue #15: Duplicate Class Name Conflicts Across Namespaces
+
+### Problem
+**Date**: March 2, 2026  
+**Severity**: HIGH - Unpredictable behavior and maintenance confusion
+
+Multiple classes with identical names existed in different namespaces:
+
+1. **ApplicationDbContext**:
+   - `StudentAssessmentTracker.Data.ApplicationDbContext` (legacy)
+   - `StudentAssessmentTracker.Infrastructure.Data.ApplicationDbContext` (clean arch)
+
+2. **MappingProfile**:
+   - `StudentAssessmentTracker.Mappings.MappingProfile` (legacy)
+   - `StudentAssessmentTracker.Application.Mappings.MappingProfile` (clean arch)
+
+3. **StudentValidator**:
+   - `StudentAssessmentTracker.Validators.StudentValidator` (legacy)
+   - `StudentAssessmentTracker.Application.Validators.CreateStudentValidator` (clean arch)
+
+### Root Cause
+Incomplete migration from monolith to Clean Architecture — old code wasn't deleted when new structured code was created.
+
+### Impact
+- **AutoMapper**: `typeof(MappingProfile)` could resolve to either class depending on assembly scan order
+- **FluentValidation**: `AddValidatorsFromAssemblyContaining<>()` registered BOTH validators
+- **Confusion**: Developers editing wrong file
+- **Merge conflicts**: Git couldn't determine which version to keep
+
+### Solution Implemented
+
+Systematically removed all legacy versions:
+```powershell
+Remove-Item StudentAssessmentTrackerAPI/Data -Recurse -Force
+Remove-Item StudentAssessmentTrackerAPI/Mappings -Recurse -Force  
+Remove-Item StudentAssessmentTrackerAPI/Validators -Recurse -Force
+```
+
+Kept only Clean Architecture versions:
+- ✅ `Infrastructure/Data/ApplicationDbContext.cs`
+- ✅ `Application/Mappings/MappingProfile.cs`
+- ✅ `Application/Validators/StudentValidator.cs`
+
+### Prevention Tips
+1. **Delete old code immediately** after creating replacement
+2. **Use unique class names** during migration (e.g., `ApplicationDbContextLegacy`)
+3. **Search entire solution** for duplicate class names before committing
+4. **Use namespaces wisely** — they prevent collisions but don't eliminate confusion
+5. **Document migrations** so team knows which version to use
+
+### Testing
+```powershell
+# Search for duplicate class names
+Get-ChildItem -Recurse -Filter *.cs | Select-String "public class ApplicationDbContext"
+# Should return only ONE result
+```
+
+---
+
+## Issue #16: Missing Teacher Functionality in Clean Architecture
+
+### Problem  
+**Date**: March 2, 2026  
+**Severity**: HIGH - Critical feature missing
+
+Teacher registration, login, and CRUD endpoints existed ONLY in legacy code. The clean architecture layers had:
+- ✅ Student (complete)
+- ❌ Teacher (completely absent)
+
+Since legacy code was crashing and needed removal, deleting it would break the Angular frontend which depends on Teacher endpoints:
+- `POST /api/teachers` (register)
+- `POST /api/teachers/login`
+- `GET /api/teachers/{id}`
+- Full CRUD operations
+
+### Root Cause
+Incomplete Clean Architecture implementation — only Student was migrated to the new structure.
+
+### Solution Implemented
+
+Implemented Teacher across all 4 Clean Architecture layers:
+
+**1. Domain Layer** - `Domain/Entities/Teacher.cs`:
+```csharp
+public class Teacher
+{
+    public int Id { get; set; }
+    public string FirstName { get; set; } = string.Empty;
+    public string LastName { get; set; } = string.Empty;
+    public string Email { get; set; } = string.Empty;
+    public string Phone { get; set; } = string.Empty;
+    public string Subject { get; set; } = string.Empty;
+    public string Password { get; set; } = string.Empty;
+    public DateTime EnrollmentDate { get; set; } = DateTime.UtcNow;
+    public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
+    
+    public string GetFullName() => $"{FirstName} {LastName}";
+}
+```
+
+**2. Application Layer** - DTOs:
+```csharp
+// TeacherResponseDto, TeacherRegisterDto, TeacherUpdateDto, 
+// TeacherLoginDto, TeacherLoginResponseDto
+```
+
+**3. Application Layer** - Validators:
+```csharp
+public class TeacherRegisterValidator : AbstractValidator<TeacherRegisterDto>
+{
+    public TeacherRegisterValidator()
+    {
+        RuleFor(x => x.Email).NotEmpty().EmailAddress();
+        RuleFor(x => x.Password).NotEmpty().MinimumLength(6);
+        // ... etc
+    }
+}
+```
+
+**4. Application Layer** - Service:
+```csharp
+public interface ITeacherService
+{
+    Task<IEnumerable<TeacherResponseDto>> GetAllTeachersAsync();
+    Task<TeacherResponseDto?> GetTeacherByIdAsync(int id);
+    Task<TeacherResponseDto> CreateTeacherAsync(TeacherRegisterDto dto);
+    Task<bool> UpdateTeacherAsync(int id, TeacherUpdateDto dto);
+    Task<bool> DeleteTeacherAsync(int id);
+    Task<TeacherLoginResponseDto?> LoginAsync(TeacherLoginDto dto);
+}
+```
+
+**5. Infrastructure Layer** - DbContext:
+```csharp
+public DbSet<Teacher> Teachers { get; set; }
+
+protected override void OnModelCreating(ModelBuilder modelBuilder)
+{
+    modelBuilder.Entity<Teacher>(entity =>
+    {
+        entity.HasKey(e => e.Id);
+        entity.Property(e => e.Email).IsRequired();
+        // ... constraints
+    });
+}
+```
+
+**6. Presentation Layer** - Controller:
+```csharp
+[ApiController]
+[Route("api/teachers")]
+public class TeachersController : ControllerBase
+{
+    [HttpGet]
+    public async Task<IActionResult> GetAll() { ... }
+    
+    [HttpPost]
+    public async Task<IActionResult> Create([FromBody] TeacherRegisterDto dto) { ... }
+    
+    [HttpPost("login")]
+    public async Task<IActionResult> Login([FromBody] TeacherLoginDto dto) { ... }
+    
+    // ... full CRUD
+}
+```
+
+**7. Program.cs DI Registration**:
+```csharp
+builder.Services.AddScoped<ITeacherService, TeacherService>();
+builder.Services.AddScoped<IRepository<Teacher>, Repository<Teacher>>();
+```
+
+**8. AutoMapper Configuration**:
+```csharp
+CreateMap<Teacher, TeacherResponseDto>()
+    .ForMember(dest => dest.TeacherId, opt => opt.MapFrom(src => src.Id));
+CreateMap<TeacherRegisterDto, Teacher>();
+CreateMap<TeacherUpdateDto, Teacher>();
+```
+
+### Files Created
+- `Domain/Entities/Teacher.cs`
+- `Application/DTOs/TeacherDto.cs`
+- `Application/Validators/TeacherValidator.cs`
+- `Application/Services/TeacherService.cs`
+- `Presentation/Controllers/TeachersController.cs`
+
+### Files Updated
+- `Infrastructure/Data/ApplicationDbContext.cs`
+- `Application/Mappings/MappingProfile.cs`
+- `Program.cs`
+
+### Testing
+```bash
+dotnet build    # 0 errors
+dotnet run      # Clean startup
+curl http://localhost:5000/swagger  # All endpoints visible
+```
+
+### Prevention Tips
+1. **Feature parity check** — list all features in legacy, ensure all exist in new arch
+2. **API contract first** — document required endpoints before migrating
+3. **Integration tests** — automated tests catch missing features
+4. **Incremental migration** — migrate one entity at a time completely
+
+---
+
+## Issue #17: Method Signature Mismatch - DeleteAsync Parameter Type
+
+### Problem
+**Date**: March 2, 2026  
+**Severity**: LOW - Build error (caught at compile time)
+
+Build failed with error:
+```
+error CS1503: Argument 1: cannot convert from 'StudentAssessmentTracker.Domain.Entities.Teacher' 
+to 'int' [StudentAssessmentTrackerAPI/Application/Services/TeacherService.cs:102]
+```
+
+### Root Cause
+The `IRepository<T>` interface defined `DeleteAsync` as:
+```csharp
+Task DeleteAsync(int id);
+```
+
+But `TeacherService.DeleteTeacherAsync()` was calling it with the entity object:
+```csharp
+var teacher = await _repository.GetByIdAsync(id);
+if (teacher is null) return false;
+
+await _repository.DeleteAsync(teacher);  // ❌ WRONG - passing Teacher object
+```
+
+### Solution
+Changed to pass the ID instead:
+```csharp
+var teacher = await _repository.GetByIdAsync(id);
+if (teacher is null) return false;
+
+await _repository.DeleteAsync(id);  // ✅ CORRECT - passing int
+await _repository.SaveChangesAsync();
+return true;
+```
+
+### Why This Happened
+Copy-paste error from a different repository pattern that uses `DeleteAsync(T entity)`. The generic `Repository<T>` implementation uses `DeleteAsync(int id)` to stay consistent with Entity Framework's `Remove()` which requires retrieving the entity first.
+
+### Prevention Tips
+1. **Check interface signature** before implementing
+2. **Use IDE navigation** (F12) to view interface definition
+3. **Enable strict type checking** — caught immediately at compile time
+4. **Unit tests** — would have caught this before manual testing
+
+---
+
+## Issue #18: Git Merge Conflict - Rename/Delete Collision
+
+### Problem
+**Date**: March 2, 2026  
+**Severity**: LOW - Standard merge conflict
+
+During `git pull`, encountered conflict:
+```
+CONFLICT (rename/delete): # Code Citations.md renamed to docs/# Code Citations.md in HEAD, 
+but deleted in c0a6016822ee782ef59445daf1d60b6cb26c52d0.
+Automatic merge failed; fix conflicts and then commit the result.
+```
+
+### Root Cause
+Two concurrent changes to the same file:
+- **Local branch**: Renamed/moved `# Code Citations.md` → `docs/# Code Citations.md` as part of documentation reorganization
+- **Remote branch**: Deleted `# Code Citations.md` (someone cleaned up root directory)
+
+Git couldn't auto-resolve because it didn't know whether to:
+- Keep the file (at new location)
+- Delete the file (as remote did)
+
+### Solution
+Decided to keep the file in its new location:
+```bash
+git add "docs/# Code Citations.md"
+git commit --no-edit
+```
+
+This resolved the conflict by telling Git "yes, I moved it to docs/, keep it there."
+
+### Alternative Solutions
+If we wanted to delete the file instead:
+```bash
+git rm "docs/# Code Citations.md"
+git commit -m "Accepting deletion from remote"
+```
+
+### Prevention Tips
+1. **Communicate with team** before major reorganizations
+2. **Pull before restructuring** to minimize conflicts
+3. **Use feature branches** for large refactors
+4. **Document moves** in commit message so team knows where files went
+
+### Testing
+```bash
+git status  # Should show "nothing to commit, working tree clean"
+git log --oneline -3  # Verify merge commit exists
+```
+
+---
+
+## Issue #19: Interactive Git Rebase Stuck in Alternate Buffer
+
+### Problem
+**Date**: March 2, 2026  
+**Severity**: LOW - Workflow interruption
+
+When attempting to rebase local commits on top of remote changes:
+```bash
+git pull --rebase origin main
+# ... conflict occurred
+git add "docs/# Code Citations.md"
+git rebase --continue
+```
+
+The terminal entered "alternate buffer" mode (interactive editor) and became unresponsive to normal commands. The terminal appeared stuck with no visible prompts.
+
+### Root Cause
+Git's `rebase --continue` opens a text editor for the commit message. In PowerShell, this opened Vim or similar in alternate screen buffer mode, which:
+- Hides normal terminal output
+- Requires editor-specific commands (`:q`, `ESC`, etc.)
+- Doesn't respond to `Ctrl+C`
+
+### Solution
+**Immediate fix**: Aborted the rebase from a fresh terminal:
+```bash
+git rebase --abort
+```
+
+**Alternative approach**: Used merge strategy instead of rebase:
+```bash
+git pull --no-rebase --no-edit origin main
+# --no-edit prevents interactive editor for merge commit message
+```
+
+### Prevention Tips
+1. **Set Git editor** for non-interactive environments:
+   ```bash
+   git config --global core.editor "code --wait"  # VS Code
+   # or
+   $env:GIT_EDITOR = "true"  # No-op editor (accepts default messages)
+   ```
+
+2. **Use --no-edit flag** for automated merges:
+   ```bash
+   git merge --no-edit
+   git pull --no-rebase --no-edit
+   ```
+
+3. **Prefer merge over rebase** for simple syncs:
+   ```bash
+   git pull --no-rebase  # Creates merge commit, no interactive steps
+   ```
+
+4. **Learn basic Vim commands** (if it's your default editor):
+   - `:q!` — Quit without saving
+   - `:wq` — Save and quit
+   - `ESC` — Exit insert mode
+
+### Testing
+```bash
+git config --list | grep editor  # Verify editor setting
+git pull --dry-run              # Preview what pull would do
+```
+
+---
+
+## Summary of March 2, 2026 Issues
+
+| # | Issue | Severity | Time to Fix | Root Cause |
+|---|-------|----------|-------------|------------|
+| 14 | DI Resolution Failure | CRITICAL | 20 min | Legacy controllers injecting unregistered dependencies |
+| 15 | Duplicate Class Names | HIGH | 15 min | Incomplete migration — both legacy and new code coexisting |
+| 16 | Missing Teacher Feature | HIGH | 2 hours | Clean Architecture incomplete — only Student migrated |
+| 17 | DeleteAsync Signature Mismatch | LOW | 2 min | Copy-paste error, wrong parameter type |
+| 18 | Git Rename/Delete Conflict | LOW | 5 min | Concurrent changes to same file |
+| 19 | Git Rebase Alternate Buffer | LOW | 3 min | Interactive editor in non-interactive environment |
+
+**Total Issues Fixed Today**: 6  
+**Critical Issues**: 1  
+**Build Breaks**: 1  
+**Runtime Breaks**: 1  
+**Git Issues**: 2  
+
+---
+
+**Last Updated**: March 2, 2026  
+**Status**: All 19 issues resolved, production-ready with complete Clean Architecture implementation

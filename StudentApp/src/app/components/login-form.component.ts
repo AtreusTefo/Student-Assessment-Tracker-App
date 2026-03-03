@@ -1,8 +1,18 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { TeacherService, LoginDto } from '../services/teacher.service';
+import { LoginDto } from '../core/models';
+import { TeacherStateService } from '../core/services/state';
+import { TeacherBusinessService } from '../features/teachers/services/teacher-business.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+
+/**
+ * PRESENTATION LAYER - Login Form Component
+ * Responsible ONLY for UI presentation and form handling
+ * Delegates authentication logic to TeacherBusinessService
+ */
 
 @Component({
   selector: 'app-login-form',
@@ -151,7 +161,7 @@ import { TeacherService, LoginDto } from '../services/teacher.service';
     }
   `]
 })
-export class LoginFormComponent implements OnInit {
+export class LoginFormComponent implements OnInit, OnDestroy {
   credentials: LoginDto = {
     email: '',
     password: ''
@@ -160,15 +170,47 @@ export class LoginFormComponent implements OnInit {
   loading = false;
   error: string | null = null;
   isServerError = false;
+  
+  private destroy$ = new Subject<void>();
 
   constructor(
     private router: Router,
-    private teacherService: TeacherService,
+    private teacherBusiness: TeacherBusinessService,
+    private teacherState: TeacherStateService,
     private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
-    // Login form doesn't need to load any data
+    // Subscribe to reactive state
+    this.teacherState.loading$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(loading => {
+        this.loading = loading;
+        this.cdr.markForCheck();
+      });
+    
+    this.teacherState.error$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(error => {
+        if (error) {
+          this.error = error;
+          this.isServerError = true;
+          this.cdr.markForCheck();
+        }
+      });
+    
+    this.teacherState.isAuthenticated$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(isAuth => {
+        if (isAuth) {
+          this.router.navigate(['/']);
+        }
+      });
+  }
+
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
 
   onSubmit(): void {
@@ -180,29 +222,6 @@ export class LoginFormComponent implements OnInit {
       return;
     }
 
-    this.loading = true;
-
-    this.teacherService.login(this.credentials).subscribe({
-      next: (response: any) => {
-        this.loading = false;
-        // Store token in localStorage
-        localStorage.setItem('authToken', response.token);
-        localStorage.setItem('teacher', JSON.stringify(response.teacher));
-        this.router.navigate(['/']);
-      },
-      error: (err: any) => {
-        this.loading = false;
-        this.isServerError = true;
-        if (err.error && err.error.errors) {
-          const errorMessages = Object.values(err.error.errors)
-            .flat()
-            .join('\n');
-          this.error = errorMessages as string;
-        } else {
-          this.error = 'Login failed: ' + (err.error?.title || err.message || 'Invalid credentials');
-        }
-        this.cdr.markForCheck();
-      }
-    });
+    this.teacherBusiness.login(this.credentials).subscribe();
   }
 }

@@ -1,8 +1,19 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
-import { StudentService, Student } from '../services/student.service';
+import { CreateStudentDto, UpdateStudentDto } from '../core/models';
+import { StudentStateService } from '../core/services/state';
+import { StudentBusinessService } from '../features/students/services/student-business.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+
+/**
+ * PRESENTATION LAYER - Student Form Component
+ * Responsible ONLY for UI presentation and form handling
+ * Delegates all business logic to StudentBusinessService
+ * Subscribes to StudentStateService for reactive data
+ */
 
 @Component({
   selector: 'app-student-form',
@@ -186,8 +197,8 @@ import { StudentService, Student } from '../services/student.service';
     }
   `]
 })
-export class StudentFormComponent implements OnInit {
-  student: Student = {
+export class StudentFormComponent implements OnInit, OnDestroy {
+  student = {
     studentId: 0,
     firstName: '',
     lastName: '',
@@ -206,57 +217,79 @@ export class StudentFormComponent implements OnInit {
   error: string | null = null;
   isServerError = false;
   fieldErrors: Record<string, string[]> = {};
+  
+  private destroy$ = new Subject<void>();
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private studentService: StudentService,
+    private studentBusiness: StudentBusinessService,
+    private studentState: StudentStateService,
     private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
+    // Subscribe to reactive state
+    this.studentState.loading$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(loading => {
+        this.loading = loading;
+        this.cdr.markForCheck();
+      });
+    
+    this.studentState.error$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(error => {
+        if (error) {
+          this.error = error;
+          this.isServerError = true;
+        }
+        this.cdr.markForCheck();
+      });
+    
+    this.studentState.selectedStudent$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(student => {
+        if (student && this.isEdit) {
+          // Parse phone number: strip "+267 " prefix if present
+          let parsedPhone = '';
+          if (student.phone) {
+            parsedPhone = student.phone.startsWith('+267 ') 
+              ? student.phone.substring(5) 
+              : student.phone;
+          }
+          
+          this.student = {
+            studentId: student.id,
+            firstName: student.firstName || '',
+            lastName: student.lastName || '',
+            email: student.email || '',
+            phone: parsedPhone,
+            grade: student.grade || '',
+            enrollmentDate: student.createdAt || new Date().toISOString(),
+            assessment1: student.assessment1 || 0,
+            assessment2: student.assessment2 || 0,
+            assessment3: student.assessment3 || 0,
+            createdDate: student.createdAt || new Date().toISOString()
+          };
+          this.cdr.markForCheck();
+        }
+      });
+    
+    // Load student if editing
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.isEdit = true;
-      this.loadStudent(parseInt(id));
+      this.studentBusiness.loadStudentById(parseInt(id)).subscribe();
     }
   }
 
-  loadStudent(id: number): void {
-    this.loading = true;
-    this.studentService.getStudent(id).subscribe({
-      next: (data) => {
-        // Parse phone number: strip "+267 " prefix if present, otherwise use as-is
-        let parsedPhone = '';
-        if (data.phone) {
-          // Only strip country code if it actually starts with it
-          parsedPhone = data.phone.startsWith('+267 ') 
-            ? data.phone.substring(5) 
-            : data.phone;
-        }
-        
-        this.student = {
-          studentId: data.id,
-          firstName: data.firstName || '',
-          lastName: data.lastName || '',
-          email: data.email || '',
-          phone: parsedPhone,
-          grade: data.grade || '',
-          enrollmentDate: data.createdAt || new Date().toISOString(),
-          assessment1: data.assessment1 || 0,
-          assessment2: data.assessment2 || 0,
-          assessment3: data.assessment3 || 0,
-          createdDate: data.createdAt || new Date().toISOString()
-        };
-        this.loading = false;
-        this.cdr.markForCheck();
-      },
-      error: (err) => {
-        this.error = 'Failed to load student: ' + err.message;
-        this.loading = false;
-        this.cdr.markForCheck();
-      }
-    });
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    if (this.isEdit) {
+      this.studentBusiness.clearSelectedStudent();
+    }
   }
 
   validatePhone(): void {
@@ -361,27 +394,38 @@ export class StudentFormComponent implements OnInit {
       return;
     }
 
-    this.loading = true;
-
-    const payload: Student = {
-      ...this.student,
-      assessment1,
-      assessment2,
-      assessment3
-    };
-
     if (this.isEdit) {
-      this.studentService.updateStudent(this.student.studentId, payload).subscribe({
+      const updateDto: UpdateStudentDto = {
+        firstName: this.student.firstName,
+        lastName: this.student.lastName,
+        email: this.student.email,
+        phone: this.student.phone,
+        grade: this.student.grade,
+        assessment1: assessment1!,
+        assessment2: assessment2!,
+        assessment3: assessment3!
+      };
+      
+      this.studentBusiness.updateStudent(this.student.studentId, updateDto).subscribe({
         next: () => {
-          this.loading = false;
           this.router.navigate(['/detail', this.student.studentId]);
         },
         error: (err) => this.handleServerError('update', err)
       });
     } else {
-      this.studentService.createStudent(payload).subscribe({
-        next: (response) => {
-          this.loading = false;
+      const createDto: CreateStudentDto = {
+        firstName: this.student.firstName,
+        lastName: this.student.lastName,
+        email: this.student.email,
+        phone: this.student.phone,
+        grade: this.student.grade,
+        assessment1: assessment1!,
+        assessment2: assessment2!,
+        assessment3: assessment3!
+      };
+      
+      this.studentBusiness.createStudent(createDto).subscribe({
+        next: () => {
           this.router.navigate(['/']);
         },
         error: (err) => this.handleServerError('create', err)

@@ -161,12 +161,12 @@ namespace StudentAssessmentTracker.Presentation.Controllers
         /// Deletes a student from the database
         /// </summary>
         /// <param name="id">The unique identifier of the student to delete</param>
-        /// <returns>No content - indicates successful deletion</returns>
-        /// <response code="204">Student successfully deleted</response>
+        /// <returns>Confirmation message indicating successful deletion</returns>
+        /// <response code="200">Student successfully deleted</response>
         /// <response code="404">Student with the specified ID was not found</response>
         /// <response code="500">Internal server error while deleting the student</response>
         [HttpDelete("{id}")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(typeof(object), StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         [ProducesResponseType(StatusCodes.Status500InternalServerError)]
         public async Task<IActionResult> DeleteStudent(int id)
@@ -175,7 +175,7 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             {
                 _logger.LogInformation("DeleteStudent endpoint called with ID: {StudentId}", id);
                 await _studentService.DeleteStudentAsync(id);
-                return NoContent();
+                return Ok(new { message = $"Student with ID {id} successfully deleted" });
             }
             catch (KeyNotFoundException ex)
             {

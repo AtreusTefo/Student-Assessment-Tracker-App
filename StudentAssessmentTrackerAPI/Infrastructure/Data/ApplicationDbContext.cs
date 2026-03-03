@@ -5,7 +5,7 @@ namespace StudentAssessmentTracker.Infrastructure.Data
 {
     /// <summary>
     /// Entity Framework Core DbContext
-    /// Manages the in-memory database and entity mappings
+    /// Manages the SQL Server database and entity mappings
     /// </summary>
     public class ApplicationDbContext : DbContext
     {
@@ -26,7 +26,7 @@ namespace StudentAssessmentTracker.Infrastructure.Data
         public DbSet<Teacher> Teachers { get; set; }
 
         /// <summary>
-        /// Configures model builder with schema and constraints
+        /// Configures model builder with SQL Server schema and constraints
         /// </summary>
         /// <param name="modelBuilder">The model builder</param>
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -46,26 +46,34 @@ namespace StudentAssessmentTracker.Infrastructure.Data
                     .HasMaxLength(50);
 
                 entity.Property(e => e.Email)
-                    .IsRequired();
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.HasIndex(e => e.Email)
+                    .IsUnique();
 
                 entity.Property(e => e.Phone)
                     .IsRequired()
                     .HasMaxLength(8);
 
                 entity.Property(e => e.Grade)
-                    .IsRequired();
+                    .IsRequired()
+                    .HasMaxLength(10);
 
                 entity.Property(e => e.Assessment1)
-                    .HasPrecision(5, 2);
+                    .HasColumnType("decimal(5,2)");
 
                 entity.Property(e => e.Assessment2)
-                    .HasPrecision(5, 2);
+                    .HasColumnType("decimal(5,2)");
 
                 entity.Property(e => e.Assessment3)
-                    .HasPrecision(5, 2);
+                    .HasColumnType("decimal(5,2)");
 
-                entity.Property(e => e.CreatedAt);
-                entity.Property(e => e.UpdatedAt);
+                entity.Property(e => e.CreatedAt)
+                    .HasDefaultValueSql("GETUTCDATE()");
+
+                entity.Property(e => e.UpdatedAt)
+                    .HasDefaultValueSql("GETUTCDATE()");
             });
 
             modelBuilder.Entity<Teacher>(entity =>
@@ -81,7 +89,11 @@ namespace StudentAssessmentTracker.Infrastructure.Data
                     .HasMaxLength(50);
 
                 entity.Property(e => e.Email)
-                    .IsRequired();
+                    .IsRequired()
+                    .HasMaxLength(255);
+
+                entity.HasIndex(e => e.Email)
+                    .IsUnique();
 
                 entity.Property(e => e.Phone)
                     .IsRequired()
@@ -92,10 +104,14 @@ namespace StudentAssessmentTracker.Infrastructure.Data
                     .HasMaxLength(100);
 
                 entity.Property(e => e.Password)
-                    .IsRequired();
+                    .IsRequired()
+                    .HasMaxLength(255);
 
-                entity.Property(e => e.EnrollmentDate);
-                entity.Property(e => e.CreatedDate);
+                entity.Property(e => e.EnrollmentDate)
+                    .HasDefaultValueSql("GETUTCDATE()");
+
+                entity.Property(e => e.CreatedDate)
+                    .HasDefaultValueSql("GETUTCDATE()");
             });
         }
     }

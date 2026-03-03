@@ -1,7 +1,18 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { StudentService, StudentDetailDto } from '../services/student.service';
+import { StudentDetailDto } from '../core/models';
+import { StudentStateService } from '../core/services/state';
+import { StudentBusinessService } from '../features/students/services/student-business.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+
+/**
+ * PRESENTATION LAYER - Student Detail Component
+ * Responsible ONLY for UI presentation
+ * Delegates all business logic to StudentBusinessService
+ * Subscribes to StudentStateService for reactive data
+ */
 
 @Component({
   selector: 'app-student-detail',
@@ -197,47 +208,64 @@ import { StudentService, StudentDetailDto } from '../services/student.service';
     }
   `]
 })
-export class StudentDetailComponent implements OnInit {
+export class StudentDetailComponent implements OnInit, OnDestroy {
+  // Reactive state dari StateService
   student: StudentDetailDto | null = null;
-  loading = true;
+  loading = false;
   error: string | null = null;
+  
+  private destroy$ = new Subject<void>();
 
   constructor(
     private route: ActivatedRoute,
-    private studentService: StudentService,
+    private studentBusiness: StudentBusinessService,
+    private studentState: StudentStateService,
     private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
+    // Subscribe to reactive state
+    this.studentState.selectedStudent$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(student => {
+        this.student = student;
+        this.cdr.markForCheck();
+      });
+    
+    this.studentState.loading$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(loading => {
+        this.loading = loading;
+        this.cdr.markForCheck();
+      });
+    
+    this.studentState.error$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(error => {
+        this.error = error;
+        this.cdr.markForCheck();
+      });
+    
+    // Load student by ID from route params
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
       this.loadStudent(parseInt(id));
     } else {
-      this.error = 'No student ID provided';
-      this.loading = false;
+      this.studentState.setError('No student ID provided');
     }
   }
 
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
+    this.studentBusiness.clearSelectedStudent();
+  }
+
+  /**
+   * Load student using business service
+   * State is automatically updated via reactive streams
+   */
   loadStudent(id: number): void {
-    this.loading = true;
-    this.error = null;
-    this.studentService.getStudent(id).subscribe({
-      next: (data) => {
-        if (data) {
-          this.student = data;
-          this.loading = false;
-          this.cdr.markForCheck();
-        } else {
-          this.error = 'No student data received';
-          this.loading = false;
-          this.cdr.markForCheck();
-        }
-      },
-      error: (err) => {
-        this.loading = false;
-        this.cdr.markForCheck();
-        this.error = 'Failed to load student: ' + (err.error?.title || err.message || 'Unknown error');
-      }
-    });
+    this.studentBusiness.loadStudentById(id).subscribe();
   }
 }

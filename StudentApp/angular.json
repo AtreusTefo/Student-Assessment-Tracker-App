@@ -64,7 +64,8 @@
               "buildTarget": "StudentApp:build:production"
             },
             "development": {
-              "buildTarget": "StudentApp:build:development"
+              "buildTarget": "StudentApp:build:development",
+              "proxyConfig": "proxy.conf.json"
             }
           },
           "defaultConfiguration": "development"

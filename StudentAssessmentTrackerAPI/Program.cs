@@ -85,10 +85,28 @@ builder.Services.AddCors(options =>
 });
 
 // ============================================================================
-// INFRASTRUCTURE LAYER - Database
+// INFRASTRUCTURE LAYER - Database (SQL Server LocalDB)
 // ============================================================================
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseInMemoryDatabase("StudentDb"));
+{
+    options.UseSqlServer(connectionString, sqlOptions =>
+    {
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorNumbersToAdd: null);
+        sqlOptions.CommandTimeout(60);
+    });
+
+    if (builder.Environment.IsDevelopment())
+    {
+        options.EnableDetailedErrors();
+        options.EnableSensitiveDataLogging();
+    }
+});
 
 // ============================================================================
 // INFRASTRUCTURE LAYER - Repositories (Data Access)
@@ -118,6 +136,27 @@ builder.Services.AddAutoMapper(typeof(MappingProfile));
 var app = builder.Build();
 
 // ============================================================================
+// AUTO-MIGRATE DATABASE ON STARTUP
+// Creates the database if it doesn't exist, applies any pending migrations
+// ============================================================================
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var dbLogger = scope.ServiceProvider.GetRequiredService<ILogger<ApplicationDbContext>>();
+    try
+    {
+        dbLogger.LogInformation("Applying database migrations...");
+        db.Database.Migrate();
+        dbLogger.LogInformation("Database ready: {Database}", db.Database.GetConnectionString());
+    }
+    catch (Exception ex)
+    {
+        dbLogger.LogError(ex, "An error occurred while migrating the database.");
+        throw;
+    }
+}
+
+// ============================================================================
 // MIDDLEWARE PIPELINE
 // ============================================================================
 app.UseSerilogRequestLogging();
@@ -127,14 +166,14 @@ app.UseStaticFiles();
 app.UseRouting();
 
 // ============================================================================
-// SWAGGER AND SCALAR API DOCUMENTATION
+// SWAGGER UI - API DOCUMENTATION
 // ============================================================================
 app.UseSwagger(options =>
 {
     options.RouteTemplate = "swagger/{documentName}/swagger.json";
 });
 
-// Map Swagger UI as main documentation interface
+// Configure Swagger UI at /swagger endpoint
 app.UseSwaggerUI(options =>
 {
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "Student Assessment Tracker API v1");
@@ -163,7 +202,7 @@ Log.Information("║   ✅ FluentValidation: Active                             
 Log.Information("║   ✅ AutoMapper: Configured                                                  ║");
 Log.Information("║   ✅ CORS: Enabled for Angular frontend                                      ║");
 Log.Information("║   ✅ Serilog: Logging active                                                 ║");
-Log.Information("║   ✅ Swagger UI: Configured at /swagger                                      ║");
+Log.Information("║   ✅ Swagger UI: http://localhost:5000/swagger                                ║");
 Log.Information("║                                                                               ║");
 Log.Information("╚═══════════════════════════════════════════════════════════════════════════════╝");
 

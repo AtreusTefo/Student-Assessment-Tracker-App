@@ -1,8 +1,18 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
-import { TeacherService, Teacher } from '../services/teacher.service';
+import { CreateTeacherDto } from '../core/models';
+import { TeacherStateService } from '../core/services/state';
+import { TeacherBusinessService } from '../features/teachers/services/teacher-business.service';
+import { Subject } from 'rxjs';
+import { takeUntil } from 'rxjs/operators';
+
+/**
+ * PRESENTATION LAYER - Signup Form Component
+ * Responsible ONLY for UI presentation and form handling
+ * Delegates registration logic to TeacherBusinessService
+ */
 
 @Component({
   selector: 'app-signup-form',
@@ -165,8 +175,8 @@ import { TeacherService, Teacher } from '../services/teacher.service';
     }
   `]
 })
-export class SignUpFormComponent implements OnInit {
-  teacher: Teacher = {
+export class SignUpFormComponent implements OnInit, OnDestroy {
+  teacher = {
     teacherId: 0,
     firstName: '',
     lastName: '',
@@ -182,39 +192,59 @@ export class SignUpFormComponent implements OnInit {
   loading = false;
   error: string | null = null;
   isServerError = false;
+  
+  private destroy$ = new Subject<void>();
 
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private teacherService: TeacherService,
+    private teacherBusiness: TeacherBusinessService,
+    private teacherState: TeacherStateService,
     private cdr: ChangeDetectorRef
   ) { }
 
   ngOnInit(): void {
-    const id = this.route.snapshot.paramMap.get('id');
-    if (id) {
-      this.isEdit = true;
-      this.loadTeacher(parseInt(id));
-    }
+    // Subscribe to reactive state
+    this.teacherState.loading$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(loading => {
+        this.loading = loading;
+        this.cdr.markForCheck();
+      });
+    
+    this.teacherState.error$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(error => {
+        if (error) {
+          this.error = error;
+          this.isServerError = true;
+          this.cdr.markForCheck();
+        }
+      });
+    
+    this.teacherState.currentTeacher$
+      .pipe(takeUntil(this.destroy$))
+      .subscribe(teacher => {
+        if (teacher && this.isEdit) {
+          this.teacher = {
+            teacherId: teacher.id,
+            firstName: teacher.firstName || '',
+            lastName: teacher.lastName || '',
+            email: teacher.email || '',
+            phone: teacher.phone || '',
+            subject: teacher.subject || '',
+            password: '',
+            enrollmentDate: teacher.createdAt || new Date().toISOString(),
+            createdDate: teacher.createdAt || new Date().toISOString()
+          };
+          this.cdr.markForCheck();
+        }
+      });
   }
 
-  loadTeacher(id: number): void {
-    this.loading = true;
-    this.teacherService.getTeacher(id).subscribe({
-      next: (data: Teacher) => {
-        this.teacher = {
-          ...data,
-          phone: data.phone.replace(/^\+267\s?/, '') // Strip country code for editing
-        };
-        this.loading = false;
-        this.cdr.markForCheck();
-      },
-      error: (err: any) => {
-        this.error = 'Failed to load teacher: ' + err.message;
-        this.loading = false;
-        this.cdr.markForCheck();
-      }
-    });
+  ngOnDestroy(): void {
+    this.destroy$.next();
+    this.destroy$.complete();
   }
   
   validatePhone(): void {
@@ -283,24 +313,20 @@ export class SignUpFormComponent implements OnInit {
       return;
     }
 
-    this.loading = true;
+    const createDto: CreateTeacherDto = {
+      firstName: this.teacher.firstName,
+      lastName: this.teacher.lastName,
+      email: this.teacher.email,
+      phone: this.teacher.phone,
+      subject: this.teacher.subject,
+      password: this.teacher.password
+    };
 
-    if (this.isEdit) {
-      this.teacherService.updateTeacher(this.teacher.teacherId, this.teacher).subscribe({
-        next: () => {
-          this.loading = false;
-          this.router.navigate(['/']);
-        },
-        error: (err: any) => this.handleServerError('update', err)
-      });
-    } else {
-      this.teacherService.createTeacher(this.teacher).subscribe({
-        next: () => {
-          this.loading = false;
-          this.router.navigate(['/login']);
-        },
-        error: (err: any) => this.handleServerError('register', err)
-      });
-    }
+    this.teacherBusiness.register(createDto).subscribe({
+      next: () => {
+        this.router.navigate(['/login']);
+      },
+      error: (err: any) => this.handleServerError('register', err)
+    });
   }
 }
