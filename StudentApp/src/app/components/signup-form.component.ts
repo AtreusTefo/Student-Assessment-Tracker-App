@@ -400,7 +400,7 @@ export class SignUpFormComponent implements OnInit, OnDestroy {
 
     this.teacherBusiness.register(createDto).subscribe({
       next: () => {
-        this.router.navigate(['/login']);
+        this.router.navigate(['/']);
       },
       error: (err: any) => this.handleServerError('register', err)
     });

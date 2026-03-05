@@ -562,10 +562,6 @@ export class StudentListComponent implements OnInit, AfterViewInit, OnDestroy {
     // Load students on init
     this.loadStudents();
     
-    // Reload on navigation
-    // Load students when component initializes
-    this.loadStudents();
-    
     // Also reload students when navigating back to this route
     this.router.events
       .pipe(
@@ -676,6 +672,7 @@ export class StudentListComponent implements OnInit, AfterViewInit, OnDestroy {
   showDeleteConfirm(id: number): void {
     this.studentToDelete = id;
     this.showConfirmDialog = true;
+    this.cdr.detectChanges(); // Force Angular to render the modal immediately
   }
 
   /**
@@ -688,11 +685,13 @@ export class StudentListComponent implements OnInit, AfterViewInit, OnDestroy {
         next: () => {
           this.showConfirmDialog = false;
           this.studentToDelete = null;
+          this.cdr.detectChanges(); // Ensure modal is dismissed
         },
         error: () => {
           // Error already handled by business service and state
           this.showConfirmDialog = false;
           this.studentToDelete = null;
+          this.cdr.detectChanges(); // Ensure modal is dismissed on error too
         }
       });
     }
@@ -701,5 +700,6 @@ export class StudentListComponent implements OnInit, AfterViewInit, OnDestroy {
   cancelDelete(): void {
     this.showConfirmDialog = false;
     this.studentToDelete = null;
+    this.cdr.detectChanges(); // Ensure modal is dismissed
   }
 }

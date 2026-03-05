@@ -2,19 +2,32 @@ import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { Teacher } from '../../models';
 
+const AUTH_STORAGE_KEY = 'sat_current_teacher';
+
 /**
  * STATE MANAGEMENT LAYER - Teacher State Service
  * Centralized state management for teacher/authentication data
  * Uses RxJS BehaviorSubject for reactive state
+ * Auth is persisted to localStorage so page refresh preserves the session
  */
 @Injectable({
   providedIn: 'root'
 })
 export class TeacherStateService {
+  // Restore session from localStorage on service init
+  private restoredTeacher: Teacher | null = (() => {
+    try {
+      const raw = localStorage.getItem(AUTH_STORAGE_KEY);
+      return raw ? (JSON.parse(raw) as Teacher) : null;
+    } catch {
+      return null;
+    }
+  })();
+
   // Private state
-  private currentTeacherSubject = new BehaviorSubject<Teacher | null>(null);
+  private currentTeacherSubject = new BehaviorSubject<Teacher | null>(this.restoredTeacher);
   private teachersSubject = new BehaviorSubject<Teacher[]>([]);
-  private isAuthenticatedSubject = new BehaviorSubject<boolean>(false);
+  private isAuthenticatedSubject = new BehaviorSubject<boolean>(!!this.restoredTeacher);
   private loadingSubject = new BehaviorSubject<boolean>(false);
   private errorSubject = new BehaviorSubject<string | null>(null);
 
@@ -27,9 +40,15 @@ export class TeacherStateService {
 
   /**
    * Set the currently authenticated teacher
+   * Persists to localStorage so the session survives page refresh
    * @param teacher - Authenticated teacher data
    */
   setCurrentTeacher(teacher: Teacher | null): void {
+    if (teacher) {
+      localStorage.setItem(AUTH_STORAGE_KEY, JSON.stringify(teacher));
+    } else {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+    }
     this.currentTeacherSubject.next(teacher);
     this.isAuthenticatedSubject.next(!!teacher);
     this.clearError();
@@ -69,9 +88,10 @@ export class TeacherStateService {
   }
 
   /**
-   * Logout - clear authentication state
+   * Logout - clear authentication state and localStorage
    */
   logout(): void {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
     this.currentTeacherSubject.next(null);
     this.isAuthenticatedSubject.next(false);
     this.clearError();
@@ -81,6 +101,7 @@ export class TeacherStateService {
    * Clear all state
    */
   clearState(): void {
+    localStorage.removeItem(AUTH_STORAGE_KEY);
     this.currentTeacherSubject.next(null);
     this.teachersSubject.next([]);
     this.isAuthenticatedSubject.next(false);
