@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Teacher, CreateTeacherDto, UpdateTeacherDto, LoginDto } from '../../models';
+import { Teacher, CreateTeacherDto, UpdateTeacherDto, LoginDto, TeacherLoginResponse } from '../../models';
 
 /**
  * DATA ACCESS LAYER - Teacher HTTP API Service
@@ -67,7 +67,7 @@ export class TeacherApiService {
    * @param credentials - Login credentials
    * @returns Observable of authenticated Teacher
    */
-  login(credentials: LoginDto): Observable<Teacher> {
-    return this.http.post<Teacher>(`${this.apiUrl}/login`, credentials);
+  login(credentials: LoginDto): Observable<TeacherLoginResponse> {
+    return this.http.post<TeacherLoginResponse>(`${this.apiUrl}/login`, credentials);
   }
 }

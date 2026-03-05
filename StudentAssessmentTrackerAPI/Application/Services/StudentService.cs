@@ -104,13 +104,26 @@ namespace StudentAssessmentTracker.Application.Services
             _logger.LogInformation("Creating new student: {FirstName} {LastName}", dto.FirstName, dto.LastName);
 
             var student = _mapper.Map<Student>(dto);
+            student.StudentUniqueId = GenerateStudentUniqueId();
             student.CreatedAt = DateTime.UtcNow;
             student.UpdatedAt = DateTime.UtcNow;
 
             await _repository.AddAsync(student);
 
-            _logger.LogInformation("Student created successfully with ID: {StudentId}", student.Id);
+            _logger.LogInformation("Student created successfully with ID: {StudentId}, UniqueId: {UniqueId}", student.Id, student.StudentUniqueId);
             return _mapper.Map<StudentDto>(student);
+        }
+
+        /// <summary>
+        /// Generates a unique student identifier in the format STU-XXXXXXXX
+        /// </summary>
+        private static string GenerateStudentUniqueId()
+        {
+            const string chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+            var random = new Random();
+            var suffix = new string(Enumerable.Repeat(chars, 8)
+                .Select(s => s[random.Next(s.Length)]).ToArray());
+            return $"STU-{suffix}";
         }
 
         /// <summary>

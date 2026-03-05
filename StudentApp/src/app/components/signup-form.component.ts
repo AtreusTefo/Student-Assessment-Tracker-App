@@ -27,7 +27,7 @@ import { takeUntil } from 'rxjs/operators';
       <form (ngSubmit)="onSubmit(form)" #form="ngForm" class="form">
         <div class="form-group">
           <label for="firstName">First Name:</label>
-          <input type="text" id="firstName" [(ngModel)]="teacher.firstName" name="firstName" #firstName="ngModel" autocomplete="given-name" required minlength="2" maxlength="50" />
+          <input type="text" id="firstName" [(ngModel)]="teacher.firstName" name="firstName" #firstName="ngModel" autocomplete="given-name" required minlength="2" maxlength="50" [disabled]="loading" (input)="clearError()" />
           <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('required')">First name is required</span>
           <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('minlength')">First name must be at least 2 characters</span>
           <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('maxlength')">First name cannot exceed 50 characters</span>
@@ -35,7 +35,7 @@ import { takeUntil } from 'rxjs/operators';
         
         <div class="form-group">
           <label for="lastName">Last Name:</label>
-          <input type="text" id="lastName" [(ngModel)]="teacher.lastName" name="lastName" #lastName="ngModel" autocomplete="family-name" required minlength="2" maxlength="50" />
+          <input type="text" id="lastName" [(ngModel)]="teacher.lastName" name="lastName" #lastName="ngModel" autocomplete="family-name" required minlength="2" maxlength="50" [disabled]="loading" (input)="clearError()" />
           <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('required')">Last name is required</span>
           <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('minlength')">Last name must be at least 2 characters</span>
           <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('maxlength')">Last name cannot exceed 50 characters</span>
@@ -43,7 +43,8 @@ import { takeUntil } from 'rxjs/operators';
         
         <div class="form-group">
           <label for="email">Email:</label>
-          <input type="email" id="email" [(ngModel)]="teacher.email" name="email" #email="ngModel" autocomplete="email" required maxlength="100" />
+          <input type="email" id="email" [(ngModel)]="teacher.email" name="email" #email="ngModel" autocomplete="email" required email maxlength="100" [disabled]="loading || isEdit" (input)="clearError()" />
+          <span class="hint" *ngIf="isEdit">Email cannot be changed after registration</span>
           <span class="error" *ngIf="(form.submitted || email.touched || email.dirty) && email.hasError('required')">Email is required</span>
           <span class="error" *ngIf="(form.submitted || email.touched || email.dirty) && email.hasError('email')">Email must be a valid email address</span>
           <span class="error" *ngIf="(form.submitted || email.touched || email.dirty) && email.hasError('maxlength')">Email cannot exceed 100 characters</span>
@@ -51,31 +52,44 @@ import { takeUntil } from 'rxjs/operators';
         
         <div class="form-group">
           <label for="phone">Phone (8 digits, e.g., 77754256):</label>
-          <input type="text" id="phone" [(ngModel)]="teacher.phone" name="phone" #phone="ngModel" placeholder="77754256" minlength="8" maxlength="8" pattern="^\\d{8}$" autocomplete="tel" (input)="validatePhone()" (keypress)="allowOnlyNumbers($event)" required />
+          <input type="text" id="phone" [(ngModel)]="teacher.phone" name="phone" #phone="ngModel" placeholder="77754256" minlength="8" maxlength="8" pattern="^\\d{8}$" autocomplete="tel" (input)="validatePhone(); clearError()" (keypress)="allowOnlyNumbers($event)" required [disabled]="loading" />
           <span class="error" *ngIf="(form.submitted || phone.touched || phone.dirty) && phone.hasError('required')">Phone is required</span>
           <span class="error" *ngIf="(form.submitted || phone.touched || phone.dirty) && (phone.hasError('pattern') || phone.hasError('minlength') || phone.hasError('maxlength'))">Phone must be exactly 8 digits</span>
         </div>
         
         <div class="form-group">
           <label for="subject">Subject:</label>
-          <input type="text" id="subject" [(ngModel)]="teacher.subject" name="subject" #subject="ngModel" placeholder="e.g., ICT, Multimedia" autocomplete="off" required maxlength="100" />
+          <input type="text" id="subject" [(ngModel)]="teacher.subject" name="subject" #subject="ngModel" placeholder="e.g., ICT, Multimedia" autocomplete="off" required maxlength="100" [disabled]="loading" (input)="clearError()" />
           <span class="error" *ngIf="(form.submitted || subject.touched || subject.dirty) && subject.hasError('required')">Subject is required</span>
           <span class="error" *ngIf="(form.submitted || subject.touched || subject.dirty) && subject.hasError('maxlength')">Subject cannot exceed 100 characters</span>
         </div>
 
-        <div class="form-group">
+        <div class="form-group" *ngIf="!isEdit">
           <label for="password">Password:</label>
-          <input type="password" id="password" [(ngModel)]="teacher.password" name="password" #password="ngModel" autocomplete="new-password" required minlength="6" maxlength="20" />
+          <div class="input-wrapper">
+            <input [type]="showPassword ? 'text' : 'password'" id="password" [(ngModel)]="teacher.password" name="password" #password="ngModel" autocomplete="new-password" required minlength="6" maxlength="20" [disabled]="loading" (input)="clearError()" />
+            <button type="button" class="toggle-password" (click)="showPassword = !showPassword" tabindex="-1">{{ showPassword ? 'Hide' : 'Show' }}</button>
+          </div>
           <span class="error" *ngIf="(form.submitted || password.touched || password.dirty) && password.hasError('required')">Password is required</span>
           <span class="error" *ngIf="(form.submitted || password.touched || password.dirty) && password.hasError('minlength')">Password must be at least 6 characters</span>
           <span class="error" *ngIf="(form.submitted || password.touched || password.dirty) && password.hasError('maxlength')">Password cannot exceed 20 characters</span>
+        </div>
+
+        <div class="form-group" *ngIf="!isEdit">
+          <label for="confirmPassword">Confirm Password:</label>
+          <div class="input-wrapper">
+            <input [type]="showConfirmPassword ? 'text' : 'password'" id="confirmPassword" [(ngModel)]="teacher.confirmPassword" name="confirmPassword" #confirmPassword="ngModel" autocomplete="new-password" required [disabled]="loading" (input)="clearError()" />
+            <button type="button" class="toggle-password" (click)="showConfirmPassword = !showConfirmPassword" tabindex="-1">{{ showConfirmPassword ? 'Hide' : 'Show' }}</button>
+          </div>
+          <span class="error" *ngIf="(form.submitted || confirmPassword.touched) && confirmPassword.hasError('required')">Please confirm your password</span>
+          <span class="error" *ngIf="(form.submitted || confirmPassword.touched) && !confirmPassword.hasError('required') && passwordMismatch">Passwords do not match</span>
         </div>
         
         <div class="actions">
           <button type="submit" class="btn btn-primary" [disabled]="loading">
             {{ loading ? 'Saving...' : (isEdit ? 'Update' : 'Register') }}
           </button>
-          <a routerLink="/" class="btn btn-secondary">Cancel</a>
+          <a routerLink="/login" class="btn btn-secondary">Cancel</a>
         </div>
       </form>
     </div>
@@ -118,6 +132,45 @@ import { takeUntil } from 'rxjs/operators';
       outline: none;
       border-color: #2196F3;
       box-shadow: 0 0 5px rgba(33, 150, 243, 0.3);
+    }
+
+    .form-group input:disabled {
+      background-color: #f5f5f5;
+      cursor: not-allowed;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-wrapper input {
+      flex: 1;
+      padding-right: 60px;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 8px;
+      background: none;
+      border: none;
+      color: #2196F3;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      padding: 4px 6px;
+    }
+
+    .toggle-password:hover {
+      text-decoration: underline;
+    }
+
+    .hint {
+      color: #888;
+      font-size: 11px;
+      margin-top: 4px;
+      display: block;
     }
     
     .actions {
@@ -184,15 +237,16 @@ export class SignUpFormComponent implements OnInit, OnDestroy {
     phone: '',
     subject: '',
     password: '',
-    enrollmentDate: new Date().toISOString(),
-    createdDate: new Date().toISOString()
+    confirmPassword: ''
   };
-  
+
   isEdit = false;
   loading = false;
   error: string | null = null;
   isServerError = false;
-  
+  showPassword = false;
+  showConfirmPassword = false;
+
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -203,7 +257,22 @@ export class SignUpFormComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef
   ) { }
 
+  get passwordMismatch(): boolean {
+    return (
+      !!this.teacher.password &&
+      !!this.teacher.confirmPassword &&
+      this.teacher.password !== this.teacher.confirmPassword
+    );
+  }
+
   ngOnInit(): void {
+    // Detect edit mode from route param
+    const id = this.route.snapshot.paramMap.get('id');
+    if (id) {
+      this.isEdit = true;
+      this.teacherBusiness.loadTeacherById(+id).subscribe();
+    }
+
     // Subscribe to reactive state
     this.teacherState.loading$
       .pipe(takeUntil(this.destroy$))
@@ -234,8 +303,7 @@ export class SignUpFormComponent implements OnInit, OnDestroy {
             phone: teacher.phone || '',
             subject: teacher.subject || '',
             password: '',
-            enrollmentDate: teacher.createdAt || new Date().toISOString(),
-            createdDate: teacher.createdAt || new Date().toISOString()
+            confirmPassword: ''
           };
           this.cdr.markForCheck();
         }
@@ -246,7 +314,12 @@ export class SignUpFormComponent implements OnInit, OnDestroy {
     this.destroy$.next();
     this.destroy$.complete();
   }
-  
+
+  clearError(): void {
+    this.error = null;
+    this.isServerError = false;
+  }
+
   validatePhone(): void {
     if (this.teacher.phone) {
       // Strip any non-numeric characters (just in case)
@@ -306,10 +379,13 @@ export class SignUpFormComponent implements OnInit, OnDestroy {
   }
 
   onSubmit(form: NgForm): void {
-    this.error = null;
-    this.isServerError = false;
-    
+    this.clearError();
+
     if (form.invalid) {
+      return;
+    }
+
+    if (!this.isEdit && this.passwordMismatch) {
       return;
     }
 

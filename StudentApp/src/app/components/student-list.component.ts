@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, ViewChild, ElementRef, AfterViewInit, NgZone } from '@angular/core';
 import { Router, NavigationEnd, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { StudentListDto } from '../core/models';
@@ -46,9 +46,9 @@ import DataTable from 'datatables.net-dt';
               <td>{{ student.firstName }}</td>
               <td>{{ student.lastName }}</td>
               <td class="action-cell">
-                <button (click)="viewStudent(student.id)" class="btn btn-info btn-sm">View</button>
-                <button (click)="editStudent(student.id)" class="btn btn-warning btn-sm">Edit</button>
-                <button (click)="showDeleteConfirm(student.id)" class="btn btn-danger btn-sm">Delete</button>
+                <button data-action="view" [attr.data-id]="student.id" class="btn btn-info btn-sm">View</button>
+                <button data-action="edit" [attr.data-id]="student.id" class="btn btn-warning btn-sm">Edit</button>
+                <button data-action="delete" [attr.data-id]="student.id" class="btn btn-danger btn-sm">Delete</button>
               </td>
             </tr>
           </tbody>
@@ -527,7 +527,8 @@ export class StudentListComponent implements OnInit, AfterViewInit, OnDestroy {
     private studentBusiness: StudentBusinessService,
     private studentState: StudentStateService,
     private router: Router,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private ngZone: NgZone
   ) { }
 
   ngOnInit(): void {
@@ -583,6 +584,9 @@ export class StudentListComponent implements OnInit, AfterViewInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    if (this.table) {
+      this.table.nativeElement.removeEventListener('click', this.onTableClick);
+    }
     if (this.dataTable) {
       this.dataTable.destroy();
     }
@@ -595,7 +599,7 @@ export class StudentListComponent implements OnInit, AfterViewInit, OnDestroy {
       if (this.dataTable) {
         this.dataTable.destroy();
       }
-      
+
       this.dataTable = new DataTable(this.table.nativeElement, {
         pagingType: 'full_numbers',
         pageLength: 10,
@@ -614,10 +618,44 @@ export class StudentListComponent implements OnInit, AfterViewInit, OnDestroy {
             orderable: false,
             searchable: false
           }
-        ]
+        ],
+        drawCallback: () => {
+          // Re-attach delegated click listener after every DataTables draw
+          // (sort, search, page) so action buttons always work
+          this.attachActionListeners();
+        }
       });
+
+      // Attach listeners for the initial render
+      this.attachActionListeners();
     }
   }
+
+  private attachActionListeners(): void {
+    if (!this.table) return;
+    const tableEl: HTMLElement = this.table.nativeElement;
+
+    // Remove previous listener to avoid duplicates, then re-add
+    tableEl.removeEventListener('click', this.onTableClick);
+    tableEl.addEventListener('click', this.onTableClick);
+  }
+
+  // Arrow function so `this` is always the component instance
+  private onTableClick = (event: Event): void => {
+    const btn = (event.target as HTMLElement).closest('[data-action]') as HTMLElement | null;
+    if (!btn) return;
+
+    const action = btn.getAttribute('data-action');
+    const id = parseInt(btn.getAttribute('data-id') || '0', 10);
+    if (!id) return;
+
+    // Run inside NgZone so Angular's change detection picks up navigation
+    this.ngZone.run(() => {
+      if (action === 'view') this.viewStudent(id);
+      else if (action === 'edit') this.editStudent(id);
+      else if (action === 'delete') this.showDeleteConfirm(id);
+    });
+  };
 
   /**
    * Load students using business service

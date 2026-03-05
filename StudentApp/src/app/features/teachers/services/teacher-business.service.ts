@@ -2,7 +2,7 @@ import { Injectable } from '@angular/core';
 import { Observable, tap, catchError, throwError } from 'rxjs';
 import { TeacherApiService } from '../../../core/services/http';
 import { TeacherStateService } from '../../../core/services/state';
-import { Teacher, CreateTeacherDto, LoginDto } from '../../../core/models';
+import { Teacher, CreateTeacherDto, LoginDto, TeacherLoginResponse } from '../../../core/models';
 
 /**
  * BUSINESS LOGIC LAYER - Teacher Business Service
@@ -22,11 +22,21 @@ export class TeacherBusinessService {
    * Authenticate a teacher
    * Business Logic: Login, update authentication state
    */
-  login(credentials: LoginDto): Observable<Teacher> {
+  login(credentials: LoginDto): Observable<TeacherLoginResponse> {
     this.teacherState.setLoading(true);
-    
+
     return this.teacherApi.login(credentials).pipe(
-      tap(teacher => {
+      tap(response => {
+        // Map teacherId → id to match the Angular Teacher interface
+        const teacher: Teacher = {
+          id: response.teacher.teacherId,
+          firstName: response.teacher.firstName,
+          lastName: response.teacher.lastName,
+          email: response.teacher.email,
+          phone: response.teacher.phone,
+          subject: response.teacher.subject,
+          createdAt: response.teacher.createdDate
+        };
         this.teacherState.setCurrentTeacher(teacher);
         this.teacherState.setLoading(false);
       }),
@@ -78,6 +88,25 @@ export class TeacherBusinessService {
    */
   logout(): void {
     this.teacherState.logout();
+  }
+
+  /**
+   * Load a single teacher by ID
+   */
+  loadTeacherById(id: number): Observable<Teacher> {
+    this.teacherState.setLoading(true);
+
+    return this.teacherApi.getById(id).pipe(
+      tap(teacher => {
+        this.teacherState.setCurrentTeacher(teacher);
+        this.teacherState.setLoading(false);
+      }),
+      catchError(error => {
+        const errorMessage = this.extractErrorMessage(error);
+        this.teacherState.setError(errorMessage);
+        return throwError(() => error);
+      })
+    );
   }
 
   /**

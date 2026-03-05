@@ -37,6 +37,17 @@ namespace StudentAssessmentTracker.Infrastructure.Data
             {
                 entity.HasKey(e => e.Id);
 
+                entity.Property(e => e.StudentUniqueId)
+                    .IsRequired()
+                    .HasMaxLength(20);
+
+                entity.HasIndex(e => e.StudentUniqueId)
+                    .IsUnique();
+
+                entity.Property(e => e.IdPassportNo)
+                    .IsRequired()
+                    .HasMaxLength(20);
+
                 entity.Property(e => e.FirstName)
                     .IsRequired()
                     .HasMaxLength(50);

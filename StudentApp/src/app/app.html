@@ -3,10 +3,19 @@
   <div class="navbar-content">
     <h1 class="app-title">📊 Student Assessment Tracker</h1>
     <div class="nav-buttons">
-      <button class="nav-btn" (click)="navigateToLogin()">Login</button>
-      <button class="nav-btn" (click)="navigateToSignUp()">Sign Up</button>
-      <button class="nav-btn" (click)="navigateToList()">View Students</button>
-      <button class="nav-btn create-btn" (click)="navigateToCreate()">Add Student</button>
+      <!-- Shown when NOT logged in -->
+      <ng-container *ngIf="!isAuthenticated">
+        <button class="nav-btn" (click)="navigateToLogin()">Login</button>
+        <button class="nav-btn" (click)="navigateToSignUp()">Sign Up</button>
+      </ng-container>
+
+      <!-- Shown when logged in -->
+      <ng-container *ngIf="isAuthenticated">
+        <span class="nav-greeting" *ngIf="teacherName">Welcome, {{ teacherName }}</span>
+        <button class="nav-btn" (click)="navigateToList()">View Students</button>
+        <button class="nav-btn create-btn" (click)="navigateToCreate()">Add Student</button>
+        <button class="nav-btn logout-btn" (click)="logout()">Logout</button>
+      </ng-container>
     </div>
   </div>
 </nav>

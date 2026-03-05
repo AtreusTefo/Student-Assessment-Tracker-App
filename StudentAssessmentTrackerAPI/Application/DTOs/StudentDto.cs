@@ -10,6 +10,17 @@ namespace StudentAssessmentTracker.Application.DTOs
         /// Unique identifier for the student
         /// </summary>
         public int Id { get; set; }
+
+        /// <summary>
+        /// System-generated unique student ID (e.g., STU-A1B2C3D4)
+        /// </summary>
+        public string? StudentUniqueId { get; set; }
+
+        /// <summary>
+        /// Student's national ID or passport number
+        /// </summary>
+        public string? IdPassportNo { get; set; }
+
         /// <summary>
         /// Student's first name
         /// </summary>
@@ -75,6 +86,11 @@ namespace StudentAssessmentTracker.Application.DTOs
     public class CreateStudentDto
     {
         /// <summary>
+        /// Student's national ID or passport number
+        /// </summary>
+        public string? IdPassportNo { get; set; }
+
+        /// <summary>
         /// Student's first name
         /// </summary>
         public string? FirstName { get; set; }
@@ -114,6 +130,11 @@ namespace StudentAssessmentTracker.Application.DTOs
     /// </summary>
     public class UpdateStudentDto
     {
+        /// <summary>
+        /// Student's national ID or passport number
+        /// </summary>
+        public string? IdPassportNo { get; set; }
+
         /// <summary>
         /// Student's first name
         /// </summary>

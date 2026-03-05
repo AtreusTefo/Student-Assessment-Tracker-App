@@ -27,6 +27,15 @@ import { takeUntil } from 'rxjs/operators';
       
       <form (ngSubmit)="onSubmit(form)" #form="ngForm" class="form">
         <div class="form-group">
+          <label for="idPassportNo">ID / Passport No.:</label>
+          <input type="text" id="idPassportNo" [(ngModel)]="student.idPassportNo" name="idPassportNo" #idPassportNo="ngModel" placeholder="e.g., 123416789 or PA1234567" autocomplete="off" required minlength="9" maxlength="9" pattern="^[a-zA-Z0-9\-]+$" />
+          <span class="error" *ngIf="(form.submitted || idPassportNo.touched || idPassportNo.dirty) && idPassportNo.hasError('required')">ID/Passport No. is required</span>
+          <span class="error" *ngIf="(form.submitted || idPassportNo.touched || idPassportNo.dirty) && idPassportNo.hasError('pattern')">ID/Passport No. can only contain letters, numbers, and hyphens</span>
+          <span class="error" *ngIf="(form.submitted || idPassportNo.touched || idPassportNo.dirty) && (idPassportNo.hasError('minlength') || idPassportNo.hasError('maxlength'))">ID/Passport No. must be exactly 9 characters</span>
+          <span class="error" *ngIf="fieldErrors['idPassportNo'] && fieldErrors['idPassportNo'].length">{{ fieldErrors['idPassportNo'].join('\n') }}</span>
+        </div>
+        
+        <div class="form-group">
           <label for="firstName">First Name:</label>
           <input type="text" id="firstName" [(ngModel)]="student.firstName" name="firstName" #firstName="ngModel" autocomplete="given-name" required minlength="2" maxlength="50" />
           <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('required')">First name is required</span>
@@ -200,6 +209,7 @@ import { takeUntil } from 'rxjs/operators';
 export class StudentFormComponent implements OnInit, OnDestroy {
   student = {
     studentId: 0,
+    idPassportNo: '',
     firstName: '',
     lastName: '',
     email: '',
@@ -261,6 +271,7 @@ export class StudentFormComponent implements OnInit, OnDestroy {
           
           this.student = {
             studentId: student.id,
+            idPassportNo: student.idPassportNo || '',
             firstName: student.firstName || '',
             lastName: student.lastName || '',
             email: student.email || '',
@@ -396,6 +407,7 @@ export class StudentFormComponent implements OnInit, OnDestroy {
 
     if (this.isEdit) {
       const updateDto: UpdateStudentDto = {
+        idPassportNo: this.student.idPassportNo,
         firstName: this.student.firstName,
         lastName: this.student.lastName,
         email: this.student.email,
@@ -414,6 +426,7 @@ export class StudentFormComponent implements OnInit, OnDestroy {
       });
     } else {
       const createDto: CreateStudentDto = {
+        idPassportNo: this.student.idPassportNo,
         firstName: this.student.firstName,
         lastName: this.student.lastName,
         email: this.student.email,

@@ -24,11 +24,13 @@ namespace StudentAssessmentTracker.Application.Mappings
                 .ForMember(dest => dest.Percentage, opt => opt.MapFrom(src => src.GetPercentage()))
                 .ForMember(dest => dest.PerformanceLevel, opt => opt.MapFrom(src => src.GetPerformanceLevel()));
 
-            // CreateStudentDto to Student mapping
-            CreateMap<CreateStudentDto, Student>();
+            // CreateStudentDto to Student mapping — StudentUniqueId is auto-generated in service
+            CreateMap<CreateStudentDto, Student>()
+                .ForMember(dest => dest.StudentUniqueId, opt => opt.Ignore());
 
-            // UpdateStudentDto to Student mapping
-            CreateMap<UpdateStudentDto, Student>();
+            // UpdateStudentDto to Student mapping — StudentUniqueId must never change
+            CreateMap<UpdateStudentDto, Student>()
+                .ForMember(dest => dest.StudentUniqueId, opt => opt.Ignore());
 
             // ── Teacher Mappings ──────────────────────────────────────────────
 

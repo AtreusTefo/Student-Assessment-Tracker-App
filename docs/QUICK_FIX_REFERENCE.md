@@ -733,6 +733,211 @@ phone: parsedPhone
 
 ---
 
+## 🚨 CRITICAL ISSUES (March 5, 2026)
+
+### 26. StudentUniqueId & IdPassportNo Fields Missing
+**Problem**: No auto-generated student reference code; no field for national ID / passport  
+**Fix**: Full-stack addition — entity → DbContext → DTOs → validators → mapping → service → migration → Angular models → components
+```csharp
+// Service — auto-generate before save:
+student.StudentUniqueId = GenerateStudentUniqueId(); // "STU-A4X9B2KL"
+
+// Mapping — ignore on input DTOs:
+.ForMember(dest => dest.StudentUniqueId, opt => opt.Ignore())
+```
+```typescript
+// Form — exactly 9 chars:
+<input minlength="9" maxlength="9" pattern="^[a-zA-Z0-9\-]+$" />
+```
+**Migration**: `20260304125258_AddStudentUniqueIdAndPassportNo`  
+**Files**: `Student.cs`, `ApplicationDbContext.cs`, `StudentDto.cs`, `StudentValidator.cs`, `MappingProfile.cs`, `StudentService.cs`, `student.model.ts`, `student-form.component.ts`, `student-detail.component.ts`
+
+---
+
+### 27. TypeScript Double-Comma Syntax Error (TS1136)
+**Problem**: Angular build fails with `TS1136: Property assignment expected`  
+**Root Cause**: Extra comma after a property in an object literal — `firstName: value,  ,`  
+**Fix**: Remove the duplicate comma
+```typescript
+// WRONG ❌
+firstName: student.firstName || '',  ,
+
+// CORRECT ✅
+firstName: student.firstName || '',
+```
+**File**: `student-form.component.ts`  
+**Detection**: ESLint + Prettier catch this automatically
+
+---
+
+### 28. ID/Passport Validation Inconsistency (Create vs Update)
+**Problem**: Create validates exactly 9 chars; Update validated max 20 — inconsistent enforcement  
+**Fix**: Apply `.Length(9)` in **both** validators and `minlength="9" maxlength="9"` in the form
+```csharp
+// Both CreateStudentValidator AND UpdateStudentValidator:
+RuleFor(s => s.IdPassportNo)
+    .NotEmpty()
+    .Length(9).WithMessage("ID/Passport No. must be exactly 9 characters.")
+    .Matches(@"^[a-zA-Z0-9\-]+$");
+```
+**Files**: `StudentValidator.cs`, `student-form.component.ts`  
+**Prevention**: When editing one validator, always check the other
+
+---
+
+### 29. Login/Signup Form UX Problems (9 Items)
+**Problem**: Missing validation, no show/hide password, stale errors, wrong Cancel routes, inputs enabled during loading  
+**Quick Fix List**:
+1. Add `NgForm` + `#ref="ngModel"` on every input
+2. Add `email` attribute to email input
+3. Add `minlength="6"` to password inputs
+4. Add confirm password field to signup with `passwordMismatch` getter
+5. Add `showPassword` bool + toggle button for each password field
+6. `[disabled]="loading"` on all inputs and submit button
+7. Guard `onSubmit()` with `if (form.invalid) return;`
+8. Add `(input)="clearError()"` to every field
+9. Cancel on login → `/register`; Cancel on signup → `/login`
+
+**Files**: `login-form.component.ts`, `signup-form.component.ts`
+
+---
+
+### 30. `loadTeacherById` Missing from TeacherBusinessService
+**Problem**: Runtime error — `this.teacherBusiness.loadTeacherById is not a function`  
+**Fix**: Add the missing method to `TeacherBusinessService`
+```typescript
+loadTeacherById(id: number): void {
+  this.stateService.setLoading(true);
+  this.teacherApi.getById(id).subscribe({
+    next: (teacher) => {
+      this.stateService.setCurrentTeacher(teacher);
+      this.stateService.setLoading(false);
+    },
+    error: (err) => {
+      this.stateService.setError(err.message || 'Failed to load teacher');
+      this.stateService.setLoading(false);
+    }
+  });
+}
+```
+**File**: `teacher-business.service.ts`
+
+---
+
+### 31. Navbar Not Reactive to Auth State
+**Problem**: After login, navbar still shows Login/Sign Up; no Logout button visible  
+**Root Cause**: Root `App` component never subscribed to `isAuthenticated$`  
+**Fix**: Subscribe in `ngOnInit`, expose boolean property, use `*ngIf` in template
+```typescript
+// app.ts
+ngOnInit(): void {
+  this.teacherBusiness.isAuthenticated$
+    .pipe(takeUntil(this.destroy$))
+    .subscribe(auth => this.isAuthenticated = auth);
+}
+```
+```html
+<!-- app.html -->
+<div *ngIf="!isAuthenticated">...</div>  <!-- Login / Sign Up -->
+<div *ngIf="isAuthenticated">...</div>   <!-- Welcome + Logout -->
+```
+**Files**: `app.ts`, `app.html`, `app.scss`
+
+---
+
+### 32. DataTables Action Buttons Dead After Sort/Search/Page ⚡
+**Problem**: View / Edit / Delete buttons stop working after any DataTables re-render  
+**Root Cause**: DataTables replaces DOM rows, destroying Angular's `(click)` bindings  
+**Fix**: Event delegation with `data-action` attributes + `NgZone.run()`
+```typescript
+// Buttons in template:
+// <button data-action="view" [attr.data-id]="student.id">View</button>
+
+private onTableClick = (event: Event) => {
+  const btn = (event.target as HTMLElement).closest('[data-action]') as HTMLElement;
+  if (!btn) return;
+  const action = btn.getAttribute('data-action');
+  const id = Number(btn.getAttribute('data-id'));
+  this.ngZone.run(() => {
+    if (action === 'view') this.viewStudent(id);
+    else if (action === 'edit') this.editStudent(id);
+    else if (action === 'delete') this.deleteStudent(id);
+  });
+};
+
+dtOptions = {
+  drawCallback: () => { this.attachActionListeners(); }
+};
+
+ngOnDestroy(): void {
+  this.tableElement?.removeEventListener('click', this.onTableClick);
+}
+```
+**Rule**: NEVER use `(click)` on DataTables rows — always use event delegation  
+**File**: `student-list.component.ts`
+
+---
+
+### 33. "Welcome, undefined undefined" After Login 🔑
+**Problem**: Teacher name shows as `undefined undefined` after successful login  
+**Root Cause (two bugs)**:
+1. API returns `{ token, teacher: {...} }` — Angular stored the whole object as `Teacher`, not `response.teacher`
+2. API uses `teacherId` but Angular `Teacher` interface expects `id`
+
+**Fix**:
+```typescript
+// 1. Add response interface (teacher.model.ts):
+export interface TeacherLoginResponse {
+  token: string;
+  teacher: { teacherId: number; firstName: string; lastName: string; ... };
+}
+
+// 2. Update HTTP service:
+login(...): Observable<TeacherLoginResponse>
+
+// 3. Fix business service tap():
+tap((response: TeacherLoginResponse) => {
+  localStorage.setItem('token', response.token);
+  const teacher: Teacher = {
+    ...response.teacher,
+    id: response.teacher.teacherId  // remap key
+  };
+  this.state.setCurrentTeacher(teacher);
+})
+```
+**Files**: `teacher.model.ts`, `teacher-api.service.ts`, `teacher-business.service.ts`  
+**Prevention**: Always check actual API response shape in DevTools Network tab before writing mapping code
+
+---
+
+## Common Diagnostics (Updated March 5, 2026)
+
+**🖱️ Buttons inside DataTables not working?**
+1. ✅ Replace `(click)` with `data-action` + `data-id` attributes
+2. ✅ Add table-level delegated listener in `attachActionListeners()`
+3. ✅ Ensure `drawCallback` calls `attachActionListeners()`
+4. ✅ Wrap all handler logic in `ngZone.run()`
+
+**🔐 Login works but name shows as `undefined`?**
+1. ✅ Open DevTools Network tab and inspect the login response body
+2. ✅ If nested (`{ token, teacher: {...} }`): define `XxxLoginResponse` interface
+3. ✅ Extract `response.teacher` in the business service `tap()`
+4. ✅ Remap any property name differences (e.g., `teacherId` → `id`)
+
+**🔒 Navbar not updating after login/logout?**
+1. ✅ Root `App` component must implement `OnInit` and subscribe to `isAuthenticated$`
+2. ✅ Use `*ngIf="isAuthenticated"` / `*ngIf="!isAuthenticated"` in navbar
+3. ✅ Subscribe in `ngOnInit`, unsubscribe with `takeUntil(destroy$)` in `ngOnDestroy`
+
+**📋 Form validation not working?**
+1. ✅ Import `NgForm` from `@angular/forms`
+2. ✅ Use `#formRef="ngForm"` on form element
+3. ✅ Add `#fieldRef="ngModel"` on each input
+4. ✅ Guard `onSubmit(form)` with `if (form.invalid) return;`
+5. ✅ Call `clearError()` in every `(input)` handler
+
+---
+
 ## Full Documentation
 
 See **`ERROR_FIXES_DOCUMENTATION.md`** in docs folder for:
@@ -744,8 +949,12 @@ See **`ERROR_FIXES_DOCUMENTATION.md`** in docs folder for:
 
 See **`DAILY_REPORT_2026-03-03.md`** for detailed write-up of issues 20–25 (March 3, 2026).
 
+See **`ERROR_FIXES_SESSION_2026-03-05.md`** for detailed write-up of issues 26–33 (March 5, 2026).
+
+See **`DAILY_REPORT_2026-03-05.md`** for the full session summary (March 5, 2026).
+
 ---
 
-**Last Updated**: March 3, 2026  
-**Total Issues Documented**: 25 (13 frontend + 6 architecture + 6 infrastructure/tooling)  
+**Last Updated**: March 5, 2026  
+**Total Issues Documented**: 33 (13 frontend + 6 architecture + 6 infrastructure/tooling + 8 auth/UX/DataTables)  
 **Keep this guide nearby when developing!** 🚀

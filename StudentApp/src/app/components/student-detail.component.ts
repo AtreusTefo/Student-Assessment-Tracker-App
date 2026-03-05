@@ -32,6 +32,14 @@ import { takeUntil } from 'rxjs/operators';
         <div class="section">
           <h4>Personal Information</h4>
           <div class="detail-row">
+            <label>Student ID:</label>
+            <span class="unique-id">{{ student.studentUniqueId }}</span>
+          </div>
+          <div class="detail-row">
+            <label>ID / Passport No.:</label>
+            <span>{{ student.idPassportNo }}</span>
+          </div>
+          <div class="detail-row">
             <label>Email:</label>
             <span>{{ student.email }}</span>
           </div>
@@ -135,6 +143,16 @@ import { takeUntil } from 'rxjs/operators';
     .detail-row label {
       font-weight: bold;
       min-width: 150px;
+    }
+    
+    .unique-id {
+      font-family: monospace;
+      font-weight: bold;
+      background-color: #e3f2fd;
+      color: #1565c0;
+      padding: 3px 8px;
+      border-radius: 4px;
+      letter-spacing: 1px;
     }
     
     .performance-excellent {

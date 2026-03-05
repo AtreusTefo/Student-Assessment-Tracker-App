@@ -6,9 +6,22 @@ namespace StudentAssessmentTracker.Domain.Entities
     public class Student
     {
         /// <summary>
-        /// Unique identifier for the student
+        /// Unique identifier for the student (auto-incremented primary key)
         /// </summary>
         public int Id { get; set; }
+
+        /// <summary>
+        /// System-generated unique student ID (e.g., STU-A1B2C3D4)
+        /// Auto-generated on creation, never changes
+        /// </summary>
+        public string? StudentUniqueId { get; set; }
+
+        /// <summary>
+        /// Student's national ID or passport number
+        /// Provided by the teacher when registering the student
+        /// </summary>
+        public string? IdPassportNo { get; set; }
+
         /// <summary>
         /// Student's first name
         /// </summary>

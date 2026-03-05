@@ -14,6 +14,11 @@ namespace StudentAssessmentTracker.Application.Validators
         /// </summary>
         public CreateStudentValidator()
         {
+            RuleFor(x => x.IdPassportNo)
+                .NotEmpty().WithMessage("ID/Passport No. is required")
+                .Length(9).WithMessage("ID/Passport No. must be exactly 9 characters")
+                .Matches(@"^[a-zA-Z0-9\-]+$").WithMessage("ID/Passport No. can only contain letters, numbers, and hyphens");
+
             RuleFor(x => x.FirstName)
                 .NotEmpty().WithMessage("First name is required")
                 .Length(2, 50).WithMessage("First name must be 2-50 characters")
@@ -58,6 +63,11 @@ namespace StudentAssessmentTracker.Application.Validators
         /// </summary>
         public UpdateStudentValidator()
         {
+            RuleFor(x => x.IdPassportNo)
+                .NotEmpty().WithMessage("ID/Passport No. is required")
+                .Length(9).WithMessage("ID/Passport No. must be exactly 9 characters")
+                .Matches(@"^[a-zA-Z0-9\-]+$").WithMessage("ID/Passport No. can only contain letters, numbers, and hyphens");
+
             RuleFor(x => x.FirstName)
                 .NotEmpty().WithMessage("First name is required")
                 .Length(2, 50).WithMessage("First name must be 2-50 characters")

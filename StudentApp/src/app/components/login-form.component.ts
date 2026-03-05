@@ -1,7 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { FormsModule } from '@angular/forms';
+import { FormsModule, NgForm } from '@angular/forms';
 import { LoginDto } from '../core/models';
 import { TeacherStateService } from '../core/services/state';
 import { TeacherBusinessService } from '../features/teachers/services/teacher-business.service';
@@ -24,24 +24,29 @@ import { takeUntil } from 'rxjs/operators';
       
       <div *ngIf="error && isServerError" class="server-error">{{ error }}</div>
       
-      <form (ngSubmit)="onSubmit()" #form="ngForm" class="form">
+      <form (ngSubmit)="onSubmit(form)" #form="ngForm" class="form">
         <div class="form-group">
           <label for="email">Email:</label>
-          <input type="email" id="email" [(ngModel)]="credentials.email" name="email" autocomplete="email" required />
-          <span class="error" *ngIf="form.submitted && !credentials.email">Email is required</span>
+          <input type="email" id="email" [(ngModel)]="credentials.email" name="email" #email="ngModel" autocomplete="email" required email maxlength="100" [disabled]="loading" (input)="clearError()" />
+          <span class="error" *ngIf="(form.submitted || email.touched) && email.hasError('required')">Email is required</span>
+          <span class="error" *ngIf="(form.submitted || email.touched) && email.hasError('email')">Email must be a valid email address</span>
         </div>
         
         <div class="form-group">
           <label for="password">Password:</label>
-          <input type="password" id="password" [(ngModel)]="credentials.password" name="password" autocomplete="current-password" required />
-          <span class="error" *ngIf="form.submitted && !credentials.password">Password is required</span>
+          <div class="input-wrapper">
+            <input [type]="showPassword ? 'text' : 'password'" id="password" [(ngModel)]="credentials.password" name="password" #password="ngModel" autocomplete="current-password" required minlength="6" maxlength="20" [disabled]="loading" (input)="clearError()" />
+            <button type="button" class="toggle-password" (click)="showPassword = !showPassword" tabindex="-1">{{ showPassword ? 'Hide' : 'Show' }}</button>
+          </div>
+          <span class="error" *ngIf="(form.submitted || password.touched) && password.hasError('required')">Password is required</span>
+          <span class="error" *ngIf="(form.submitted || password.touched) && password.hasError('minlength')">Password must be at least 6 characters</span>
         </div>
         
         <div class="actions">
           <button type="submit" class="btn btn-primary" [disabled]="loading">
             {{ loading ? 'Logging in...' : 'Login' }}
           </button>
-          <a routerLink="/" class="btn btn-secondary">Cancel</a>
+          <a routerLink="/register" class="btn btn-secondary">Register</a>
         </div>
       </form>
       
@@ -88,6 +93,38 @@ import { takeUntil } from 'rxjs/operators';
       outline: none;
       border-color: #2196F3;
       box-shadow: 0 0 5px rgba(33, 150, 243, 0.3);
+    }
+
+    .form-group input:disabled {
+      background-color: #f5f5f5;
+      cursor: not-allowed;
+    }
+
+    .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-wrapper input {
+      flex: 1;
+      padding-right: 60px;
+    }
+
+    .toggle-password {
+      position: absolute;
+      right: 8px;
+      background: none;
+      border: none;
+      color: #2196F3;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      padding: 4px 6px;
+    }
+
+    .toggle-password:hover {
+      text-decoration: underline;
     }
     
     .actions {
@@ -170,7 +207,8 @@ export class LoginFormComponent implements OnInit, OnDestroy {
   loading = false;
   error: string | null = null;
   isServerError = false;
-  
+  showPassword = false;
+
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -213,15 +251,24 @@ export class LoginFormComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  onSubmit(): void {
+  clearError(): void {
     this.error = null;
     this.isServerError = false;
-    
-    if (!this.credentials.email || !this.credentials.password) {
-      this.error = 'Email and password are required';
+  }
+
+  onSubmit(form: NgForm): void {
+    this.clearError();
+
+    if (form.invalid) {
       return;
     }
 
-    this.teacherBusiness.login(this.credentials).subscribe();
+    this.teacherBusiness.login(this.credentials).subscribe({
+      error: (err: any) => {
+        this.isServerError = true;
+        this.error = err?.error?.message || err?.error?.title || 'Invalid email or password';
+        this.cdr.markForCheck();
+      }
+    });
   }
 }

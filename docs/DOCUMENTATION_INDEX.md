@@ -4,15 +4,29 @@
 
 ### 1. **QUICK_FIX_REFERENCE.md** ⭐ START HERE
 - **Best for**: Quick lookups when something breaks
-- **Contains**: 17 major issues + quick fixes + diagnostic checklist
+- **Contains**: 33 major issues + quick fixes + diagnostic checklist
 - **Read time**: 5 minutes
 - **Use when**: You need a fast answer
-- **Updated**: March 2, 2026
+- **Updated**: March 5, 2026
 
-### 2. **ERROR_FIXES_DOCUMENTATION.md** 📖 COMPREHENSIVE GUIDE
-- **Best for**: Understanding root causes and prevention
+### 2. **ERROR_FIXES_SESSION_2026-03-05.md** 🆕 LATEST SESSION
+- **Best for**: Understanding issues #26–#33 (March 5, 2026 session)
+- **Contains**:
+  - StudentUniqueId + IdPassportNo full-stack addition
+  - TypeScript double-comma syntax error fix
+  - Validator length inconsistency fix
+  - Login/Signup 9 UX improvements
+  - `loadTeacherById` missing method fix
+  - Navbar auth state reactivity fix
+  - DataTables event delegation pattern
+  - Nested API response mapping fix
+- **Read time**: 15 minutes
+- **Use when**: Debugging auth, DataTables buttons, or login response mapping
+
+### 3. **ERROR_FIXES_DOCUMENTATION.md** 📖 COMPREHENSIVE GUIDE
+- **Best for**: Understanding root causes and prevention for issues #1–#19
 - **Contains**: 
-  - Detailed problem descriptions for all 19 issues
+  - Detailed problem descriptions for all 19 original issues
   - Root cause analysis
   - Complete code examples
   - Prevention tips for future development
@@ -22,32 +36,42 @@
 - **Use when**: You want to understand WHY something broke
 - **Updated**: March 2, 2026 (added 6 new architecture issues)
 
-### 3. **DAILY_REPORT_2026-03-02.md** 📝 NEW!
-- **Best for**: Understanding what was accomplished today
+### 4. **DAILY_REPORT_2026-03-05.md** 📝 NEW!
+- **Best for**: Understanding what was accomplished on March 5, 2026
 - **Contains**:
-  - Complete list of today's tasks and implementations
+  - 1 feature addition + 7 bug fixes
+  - Full file change list (backend + frontend)
+  - Key technical decisions (DataTables pattern, nested API mapping)
+  - Key learnings
+- **Read time**: 5 minutes
+- **Use when**: You want a high-level summary of the March 5 session
+
+### 5. **DAILY_REPORT_2026-03-02.md**
+- **Best for**: Understanding what was accomplished on March 2, 2026
+- **Contains**:
+  - Complete list of tasks and implementations
   - Summary of all challenges faced and how they were resolved
   - Statistics and metrics (67 files changed, 2,746 additions)
   - Before/after architecture comparison
 - **Read time**: 10 minutes
-- **Use when**: You want a high-level summary of the day's work
+- **Use when**: You want a high-level summary of the March 2 session
 
-### 4. **README.md** (project root)
+### 7. **README.md** (project root)
 - **Project overview and getting started guide**
 
-### 5. **ARCHITECTURE.md** (project root)
+### 8. **ARCHITECTURE.md** (project root)
 - **Clean Architecture explanation with SoC pattern**
 - **Project structure and layer responsibilities**
 
-### 6. **TESTING_GUIDE.md**
+### 9. **TESTING_GUIDE.md**
 - **How to test the application**
 
-### 7. **PROJECT_REQUIREMENTS.md**
+### 10. **PROJECT_REQUIREMENTS.md**
 - **Project requirements document (scope, functional/non-functional requirements, acceptance criteria)**
 
 ---
 
-## 🔧 All Issues Fixed (19 Total)
+## 🔧 All Issues Fixed (33 Total)
 
 ### 🚨 Critical Architecture Issues (March 2, 2026)
 
@@ -179,6 +203,65 @@
 
 ---
 
+### 🆕 Feature Additions & Bug Fixes (March 5, 2026)
+
+#### Issue #26: Missing StudentUniqueId and IdPassportNo Fields (Feature)
+- **Severity**: Medium (Feature Addition)
+- **Problem**: No auto-generated student reference code; no field for national ID/passport records
+- **Fix**: Full-stack implementation across all layers + EF migration
+- **Migration**: `20260304125258_AddStudentUniqueIdAndPassportNo`
+- **See**: `ERROR_FIXES_SESSION_2026-03-05.md` → Issue #26
+
+#### Issue #27: TypeScript Double-Comma Syntax Error (TS1136)
+- **Severity**: LOW (Build Error)
+- **Problem**: Extra comma in object literal — `firstName: value,  ,`
+- **Root Cause**: Typo/copy-paste error in student-form.component.ts state subscription
+- **Quick Fix**: Remove the duplicate comma
+- **See**: `ERROR_FIXES_SESSION_2026-03-05.md` → Issue #27
+
+#### Issue #28: ID/Passport Validation Length Inconsistency
+- **Severity**: MEDIUM
+- **Problem**: `UpdateStudentValidator` used `MaximumLength(20)` while `CreateStudentValidator` used `.Length(9)` — inconsistent rules
+- **Quick Fix**: Apply `.Length(9)` to both validators; set `minlength="9" maxlength="9"` on form input
+- **See**: `ERROR_FIXES_SESSION_2026-03-05.md` → Issue #28
+
+#### Issue #29: Login & Signup Form — 9 UX/Validation Problems
+- **Severity**: MEDIUM
+- **Problem**: Missing NgForm, no email validation, no confirm password, no show/hide, no disabled-during-load, stale errors, wrong Cancel routes
+- **Quick Fix**: See 9-item checklist in `QUICK_FIX_REFERENCE.md` → Issue #29
+- **See**: `ERROR_FIXES_SESSION_2026-03-05.md` → Issue #29
+
+#### Issue #30: `loadTeacherById` Missing from TeacherBusinessService
+- **Severity**: MEDIUM (Runtime Error)
+- **Problem**: `this.teacherBusiness.loadTeacherById is not a function` when navigating to edit teacher route
+- **Root Cause**: Method was never implemented
+- **Quick Fix**: Add `loadTeacherById(id)` calling `teacherApi.getById(id)` with loading/error state management
+- **See**: `ERROR_FIXES_SESSION_2026-03-05.md` → Issue #30
+
+#### Issue #31: Navbar Always Shows Login/Sign Up After Authentication
+- **Severity**: HIGH
+- **Problem**: Navbar remains unauthenticated state after login; no Logout button
+- **Root Cause**: Root `App` component never subscribed to `isAuthenticated$`
+- **Quick Fix**: Implement `OnInit` in `App`, subscribe to `isAuthenticated$`, use `*ngIf` blocks in navbar
+- **See**: `ERROR_FIXES_SESSION_2026-03-05.md` → Issue #31
+
+#### Issue #32: DataTables Action Buttons Not Working After Sort/Search/Page ⚡
+- **Severity**: HIGH
+- **Problem**: View, Edit, Delete buttons in student list stop working after any DataTables interaction
+- **Root Cause**: DataTables replaces DOM rows, destroying Angular `(click)` bindings
+- **Quick Fix**: Event delegation with `data-action` attributes + `NgZone.run()` + `drawCallback` re-attach
+- **See**: `ERROR_FIXES_SESSION_2026-03-05.md` → Issue #32
+- **Pattern**: See "Event Delegation for Dynamic Tables" pattern in same doc
+
+#### Issue #33: "Welcome, undefined undefined" After Login 🔑
+- **Severity**: HIGH
+- **Problem**: Navbar shows wrong teacher name after login
+- **Root Cause (2 bugs)**: API returns nested `{ token, teacher: {...} }` — whole object stored instead of `response.teacher`; also `teacherId` ≠ `id`
+- **Quick Fix**: Add `TeacherLoginResponse` interface; extract `response.teacher` in business service; remap `teacherId → id`
+- **See**: `ERROR_FIXES_SESSION_2026-03-05.md` → Issue #33
+
+---
+
 ## 🎯 How to Use This Documentation
 
 ### Scenario 1: "Something is broken, fix it now!"
@@ -202,6 +285,16 @@
 1. Read **README.md** for project overview
 2. Read **ERROR_FIXES_DOCUMENTATION.md** → "Key Learnings"
 3. Study the "Files Reference" section
+
+### Scenario 5: "DataTables buttons are broken / navbar not updating after login"
+1. Open **QUICK_FIX_REFERENCE.md** → Issues #31, #32, #33
+2. For DataTables: apply event delegation pattern (Issue #32)
+3. For navbar: subscribe to `isAuthenticated$` in `App` component (Issue #31)
+4. For wrong teacher name: check API response shape and map nested response (Issue #33)
+
+### Scenario 6: "A new field needs to be added to Student/Teacher"
+1. Follow the checklist from Issue #26 in **ERROR_FIXES_SESSION_2026-03-05.md**
+2. Entity → DbContext → DTOs → Validators → Mapping → Service → Migration → Angular models → Components
 
 ---
 
@@ -292,13 +385,15 @@ After implementing any fix:
 
 ## 📊 Issue Statistics
 
-**Total Issues Resolved**: 19  
-**Frontend Issues**: 13  
-**Backend/Architecture Issues**: 6  
-**Critical Severity**: 1  
-**High Severity**: 2  
-**Medium Severity**: 0  
+**Total Issues Resolved**: 33  
+**Frontend Issues**: 13 (original)  
+**Backend/Architecture Issues**: 6 (original)  
+**Infrastructure/Tooling Issues**: 6 (March 3, 2026)  
+**Auth/UX/DataTables Issues**: 8 (March 5, 2026 — includes 1 feature add)  
+**Critical Severity**: 2  
+**High Severity**: 5  
+**Medium Severity**: 5  
 **Low Severity**: 3  
 
-**Last Updated**: March 2, 2026  
-**Status**: All 19 issues resolved, Clean Architecture fully implemented, production-ready
+**Last Updated**: March 5, 2026  
+**Status**: All 33 issues resolved, Clean Architecture fully implemented, production-ready

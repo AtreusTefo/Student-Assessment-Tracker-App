@@ -39,6 +39,23 @@ export interface LoginDto {
 }
 
 /**
+ * Login Response - shape returned by POST /api/teachers/login
+ */
+export interface TeacherLoginResponse {
+  token: string;
+  teacher: {
+    teacherId: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    subject: string;
+    enrollmentDate: string;
+    createdDate: string;
+  };
+}
+
+/**
  * Update Teacher DTO - Data for updating teacher profile
  */
 export interface UpdateTeacherDto {

@@ -9,6 +9,8 @@
  */
 export interface Student {
   id: number;
+  studentUniqueId: string;
+  idPassportNo: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -35,6 +37,8 @@ export interface StudentListDto {
  */
 export interface StudentDetailDto {
   id: number;
+  studentUniqueId: string;
+  idPassportNo: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -54,6 +58,7 @@ export interface StudentDetailDto {
  * Create Student DTO - Data required for creating a new student
  */
 export interface CreateStudentDto {
+  idPassportNo: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -68,6 +73,7 @@ export interface CreateStudentDto {
  * Update Student DTO - Data required for updating a student
  */
 export interface UpdateStudentDto {
+  idPassportNo: string;
   firstName: string;
   lastName: string;
   email: string;
