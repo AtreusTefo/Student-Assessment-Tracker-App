@@ -2,7 +2,7 @@
 
 Student Assessment Tracker is a **full-stack web application** built with **ASP.NET Core 8** backend and **Angular 18** frontend following **Clean Architecture** principles. It provides an intuitive interface to manage and track student assessments, allowing teachers to add, edit, delete, and view student scores with automatic calculations for totals, averages, percentages, and performance levels.
 
-## 🏗️ Architecture Overview
+## Architecture Overview
 
 This system follows **Clean Architecture with Separation of Concerns (SoC)** pattern, ensuring the backend API and frontend are completely decoupled and independently deployable.
 
@@ -42,14 +42,14 @@ StudentAssessmentTracker/                  ← Solution Root
 - Responsive UI with modern CSS
 
 **Why Clean Architecture:**
-- ✅ **Separation of Concerns**: Each layer has a single responsibility
-- ✅ **Independence**: Frontend and backend are fully decoupled
-- ✅ **Testability**: Each layer can be tested in isolation
-- ✅ **Maintainability**: Clear structure makes code easy to understand
-- ✅ **Scalability**: Layers can scale independently
-- ✅ **Flexibility**: Easy to swap implementations without affecting other layers
+- **Separation of Concerns**: Each layer has a single responsibility
+- **Independence**: Frontend and backend are fully decoupled
+- **Testability**: Each layer can be tested in isolation
+- **Maintainability**: Clear structure makes code easy to understand
+- **Scalability**: Layers can scale independently
+- **Flexibility**: Easy to swap implementations without affecting other layers
 
-📚 **For detailed architecture information, see [ARCHITECTURE.md](ARCHITECTURE.md)**
+**For detailed architecture information, see [ARCHITECTURE.md](ARCHITECTURE.md)**
 
 ## Technology Stack
 
@@ -88,19 +88,19 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 
 ## Features
 
-✅ **Student Management**
+**Student Management**
 - Add new students with assessments (scores 0-20)
 - Edit student information
 - Delete students with confirmation
 - View all students in a table
 
-✅ **Data Validation**
+**Data Validation**
 - Frontend validation (name format, email, phone)
 - Backend validation with FluentValidation
 - Real-time error messages
 - User-friendly form feedback
 
-✅ **Automatic Calculations**
+**Automatic Calculations**
 - Total Score: Sum of 3 assessments
 - Average Score: Total ÷ 3
 - Percentage: (Total ÷ 60) × 100
@@ -110,7 +110,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
   - **Good**: 56-75%
   - **Excellent**: > 75%
 
-✅ **User Interface**
+**User Interface**
 - Responsive design
 - Student list with sorting
 - Interactive forms
@@ -331,10 +331,10 @@ Validation occurs both on the frontend (real-time) and backend (API submission).
 
 This project has been updated to resolve the following issues:
 
-- ✅ **Phone Validation Duplicate Error** – Fixed template to show only one error message
-- ✅ **Application Blank Screen** – Fixed Angular build deployment to wwwroot root directory
-- ✅ **Form Change Detection** – Added ChangeDetectorRef for proper async handling in Angular
-- ✅ **API Response Type Mismatch** – Implemented proper DTO mapping with AutoMapper
-- ✅ **Validation Error Handling** – Separated frontend and backend validation concerns
+- **Phone Validation Duplicate Error** – Fixed template to show only one error message
+- **Application Blank Screen** – Fixed Angular build deployment to wwwroot root directory
+- **Form Change Detection** – Added ChangeDetectorRef for proper async handling in Angular
+- **API Response Type Mismatch** – Implemented proper DTO mapping with AutoMapper
+- **Validation Error Handling** – Separated frontend and backend validation concerns
 
 For detailed information about fixes and known issues, see the documentation files in the project root.
