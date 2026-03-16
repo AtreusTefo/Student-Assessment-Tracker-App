@@ -78,7 +78,7 @@ import { takeUntil } from 'rxjs/operators';
         <div class="form-group" *ngIf="!isEdit">
           <label for="confirmPassword">Confirm Password:</label>
           <div class="input-wrapper">
-            <input [type]="showConfirmPassword ? 'text' : 'password'" id="confirmPassword" [(ngModel)]="teacher.confirmPassword" name="confirmPassword" #confirmPassword="ngModel" autocomplete="new-password" required [disabled]="loading" (input)="clearError()" />
+            <input [type]="showConfirmPassword ? 'text' : 'password'" id="confirmPassword" [(ngModel)]="teacher.confirmPassword" name="confirmPassword" #confirmPassword="ngModel" autocomplete="new-password" required  minlength="6" maxlength="20" [disabled]="loading" (input)="clearError()" />
             <button type="button" class="toggle-password" (click)="showConfirmPassword = !showConfirmPassword" tabindex="-1">{{ showConfirmPassword ? 'Hide' : 'Show' }}</button>
           </div>
           <span class="error" *ngIf="(form.submitted || confirmPassword.touched) && confirmPassword.hasError('required')">Please confirm your password</span>
