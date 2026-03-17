@@ -1,103 +1,60 @@
-# Student Assessment Tracker - Technology Stack Presentation
+# Technology Stack and Architecture Overview
 
-## 1. FluentValidation & AutoMapper
+This presentation provides a brief overview of the key technologies and architectural patterns used in the Student Assessment Tracker application.
 
-### What They Are
-- **FluentValidation**: A .NET library that provides a clean, fluent interface for building validation rules
-- **AutoMapper**: A .NET library that automatically maps data between objects (e.g., from database entities to DTOs)
+## Core Technologies & Architecture
 
-### Where Used in Code
-**FluentValidation** - [Application/Validators/StudentValidator.cs](Application/Validators/StudentValidator.cs)
-```csharp
-public class CreateStudentValidator : AbstractValidator<CreateStudentDto>
-{
-    public CreateStudentValidator()
-    {
-        RuleFor(x => x.FirstName)
-            .NotEmpty().WithMessage("First name is required")
-            .Length(2, 50).WithMessage("First name must be 2-50 characters");
-        
-        RuleFor(x => x.Email)
-            .NotEmpty()
-            .EmailAddress().WithMessage("Email must be valid");
-    }
-}
-```
+### 1. Multilayered Architecture
 
-**AutoMapper** - [Application/Mappings/MappingProfile.cs](Application/Mappings/MappingProfile.cs)
-```csharp
-public class MappingProfile : Profile
-{
-    public MappingProfile()
-    {
-        // Maps Student entity to StudentDto automatically
-        CreateMap<Student, StudentDto>()
-            .ForMember(dest => dest.TotalScore, opt => opt.MapFrom(src => src.GetTotalScore()));
-        
-        CreateMap<CreateStudentDto, Student>();
-    }
-}
-```
+Our application is built using a multilayered architecture, which separates concerns and improves maintainability. This includes:
 
-**Registered in** [Program.cs](Program.cs) - Lines 30-45
+-   **Presentation Layer:** Handles user interaction (API endpoints).
+-   **Application Layer:** Contains business logic, services, DTOs and validation.
+-   **Domain Layer:** Represents the core business entities and rules.
+-   **Infrastructure Layer:** Manages data access and external services.
 
----
+### 2. ASP.NET Core=
+The backend is powered by ASP.NET Core, a high-performance, cross-platform framework for building modern, cloud-based, internet-connected applications. It serves as the foundation for our RESTful API.
 
-## 2. Data Transfer Objects (DTOs)
+### 3. Entity Framework Core
+We use Entity Framework Core as our Object-Relational Mapper (ORM) to interact with a SQL Server LocalDB database. It simplifies data access by allowing us to work with .NET objects instead of writing raw SQL queries.
 
-### What They Are
-Objects designed to transfer data between layers. They expose only the data needed for a specific use case, hiding internal business logic.
+### 4. Angular
+The front-end is a single-page application (SPA) built with Angular. Angular allows us to create a dynamic, responsive and modern user interface for a seamless user experience.
 
-### Where Used in Code
-**StudentDto Variants** - [Application/DTOs/StudentDto.cs](Application/DTOs/StudentDto.cs)
+## Key Libraries & Tools
 
-```csharp
-// For GET responses - shows all fields
-public class StudentDto
-{
-    public int Id { get; set; }
-    public string FirstName { get; set; }
-    public decimal Assessment1 { get; set; }
-    public decimal TotalScore { get; set; }  // Calculated field
-    public decimal AverageScore { get; set; }  // Calculated field
-}
+### 5. DTOs (Data Transfer Objects)
 
-// For POST requests - only input fields
-public class CreateStudentDto
-{
-    public string FirstName { get; set; }
-    public string LastName { get; set; }
-    public string Email { get; set; }
-    // No Id, no calculated fields
-}
+DTOs are used to transfer data between the client and server and between different layers of the application. This helps to decouple layers and prevent exposing our internal domain models.
 
-// For PUT requests - similar to Create
-public class UpdateStudentDto
-{
-    // Fields that can be updated
-}
-```
+### 6. AutoMapper
 
-**Why DTOs?**
-- ✅ Security: Hide internal database fields
-- ✅ Flexibility: Different shapes for different operations
-- ✅ Performance: Only send necessary data
-- ✅ Decoupling: API contract doesn't depend on database schema
+AutoMapper is a library that simplifies the process of mapping between our domain entities and DTOs. It automates the tedious task of writing boilerplate code to copy data from one object to another.
 
----
+### 7. FluentValidation
 
-## 3. Serilog Logging Framework
+For robust and readable validation, we use FluentValidation. It allows us to define clear and concise validation rules for our DTOs, ensuring data integrity.
 
-### What It Is
-A .NET logging library that structures logs and sends them to multiple destinations (files, console, etc.)
+### 8. DataTables
 
-### Where Used in Code
-**Configured in** [Program.cs](Program.cs) - Lines 32-38
+The DataTables library is integrated into our Angular front-end to provide advanced interaction controls for our HTML tables, including searching, sorting and pagination.
 
-```csharp
-builder.Host.UseSerilog((context, services, loggerConfiguration) =>
-{
-    loggerConfiguration
+## Testing & Documentation
+
+### 9. Swagger UI
+
+Our API is documented and can be tested interactively using Swagger UI. It automatically generates a user-friendly interface from our code, making it easy to explore and test the API endpoints.
+
+### 10. Postman
+
+Postman is used for more in-depth API testing. We have created a Postman collection with a set of pre-configured requests to test all API functionalities and ensure everything is working as expected.
+
+### 11. ELMAH
+
+ELMAH (Error Logging Modules and Handlers) is used for application-wide error logging for ASP.NET Core. It provides a pluggable solution for logging unhandled exceptions, complete with a web page to view the logged exceptions remotely.
+
+
         .ReadFrom.Configuration(context.Configuration)
         .ReadFrom.Services(services)
         .Enrich.FromLogContext();
@@ -113,10 +70,10 @@ _logger.LogError("Error creating student: {Error}", ex.Message);
 **Logs Destination**: `~/Logs/` folder (created automatically)
 
 **Benefits:**
-- 📝 Structured logging (JSON format)
-- 📂 Automatic file rotation
-- 🔍 Easy debugging and monitoring
-- 📊 Production diagnostics
+- Structured logging (JSON format)
+- Automatic file rotation
+- Easy debugging and monitoring
+- Production diagnostics
 
 ---
 
@@ -140,10 +97,10 @@ A JavaScript library that adds interactive features to HTML tables: sorting, fil
 1. Frontend fetches student data from API (Application Programming Interface)
 2. Datatables renders it in an interactive table
 3. Users can:
-   - 📊 Sort by any column (Grade, Score, etc.)
-   - 🔍 Search/filter students
-   - 📄 View data in pages
-   - 📥 Export to CSV/Excel
+   - Sort by any column (Grade, Score, etc.)
+   - Search/filter students
+   - View data in pages
+   - Export to CSV/Excel
 
 **Frontend Integration**: Used in Angular components to display the student grid
 
@@ -170,10 +127,10 @@ StudentApp/
 ```
 
 **Key Technologies:**
-- 📱 Components: Reusable UI pieces
-- 🔄 Services: Handle API communication
-- 🎨 Routing: Navigate between pages
-- 📋 Forms: Handle user input
+- Components: Reusable UI pieces
+- Services: Handle API communication
+- Routing: Navigate between pages
+- Forms: Handle user input
 
 **Frontend to Backend Communication:**
 ```
@@ -190,13 +147,13 @@ A software design pattern that separates code into distinct layers, each with a 
 
 ### The Four Layers in Your Project
 
-#### **Layer 1: Presentation Layer** 📱
+#### **Layer 1: Presentation Layer**
 Shows data to users and collects input
 - Location: [Presentation/Controllers/](Presentation/Controllers/)
 - Handles HTTP requests/responses
 - Returns DTOs to frontend
 
-#### **Layer 2: Application Layer** 🔧
+#### **Layer 2: Application Layer**
 Contains business logic and validation rules
 - Location: [Application/](Application/)
 - Contains:
@@ -205,14 +162,14 @@ Contains business logic and validation rules
   - **DTOs** - Data transfer objects
   - **Mappings** - AutoMapper profiles
 
-#### **Layer 3: Domain Layer** 💼
+#### **Layer 3: Domain Layer**
 Defines core business entities and interfaces
 - Location: [Domain/](Domain/)
 - Contains:
   - **Entities** - Student, Teacher classes
   - **Interfaces** - IRepository contract
 
-#### **Layer 4: Infrastructure Layer** 🗄️
+#### **Layer 4: Infrastructure Layer**
 Handles data access and external services
 - Location: [Infrastructure/](Infrastructure/)
 - Contains:
@@ -238,10 +195,10 @@ Database
 ```
 
 **Benefits:**
-- ✅ Separation of concerns (each layer has one job)
-- ✅ Testability (can test each layer independently)
-- ✅ Maintainability (easy to find and modify code)
-- ✅ Scalability (easy to add new features)
+- Separation of concerns (each layer has one job)
+- Testability (can test each layer independently)
+- Maintainability (easy to find and modify code)
+- Scalability (easy to add new features)
 
 ---
 
@@ -251,7 +208,7 @@ Database
 An interactive API documentation tool. It reads your API code and automatically generates documentation that developers can test directly in the browser.
 
 ### Where Used in Code
-**Configured in** [Program.cs](Program.cs) - Lines 48-64
+**Configured in** [Program.cs](Program.cs) - Lines 51-72
 
 ```csharp
 builder.Services.AddSwaggerGen(options =>
@@ -274,10 +231,10 @@ builder.Services.AddSwaggerGen(options =>
 
 ### Access It
 When your application runs:
-- 🔗 Visit: `http://localhost:5000/swagger/ui`
-- 📖 See all API endpoints
-- ✅ Test requests directly
-- 📋 View response models
+- Visit: `http://localhost:5000/swagger/ui`
+- See all API endpoints
+- Test requests directly
+- View response models
 
 **What It Shows:**
 ```
@@ -299,9 +256,9 @@ A tool for testing APIs. Instead of writing code, you click buttons to send requ
 **Postman Collection** - [StudentAssessmentTracker.postman_collection.json](StudentAssessmentTracker.postman_collection.json)
 
 ### Testing Workflow
-1. 📝 Create a request (GET, POST, PUT, DELETE)
-2. 🎯 Enter the endpoint URL: `http://localhost:5000/api/students`
-3. 📤 Add request body (JSON):
+1. Create a request (GET, POST, PUT, DELETE)
+2. Enter the endpoint URL: `http://localhost:5000/api/students`
+3. Add request body (JSON):
    ```json
    {
      "firstName": "John",
@@ -312,14 +269,14 @@ A tool for testing APIs. Instead of writing code, you click buttons to send requ
      "assessment3": 17
    }
    ```
-4. 🚀 Click "Send"
-5. 👀 View the response (with status code, headers, body)
+4. Click "Send"
+5. View the response (with status code, headers, body)
 
 ### Benefits
-- ✅ Manual API testing before frontend is ready
-- ✅ Debug issues without running full application
-- ✅ Share test collection with team
-- ✅ Automate API tests
+- Manual API testing before frontend is ready
+- Debug issues without running full application
+- Share test collection with team
+- Automate API tests
 
 ---
 
@@ -418,4 +375,4 @@ TOOLS & FEATURES:
 
 ---
 
-**Everything works together to create a modern, professional, scalable application!** 🚀
+**Everything works together to create a modern, professional, scalable application!**
