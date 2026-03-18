@@ -34,7 +34,7 @@
   - Postman
   - **ELMAH** (Error Logging Modules and Handlers) — added as item #11
 
-### Agile Hierarchy Document (`docs/AGILE_HIERARCHY.md`) ✅ New File
+### Agile Hierarchy Document (`docs/AGILE_HIERARCHY.md`) New File
 - Created a comprehensive Agile hierarchy document from scratch, fully grounded in the app's real functionality.
 - Defined all three levels of the hierarchy with descriptions and format rules:
   - **Epic** — high-level business capability
