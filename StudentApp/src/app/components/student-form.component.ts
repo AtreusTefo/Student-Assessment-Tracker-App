@@ -2,9 +2,10 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
-import { CreateStudentDto, UpdateStudentDto } from '../core/models';
-import { StudentStateService } from '../core/services/state';
+import { CreateStudentDto, UpdateStudentDto, GradeDto } from '../core/models';
+import { StudentStateService, TeacherStateService } from '../core/services/state';
 import { StudentBusinessService } from '../features/students/services/student-business.service';
+import { GradeApiService } from '../core/services/http';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -71,35 +72,13 @@ import { takeUntil } from 'rxjs/operators';
         </div>
         
         <div class="form-group">
-          <label for="grade">Grade:</label>
-          <input type="text" id="grade" [(ngModel)]="student.grade" name="grade" #grade="ngModel" placeholder="e.g., 10A, 11B" autocomplete="off" required maxlength="10" [disabled]="loading" />
-          <span class="error" *ngIf="(form.submitted || grade.touched || grade.dirty) && grade.hasError('required')">Grade is required</span>
-          <span class="error" *ngIf="(form.submitted || grade.touched || grade.dirty) && grade.hasError('maxlength')">Grade cannot exceed 10 characters</span>
-          <span class="error" *ngIf="fieldErrors['grade'] && fieldErrors['grade'].length">{{ fieldErrors['grade'].join('\n') }}</span>
-        </div>
-        
-        <div class="form-group">
-          <label for="assessment1">Assessment 1 (0-20):</label>
-          <input type="number" id="assessment1" [(ngModel)]="student.assessment1" name="assessment1" #assessment1="ngModel" min="0" max="20" required [disabled]="loading" />
-          <span class="error" *ngIf="(form.submitted || assessment1.touched || assessment1.dirty) && assessment1.hasError('required')">Assessment 1 is required</span>
-          <span class="error" *ngIf="(form.submitted || assessment1.touched || assessment1.dirty) && (assessment1.hasError('min') || assessment1.hasError('max'))">Assessment 1 must be between 0 and 20</span>
-          <span class="error" *ngIf="fieldErrors['assessment1'] && fieldErrors['assessment1'].length">{{ fieldErrors['assessment1'].join('\n') }}</span>
-        </div>
-        
-        <div class="form-group">
-          <label for="assessment2">Assessment 2 (0-20):</label>
-          <input type="number" id="assessment2" [(ngModel)]="student.assessment2" name="assessment2" #assessment2="ngModel" min="0" max="20" required [disabled]="loading" />
-          <span class="error" *ngIf="(form.submitted || assessment2.touched || assessment2.dirty) && assessment2.hasError('required')">Assessment 2 is required</span>
-          <span class="error" *ngIf="(form.submitted || assessment2.touched || assessment2.dirty) && (assessment2.hasError('min') || assessment2.hasError('max'))">Assessment 2 must be between 0 and 20</span>
-          <span class="error" *ngIf="fieldErrors['assessment2'] && fieldErrors['assessment2'].length">{{ fieldErrors['assessment2'].join('\n') }}</span>
-        </div>
-        
-        <div class="form-group">
-          <label for="assessment3">Assessment 3 (0-20):</label>
-          <input type="number" id="assessment3" [(ngModel)]="student.assessment3" name="assessment3" #assessment3="ngModel" min="0" max="20" required [disabled]="loading" />
-          <span class="error" *ngIf="(form.submitted || assessment3.touched || assessment3.dirty) && assessment3.hasError('required')">Assessment 3 is required</span>
-          <span class="error" *ngIf="(form.submitted || assessment3.touched || assessment3.dirty) && (assessment3.hasError('min') || assessment3.hasError('max'))">Assessment 3 must be between 0 and 20</span>
-          <span class="error" *ngIf="fieldErrors['assessment3'] && fieldErrors['assessment3'].length">{{ fieldErrors['assessment3'].join('\n') }}</span>
+          <label for="gradeId">Grade:</label>
+          <select id="gradeId" [(ngModel)]="student.gradeId" name="gradeId" #gradeId="ngModel" required [disabled]="loading">
+            <option [value]="0">-- Select Grade --</option>
+            <option *ngFor="let g of grades" [value]="g.id">{{ g.name }}</option>
+          </select>
+          <span class="error" *ngIf="(form.submitted || gradeId.touched || gradeId.dirty) && gradeId.hasError('required')">Grade is required</span>
+          <span class="error" *ngIf="fieldErrors['gradeId'] && fieldErrors['gradeId'].length">{{ fieldErrors['gradeId'].join('\n') }}</span>
         </div>
         
         <div class="actions">
@@ -136,7 +115,8 @@ import { takeUntil } from 'rxjs/operators';
       color: #333;
     }
     
-    .form-group input {
+    .form-group input,
+    .form-group select {
       width: 100%;
       padding: 10px;
       border: 1px solid #ddd;
@@ -145,7 +125,8 @@ import { takeUntil } from 'rxjs/operators';
       box-sizing: border-box;
     }
     
-    .form-group input:focus {
+    .form-group input:focus,
+    .form-group select:focus {
       outline: none;
       border-color: #2196F3;
       box-shadow: 0 0 5px rgba(33, 150, 243, 0.3);
@@ -188,7 +169,8 @@ import { takeUntil } from 'rxjs/operators';
       pointer-events: none;
     }
     
-    .form-group input:disabled {
+    .form-group input:disabled,
+    .form-group select:disabled {
       background-color: #f5f5f5;
       color: #9e9e9e;
       cursor: not-allowed;
@@ -227,13 +209,13 @@ export class StudentFormComponent implements OnInit, OnDestroy {
     lastName: '',
     email: '',
     phone: '',
-    grade: '',
+    gradeId: 0,
     enrollmentDate: new Date().toISOString(),
-    assessment1: null as any,
-    assessment2: null as any,
-    assessment3: null as any,
     createdDate: new Date().toISOString()
   };
+
+  grades: GradeDto[] = [];
+  private teacherId = 0;
   
   isEdit = false;
   loading = false;
@@ -248,6 +230,8 @@ export class StudentFormComponent implements OnInit, OnDestroy {
     private router: Router,
     private studentBusiness: StudentBusinessService,
     private studentState: StudentStateService,
+    private teacherState: TeacherStateService,
+    private gradeApi: GradeApiService,
     private cdr: ChangeDetectorRef
   ) { }
 
@@ -289,11 +273,8 @@ export class StudentFormComponent implements OnInit, OnDestroy {
             lastName: student.lastName || '',
             email: student.email || '',
             phone: parsedPhone,
-            grade: student.grade || '',
+            gradeId: student.gradeId || 0,
             enrollmentDate: student.createdAt || new Date().toISOString(),
-            assessment1: student.assessment1 || 0,
-            assessment2: student.assessment2 || 0,
-            assessment3: student.assessment3 || 0,
             createdDate: student.createdAt || new Date().toISOString()
           };
           this.cdr.markForCheck();
@@ -306,6 +287,16 @@ export class StudentFormComponent implements OnInit, OnDestroy {
       this.isEdit = true;
       this.studentBusiness.loadStudentById(parseInt(id)).subscribe();
     }
+
+    // Get current teacher id synchronously
+    const teacher = this.teacherState.getCurrentTeacher();
+    this.teacherId = teacher?.id ?? 0;
+
+    // Load grade options
+    this.gradeApi.getAll().subscribe(grades => {
+      this.grades = grades;
+      this.cdr.markForCheck();
+    });
   }
 
   ngOnDestroy(): void {
@@ -388,33 +379,15 @@ export class StudentFormComponent implements OnInit, OnDestroy {
   }
 
 
-  private parseAssessment(value: unknown): number | null {
-    if (value === null || value === undefined || value === '') {
-      return null;
-    }
-
-    const parsed = typeof value === 'number' ? value : Number(value);
-    return Number.isFinite(parsed) ? parsed : null;
-  }
-
   onSubmit(form: NgForm): void {
     this.error = null;
     this.isServerError = false;
     this.fieldErrors = {};
 
-    const assessment1 = this.parseAssessment(this.student.assessment1);
-    const assessment2 = this.parseAssessment(this.student.assessment2);
-    const assessment3 = this.parseAssessment(this.student.assessment3);
-
-    const assessmentsValid =
-      assessment1 !== null &&
-      assessment2 !== null &&
-      assessment3 !== null &&
-      assessment1 >= 0 && assessment1 <= 20 &&
-      assessment2 >= 0 && assessment2 <= 20 &&
-      assessment3 >= 0 && assessment3 <= 20;
-
-    if (form.invalid || !assessmentsValid) {
+    if (form.invalid || this.student.gradeId === 0) {
+      if (this.student.gradeId === 0) {
+        this.fieldErrors['gradeId'] = ['Please select a grade'];
+      }
       return;
     }
 
@@ -425,10 +398,7 @@ export class StudentFormComponent implements OnInit, OnDestroy {
         lastName: this.student.lastName,
         email: this.student.email,
         phone: this.student.phone,
-        grade: this.student.grade,
-        assessment1: assessment1!,
-        assessment2: assessment2!,
-        assessment3: assessment3!
+        gradeId: this.student.gradeId
       };
       
       this.studentBusiness.updateStudent(this.student.studentId, updateDto).subscribe({
@@ -444,10 +414,8 @@ export class StudentFormComponent implements OnInit, OnDestroy {
         lastName: this.student.lastName,
         email: this.student.email,
         phone: this.student.phone,
-        grade: this.student.grade,
-        assessment1: assessment1!,
-        assessment2: assessment2!,
-        assessment3: assessment3!
+        gradeId: this.student.gradeId,
+        teacherId: this.teacherId
       };
       
       this.studentBusiness.createStudent(createDto).subscribe({

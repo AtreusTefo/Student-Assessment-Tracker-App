@@ -66,18 +66,11 @@ export class StudentBusinessService {
 
   /**
    * Create a new student
-   * Business Logic: Validate, create, update state
+   * Business Logic: create, update state
    */
   createStudent(studentData: CreateStudentDto): Observable<StudentDetailDto> {
-    // Business rule: Validate assessment scores
-    if (!this.validateAssessmentScores(studentData)) {
-      const error = 'Assessment scores must be between 0 and 20';
-      this.studentState.setError(error);
-      return throwError(() => new Error(error));
-    }
-
     this.studentState.setLoading(true);
-    
+
     return this.studentApi.create(studentData).pipe(
       tap(createdStudent => {
         // Add to list state
@@ -99,18 +92,11 @@ export class StudentBusinessService {
 
   /**
    * Update an existing student
-   * Business Logic: Validate, update, refresh state
+   * Business Logic: update, refresh state
    */
   updateStudent(id: number, studentData: UpdateStudentDto): Observable<void> {
-    // Business rule: Validate assessment scores
-    if (!this.validateAssessmentScores(studentData)) {
-      const error = 'Assessment scores must be between 0 and 20';
-      this.studentState.setError(error);
-      return throwError(() => new Error(error));
-    }
-
     this.studentState.setLoading(true);
-    
+
     return this.studentApi.update(id, studentData).pipe(
       tap(() => {
         // Update in list state
@@ -145,19 +131,6 @@ export class StudentBusinessService {
         this.studentState.setError(errorMessage);
         return throwError(() => error);
       })
-    );
-  }
-
-  /**
-   * Business Rule: Validate assessment scores
-   * Scores must be between 0 and 20
-   */
-  private validateAssessmentScores(student: CreateStudentDto | UpdateStudentDto): boolean {
-    const { assessment1, assessment2, assessment3 } = student;
-    return (
-      assessment1 >= 0 && assessment1 <= 20 &&
-      assessment2 >= 0 && assessment2 <= 20 &&
-      assessment3 >= 0 && assessment3 <= 20
     );
   }
 

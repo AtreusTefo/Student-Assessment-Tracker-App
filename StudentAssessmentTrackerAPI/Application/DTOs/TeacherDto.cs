@@ -23,8 +23,7 @@ namespace StudentAssessmentTracker.Application.DTOs
         /// <summary>Gets or sets the subject taught</summary>
         public string Subject { get; set; } = string.Empty;
 
-        /// <summary>Gets or sets the password (omit in production; kept for demo purposes)</summary>
-        public string Password { get; set; } = string.Empty;
+        // Password is intentionally excluded from the response DTO for security.
 
         /// <summary>Gets or sets the enrollment date</summary>
         public DateTime EnrollmentDate { get; set; }

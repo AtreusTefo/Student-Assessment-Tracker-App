@@ -88,27 +88,37 @@ namespace StudentAssessmentTracker.Infrastructure.Repositories
     }
 
     /// <summary>
-    /// Student-specific repository extending the generic repository
-    /// Can be extended with student-specific data access logic
+    /// Student-specific repository extending the generic repository.
+    /// Overrides GetAllAsync and GetByIdAsync to eagerly load Assessments
+    /// and GradeNavigation — required for domain method calculations.
     /// </summary>
     public class StudentRepository : Repository<Student>
     {
-        /// <summary>
-        /// Initializes a new instance of the StudentRepository class
-        /// </summary>
-        /// <param name="context">The database context</param>
         public StudentRepository(ApplicationDbContext context) : base(context) { }
 
         /// <summary>
-        /// Gets all students with error handling
+        /// Gets all students with assessments and grade info included
         /// </summary>
         public override async Task<IEnumerable<Student>> GetAllAsync()
         {
             return await _context.Students
                 .AsNoTracking()
+                .Include(s => s.Assessments)
+                .Include(s => s.GradeNavigation)
                 .OrderBy(s => s.LastName)
                 .ThenBy(s => s.FirstName)
                 .ToListAsync();
+        }
+
+        /// <summary>
+        /// Gets a single student with assessments and grade info included
+        /// </summary>
+        public override async Task<Student?> GetByIdAsync(int id)
+        {
+            return await _context.Students
+                .Include(s => s.Assessments)
+                .Include(s => s.GradeNavigation)
+                .FirstOrDefaultAsync(s => s.Id == id);
         }
     }
 }

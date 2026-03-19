@@ -1,8 +1,10 @@
-# Agile Methodology — Epic > Feature > User Story Hierarchy
+# Agile Methodology — Scrum Framework with Epic > Feature > User Story Hierarchy
 
 ## Overview
 
-This document maps the Student Assessment Tracker application to a formal Agile hierarchy. Each level of the hierarchy is defined below, followed by a full breakdown of all Epics, Features, and User Stories derived directly from the app's requirements and functionality.
+This document applies the **Scrum framework** to the Student Assessment Tracker project. Scrum is an Agile framework that delivers value in short, time-boxed iterations called **Sprints**. It provides structure through defined roles (Product Owner, Scrum Master, Development Team), artifacts (Product Backlog, Sprint Backlog, Increment), and events (Sprint Planning, Daily Scrum, Sprint Review, Sprint Retrospective).
+
+The project work is organized using a three-level Agile hierarchy — **Epics → Features → User Stories** — which populates the Scrum **Product Backlog**. User Stories are estimated with **story points** (Fibonacci scale), prioritized by business value, and allocated to four 1-week Sprints.
 
 ---
 
@@ -81,6 +83,211 @@ EPIC-05: API & Backend
 
 ---
 
+## Scrum Framework
+
+### What is Scrum?
+
+Scrum is an Agile framework that organizes work into short, time-boxed iterations called **Sprints** (1-week each in this project). At the end of every Sprint, the team delivers a potentially shippable **Increment** of the product. Scrum promotes continuous improvement through three core pillars: **Transparency**, **Inspection**, and **Adaptation**.
+
+---
+
+### Scrum Team
+
+| Role | Person | Responsibilities |
+|------|--------|-----------------|
+| **Product Owner** | School Administrator | Owns and prioritizes the Product Backlog; defines user stories based on business value; accepts completed increments at Sprint Reviews. |
+| **Scrum Master** | Developer.03 | Facilitates all Scrum events; removes impediments; ensures adherence to Scrum practices; coaches the team on Agile principles. |
+| **Development Team** | Developer.03 | Self-organizing, cross-functional team responsible for designing, building, and testing each Sprint increment — covering backend (ASP.NET Core), frontend (Angular), database (EF Core + SQL Server), and API testing (Postman). |
+
+> **Note**: In this solo student project, Developer.03 fulfills both the Scrum Master and Development Team roles, while the Product Owner perspective represents the teacher end-user's needs.
+
+---
+
+### Scrum Artifacts
+
+#### 1. Product Backlog
+A living, prioritized list of all work needed for the product. All 19 User Stories reside here, estimated in story points and ordered by business priority. The Product Owner is responsible for its content and ordering.
+
+#### 2. Sprint Backlog
+The set of Product Backlog items selected for a given Sprint, along with the Sprint Goal and the plan for delivering the Increment. Each Sprint section below contains its own Sprint Backlog.
+
+#### 3. Increment
+The sum of all completed and accepted Product Backlog items at the end of a Sprint. Each Increment must satisfy the **Definition of Done** and represent a working, tested build of the application.
+
+---
+
+### Scrum Events
+
+| Event | Timing | Timebox | Purpose |
+|-------|--------|---------|---------|
+| **Sprint Planning** | Start of Sprint | 1 hour | Define the Sprint Goal; select and commit to Sprint Backlog items from the Product Backlog. |
+| **Daily Scrum** | Every working day | 15 minutes | Synchronize progress using three questions: *What did I complete yesterday? What will I work on today? Are there any impediments?* |
+| **Sprint Review** | End of Sprint | 30 minutes | Demonstrate the completed Increment to stakeholders; gather feedback; update the Product Backlog as needed. |
+| **Sprint Retrospective** | After Sprint Review | 30 minutes | Reflect on team processes; identify improvements using the **Start / Stop / Continue** format. |
+
+---
+
+### Definition of Done (DoD)
+
+A User Story is **Done** only when ALL of the following criteria are satisfied:
+
+- [ ] All Acceptance Criteria for the story are met and verified.
+- [ ] Code is committed and pushed to the `main` branch on GitHub.
+- [ ] Backend endpoint (if applicable) is tested in Postman and returns the correct HTTP status and response body.
+- [ ] Frontend component (if applicable) renders correctly at `http://localhost:4200` with no console errors.
+- [ ] FluentValidation rules are enforced — invalid input returns HTTP 400 with structured error messages.
+- [ ] No new compile errors or runtime exceptions are introduced.
+- [ ] Swagger UI is updated to reflect any new or changed endpoints.
+
+---
+
+### Story Point Scale (Fibonacci)
+
+| Points | Effort | Description |
+|:------:|--------|-------------|
+| 1 | Trivial | Configuration change, text update |
+| 2 | Small | Simple UI badge, Swagger setup, minor handler |
+| 3 | Medium | Form validation, FluentValidator, API error handling |
+| 5 | Standard | Full end-to-end feature (form + API call + Angular service) |
+| 8 | Large | Complex feature with multiple components and integration |
+| 13 | Very Large | Entire Epic built from scratch |
+
+---
+
+### Product Backlog
+
+All 19 User Stories, prioritized by business value, with story point estimates and Sprint assignments. **Total estimated effort: 64 story points**.
+
+| ID | User Story | Priority | Points | Sprint |
+|----|-----------|----------|:------:|:------:|
+| US-18 | Reject invalid data server-side | High | 3 | Sprint 1 |
+| US-19 | Explore API via Swagger UI | High | 2 | Sprint 1 |
+| US-01 | Register with full profile | High | 5 | Sprint 1 |
+| US-02 | Validate registration fields | High | 3 | Sprint 1 |
+| US-03 | Log in with email and password | High | 5 | Sprint 2 |
+| US-04 | Handle invalid login credentials | High | 2 | Sprint 2 |
+| US-05 | Add a new student record | High | 5 | Sprint 2 |
+| US-06 | Validate student input fields | High | 3 | Sprint 2 |
+| US-16 | Consume student API from frontend | High | 5 | Sprint 2 |
+| US-07 | View all students in a table | High | 5 | Sprint 3 |
+| US-08 | View detailed student profile | Medium | 3 | Sprint 3 |
+| US-09 | Update student information | Medium | 5 | Sprint 3 |
+| US-10 | Delete a student record | Medium | 3 | Sprint 3 |
+| US-17 | Consume teacher API from frontend | Medium | 3 | Sprint 3 |
+| US-11 | Enter assessment scores (0–20) | Medium | 3 | Sprint 4 |
+| US-12 | View total, average, and percentage | Medium | 3 | Sprint 4 |
+| US-13 | View performance level badge | Medium | 2 | Sprint 4 |
+| US-14 | Sort students by column | Low | 2 | Sprint 4 |
+| US-15 | Search and filter students | Low | 2 | Sprint 4 |
+| **Total** | | | **64** | |
+
+---
+
+### Sprint Plan
+
+#### Sprint 1 — Foundation & Authentication
+**Dates**: March 2–8, 2026
+**Sprint Goal**: *Establish project infrastructure, configure server-side validation and API documentation, and deliver a fully working teacher registration system.*
+**Velocity**: 13 story points
+
+| Story | Title | Points | Status |
+|-------|-------|:------:|:------:|
+| US-18 | Reject invalid data server-side | 3 | Done |
+| US-19 | Explore API via Swagger UI | 2 | Done |
+| US-01 | Register with full profile | 5 | Done |
+| US-02 | Validate registration fields | 3 | Done |
+| **Total** | | **13** | |
+
+**Sprint Review**: Teacher registration form is functional end-to-end. FluentValidation rejects invalid data with HTTP 400. Swagger UI documents all available endpoints. Backend infrastructure (layered architecture, EF Core, SQL Server LocalDB) is fully configured and running.
+
+**Sprint Retrospective**:
+
+| | Notes |
+|-|-------|
+| Start | Writing validation tests alongside each new endpoint |
+| Stop | Skipping inline code comments — makes debugging harder later |
+| Continue | Daily commits to GitHub to maintain a clear, traceable history |
+
+---
+
+#### Sprint 2 — Authentication & Student CRUD
+**Dates**: March 9–15, 2026
+**Sprint Goal**: *Complete teacher login and enable teachers to create and manage students through the Angular frontend, fully connected to the RESTful API.*
+**Velocity**: 20 story points
+
+| Story | Title | Points | Status |
+|-------|-------|:------:|:------:|
+| US-03 | Log in with email and password | 5 | Done |
+| US-04 | Handle invalid login credentials | 2 | Done |
+| US-05 | Add a new student record | 5 | Done |
+| US-06 | Validate student input fields | 3 | Done |
+| US-16 | Consume student API from frontend | 5 | Done |
+| **Total** | | **20** | |
+
+**Sprint Review**: Teachers can register, log in, and add students via the Angular frontend. The Angular `StudentService` calls real API endpoints. Student creation triggers live feedback and redirects to the list. Node.js PATH fix applied and npm dependencies resolved; Angular dev server stable at `localhost:4200`.
+
+**Sprint Retrospective**:
+
+| | Notes |
+|-|-------|
+| Start | Using `proxy.conf.json` to avoid CORS issues during local development |
+| Stop | Hard-coding API base URLs in components; move to Angular environment files |
+| Continue | Committing working increments daily to maintain sprint momentum |
+
+---
+
+#### Sprint 3 — Student Lifecycle & Views
+**Dates**: March 16–22, 2026
+**Sprint Goal**: *Complete the full student management lifecycle — list view, detail view, edit, and delete — and finalize teacher API integration in the Angular frontend.*
+**Velocity**: 19 story points
+
+| Story | Title | Points | Status |
+|-------|-------|:------:|:------:|
+| US-07 | View all students in a table | 5 | Done |
+| US-08 | View detailed student profile | 3 | Done |
+| US-09 | Update student information | 5 | Done |
+| US-10 | Delete a student record | 3 | Done |
+| US-17 | Consume teacher API from frontend | 3 | Done |
+| **Total** | | **19** | |
+
+**Sprint Review**: Full CRUD lifecycle for students is complete. Teachers can view all students, open individual detail pages, edit records, and delete with a confirmation step. All Angular routes (`/`, `/detail/:id`, `/edit/:id`) are functional. Teacher API integration (registration and login) is wired to the Angular frontend.
+
+**Sprint Retrospective**:
+
+| | Notes |
+|-|-------|
+| Start | Breaking large components into smaller, focused Angular services |
+| Stop | Mixing business logic directly into Angular components |
+| Continue | Validating API responses in the Angular service layer before rendering |
+
+---
+
+#### Sprint 4 — Assessment Scoring & DataTables Polish
+**Dates**: March 23–29, 2026
+**Sprint Goal**: *Implement automated assessment score calculations with performance level labels, and enhance the student table with DataTables sorting, searching, and pagination.*
+**Velocity**: 12 story points
+
+| Story | Title | Points | Status |
+|-------|-------|:------:|:------:|
+| US-11 | Enter assessment scores (0–20) | 3 | Done |
+| US-12 | View total, average, and percentage | 3 | Done |
+| US-13 | View performance level badge | 2 | Done |
+| US-14 | Sort students by column | 2 | Done |
+| US-15 | Search and filter students | 2 | Done |
+| **Total** | | **12** | |
+
+**Sprint Review**: Assessment scores (0–20 each) are captured, stored, and validated. Total, average, and percentage are auto-calculated. Performance level badges (Needs Support / Satisfactory / Good / Excellent) display correctly in both list and detail views. DataTables is integrated, providing real-time search, column sorting, and pagination across the student table.
+
+**Sprint Retrospective**:
+
+| | Notes |
+|-|-------|
+| Start | Running the full Postman collection as a regression suite before each release |
+| Stop | Manual testing only; introduce smoke tests for critical API paths |
+| Continue | Keeping Swagger UI and Postman collection synchronized with the latest API |
+
+---
+
 ## EPIC-01: Teacher Authentication
 
 > **Goal**: Enable teachers to securely register and log in to the application so only authorized teachers can access student data.
@@ -94,6 +301,8 @@ EPIC-05: API & Backend
 ---
 
 #### US-01: Register with Full Profile
+
+> **Story Points**: 5 &nbsp;|&nbsp; **Sprint**: Sprint 1
 
 **As a** teacher,
 **I want** to register an account with my name, email, phone, subject, and password,
@@ -110,6 +319,8 @@ EPIC-05: API & Backend
 ---
 
 #### US-02: Validate Registration Fields
+
+> **Story Points**: 3 &nbsp;|&nbsp; **Sprint**: Sprint 1
 
 **As a** teacher,
 **I want** the registration form to show inline errors for invalid inputs,
@@ -137,6 +348,8 @@ EPIC-05: API & Backend
 
 #### US-03: Log In with Email and Password
 
+> **Story Points**: 5 &nbsp;|&nbsp; **Sprint**: Sprint 2
+
 **As a** registered teacher,
 **I want** to log in using my email and password,
 **so that** I can access the student management dashboard.
@@ -152,6 +365,8 @@ EPIC-05: API & Backend
 ---
 
 #### US-04: Handle Invalid Login Credentials
+
+> **Story Points**: 2 &nbsp;|&nbsp; **Sprint**: Sprint 2
 
 **As a** teacher,
 **I want** to see a friendly error message when I enter wrong credentials,
@@ -181,6 +396,8 @@ EPIC-05: API & Backend
 
 #### US-05: Add a New Student Record
 
+> **Story Points**: 5 &nbsp;|&nbsp; **Sprint**: Sprint 2
+
 **As a** teacher,
 **I want** to add a new student by filling in their details and assessment scores,
 **so that** their performance can be tracked in the system.
@@ -196,6 +413,8 @@ EPIC-05: API & Backend
 ---
 
 #### US-06: Validate Student Input Fields
+
+> **Story Points**: 3 &nbsp;|&nbsp; **Sprint**: Sprint 2
 
 **As a** teacher,
 **I want** the student form to validate my input before submitting,
@@ -220,6 +439,8 @@ EPIC-05: API & Backend
 
 #### US-07: View All Students in a Table
 
+> **Story Points**: 5 &nbsp;|&nbsp; **Sprint**: Sprint 3
+
 **As a** teacher,
 **I want** to see all students listed in a table,
 **so that** I can get a quick overview of the class.
@@ -235,6 +456,8 @@ EPIC-05: API & Backend
 ---
 
 #### US-08: View Detailed Student Profile
+
+> **Story Points**: 3 &nbsp;|&nbsp; **Sprint**: Sprint 3
 
 **As a** teacher,
 **I want** to click on a student and view their full profile,
@@ -259,6 +482,8 @@ EPIC-05: API & Backend
 
 #### US-09: Update Student Information
 
+> **Story Points**: 5 &nbsp;|&nbsp; **Sprint**: Sprint 3
+
 **As a** teacher,
 **I want** to edit a student's record,
 **so that** I can correct mistakes or update their assessment scores.
@@ -281,6 +506,8 @@ EPIC-05: API & Backend
 ---
 
 #### US-10: Delete a Student Record
+
+> **Story Points**: 3 &nbsp;|&nbsp; **Sprint**: Sprint 3
 
 **As a** teacher,
 **I want** to delete a student record with a confirmation step,
@@ -311,6 +538,8 @@ EPIC-05: API & Backend
 
 #### US-11: Enter Assessment Scores (0–20)
 
+> **Story Points**: 3 &nbsp;|&nbsp; **Sprint**: Sprint 4
+
 **As a** teacher,
 **I want** to enter three separate assessment scores for each student,
 **so that** the system can calculate their overall performance.
@@ -333,6 +562,8 @@ EPIC-05: API & Backend
 
 #### US-12: View Total, Average, and Percentage
 
+> **Story Points**: 3 &nbsp;|&nbsp; **Sprint**: Sprint 4
+
 **As a** teacher,
 **I want** the system to automatically calculate a student's total, average, and percentage score,
 **so that** I don't have to calculate them manually.
@@ -349,6 +580,8 @@ EPIC-05: API & Backend
 ---
 
 #### US-13: View Performance Level Badge
+
+> **Story Points**: 2 &nbsp;|&nbsp; **Sprint**: Sprint 4
 
 **As a** teacher,
 **I want** each student to have a performance level label,
@@ -382,6 +615,8 @@ EPIC-05: API & Backend
 
 #### US-14: Sort Students by Column
 
+> **Story Points**: 2 &nbsp;|&nbsp; **Sprint**: Sprint 4
+
 **As a** teacher,
 **I want** to sort the students table by any column (e.g., name or total score),
 **so that** I can quickly find top-performing or struggling students.
@@ -397,6 +632,8 @@ EPIC-05: API & Backend
 ---
 
 #### US-15: Search and Filter Students
+
+> **Story Points**: 2 &nbsp;|&nbsp; **Sprint**: Sprint 4
 
 **As a** teacher,
 **I want** to search for a student by name or email in the table,
@@ -426,6 +663,8 @@ EPIC-05: API & Backend
 
 #### US-16: Consume Student API from Frontend
 
+> **Story Points**: 5 &nbsp;|&nbsp; **Sprint**: Sprint 2
+
 **As a** developer,
 **I want** the Angular frontend to communicate with the student API endpoints,
 **so that** all student data operations are persisted via the backend.
@@ -444,6 +683,8 @@ EPIC-05: API & Backend
 ---
 
 #### US-17: Consume Teacher API from Frontend
+
+> **Story Points**: 3 &nbsp;|&nbsp; **Sprint**: Sprint 3
 
 **As a** developer,
 **I want** the Angular frontend to communicate with the teacher API endpoints,
@@ -467,6 +708,8 @@ EPIC-05: API & Backend
 
 #### US-18: Reject Invalid Data Server-Side
 
+> **Story Points**: 3 &nbsp;|&nbsp; **Sprint**: Sprint 1
+
 **As a** system,
 **I want** the API to validate all incoming data and reject invalid requests,
 **so that** bad data never reaches the database regardless of frontend state.
@@ -489,6 +732,8 @@ EPIC-05: API & Backend
 
 #### US-19: Explore API via Swagger UI
 
+> **Story Points**: 2 &nbsp;|&nbsp; **Sprint**: Sprint 1
+
 **As a** developer or tester,
 **I want** to view and test all API endpoints in Swagger UI,
 **so that** I can understand the API contract and verify endpoint behavior without needing Postman.
@@ -506,41 +751,42 @@ EPIC-05: API & Backend
 
 ## Summary Table
 
-| ID | Level | Title | Parent |
-|----|-------|-------|--------|
-| EPIC-01 | Epic | Teacher Authentication | — |
-| FEAT-01 | Feature | Teacher Registration | EPIC-01 |
-| US-01 | User Story | Register with Full Profile | FEAT-01 |
-| US-02 | User Story | Validate Registration Fields | FEAT-01 |
-| FEAT-02 | Feature | Teacher Login | EPIC-01 |
-| US-03 | User Story | Log In with Email and Password | FEAT-02 |
-| US-04 | User Story | Handle Invalid Login Credentials | FEAT-02 |
-| EPIC-02 | Epic | Student Management | — |
-| FEAT-03 | Feature | Create Student | EPIC-02 |
-| US-05 | User Story | Add a New Student Record | FEAT-03 |
-| US-06 | User Story | Validate Student Input Fields | FEAT-03 |
-| FEAT-04 | Feature | View Students | EPIC-02 |
-| US-07 | User Story | View All Students in a Table | FEAT-04 |
-| US-08 | User Story | View Detailed Student Profile | FEAT-04 |
-| FEAT-05 | Feature | Edit Student | EPIC-02 |
-| US-09 | User Story | Update Student Information | FEAT-05 |
-| FEAT-06 | Feature | Delete Student | EPIC-02 |
-| US-10 | User Story | Delete a Student Record | FEAT-06 |
-| EPIC-03 | Epic | Assessment & Scoring | — |
-| FEAT-07 | Feature | Score Entry | EPIC-03 |
-| US-11 | User Story | Enter Assessment Scores (0–20) | FEAT-07 |
-| FEAT-08 | Feature | Automatic Score Calculations | EPIC-03 |
-| US-12 | User Story | View Total, Average, and Percentage | FEAT-08 |
-| US-13 | User Story | View Performance Level Badge | FEAT-08 |
-| EPIC-04 | Epic | Data Display & Interaction | — |
-| FEAT-09 | Feature | DataTables Integration | EPIC-04 |
-| US-14 | User Story | Sort Students by Column | FEAT-09 |
-| US-15 | User Story | Search and Filter Students | FEAT-09 |
-| EPIC-05 | Epic | API & Backend | — |
-| FEAT-10 | Feature | RESTful API Endpoints | EPIC-05 |
-| US-16 | User Story | Consume Student API from Frontend | FEAT-10 |
-| US-17 | User Story | Consume Teacher API from Frontend | FEAT-10 |
-| FEAT-11 | Feature | Input Validation (Backend) | EPIC-05 |
-| US-18 | User Story | Reject Invalid Data Server-Side | FEAT-11 |
-| FEAT-12 | Feature | API Documentation | EPIC-05 |
-| US-19 | User Story | Explore API via Swagger UI | FEAT-12 |
+| ID | Level | Title | Parent | Points | Sprint |
+|----|-------|-------|--------|:------:|:------:|
+| EPIC-01 | Epic | Teacher Authentication | — | — | — |
+| FEAT-01 | Feature | Teacher Registration | EPIC-01 | — | — |
+| US-01 | User Story | Register with Full Profile | FEAT-01 | 5 | Sprint 1 |
+| US-02 | User Story | Validate Registration Fields | FEAT-01 | 3 | Sprint 1 |
+| FEAT-02 | Feature | Teacher Login | EPIC-01 | — | — |
+| US-03 | User Story | Log In with Email and Password | FEAT-02 | 5 | Sprint 2 |
+| US-04 | User Story | Handle Invalid Login Credentials | FEAT-02 | 2 | Sprint 2 |
+| EPIC-02 | Epic | Student Management | — | — | — |
+| FEAT-03 | Feature | Create Student | EPIC-02 | — | — |
+| US-05 | User Story | Add a New Student Record | FEAT-03 | 5 | Sprint 2 |
+| US-06 | User Story | Validate Student Input Fields | FEAT-03 | 3 | Sprint 2 |
+| FEAT-04 | Feature | View Students | EPIC-02 | — | — |
+| US-07 | User Story | View All Students in a Table | FEAT-04 | 5 | Sprint 3 |
+| US-08 | User Story | View Detailed Student Profile | FEAT-04 | 3 | Sprint 3 |
+| FEAT-05 | Feature | Edit Student | EPIC-02 | — | — |
+| US-09 | User Story | Update Student Information | FEAT-05 | 5 | Sprint 3 |
+| FEAT-06 | Feature | Delete Student | EPIC-02 | — | — |
+| US-10 | User Story | Delete a Student Record | FEAT-06 | 3 | Sprint 3 |
+| EPIC-03 | Epic | Assessment & Scoring | — | — | — |
+| FEAT-07 | Feature | Score Entry | EPIC-03 | — | — |
+| US-11 | User Story | Enter Assessment Scores (0–20) | FEAT-07 | 3 | Sprint 4 |
+| FEAT-08 | Feature | Automatic Score Calculations | EPIC-03 | — | — |
+| US-12 | User Story | View Total, Average, and Percentage | FEAT-08 | 3 | Sprint 4 |
+| US-13 | User Story | View Performance Level Badge | FEAT-08 | 2 | Sprint 4 |
+| EPIC-04 | Epic | Data Display & Interaction | — | — | — |
+| FEAT-09 | Feature | DataTables Integration | EPIC-04 | — | — |
+| US-14 | User Story | Sort Students by Column | FEAT-09 | 2 | Sprint 4 |
+| US-15 | User Story | Search and Filter Students | FEAT-09 | 2 | Sprint 4 |
+| EPIC-05 | Epic | API & Backend | — | — | — |
+| FEAT-10 | Feature | RESTful API Endpoints | EPIC-05 | — | — |
+| US-16 | User Story | Consume Student API from Frontend | FEAT-10 | 5 | Sprint 2 |
+| US-17 | User Story | Consume Teacher API from Frontend | FEAT-10 | 3 | Sprint 3 |
+| FEAT-11 | Feature | Input Validation (Backend) | EPIC-05 | — | — |
+| US-18 | User Story | Reject Invalid Data Server-Side | FEAT-11 | 3 | Sprint 1 |
+| FEAT-12 | Feature | API Documentation | EPIC-05 | — | — |
+| US-19 | User Story | Explore API via Swagger UI | FEAT-12 | 2 | Sprint 1 |
+| **Totals** | | **19 User Stories** | | **64 pts** | **4 Sprints** |

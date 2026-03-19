@@ -1,92 +1,85 @@
 namespace StudentAssessmentTracker.Domain.Entities
 {
     /// <summary>
-    /// Student domain entity - contains core business logic for student assessments
+    /// Student domain entity - contains core business logic for student assessments.
+    /// Assessment scores are stored in the related StudentAssessments collection,
+    /// not as columns on this row, allowing any number of named assessments with
+    /// flexible max scores and optional due dates.
     /// </summary>
     public class Student
     {
-        /// <summary>
-        /// Unique identifier for the student (auto-incremented primary key)
-        /// </summary>
+        /// <summary>Unique identifier (auto-incremented PK)</summary>
         public int Id { get; set; }
 
-        /// <summary>
-        /// System-generated unique student ID (e.g., STU-A1B2C3D4)
-        /// Auto-generated on creation, never changes
-        /// </summary>
+        /// <summary>System-generated unique student ID (e.g., STU-A1B2C3D4), never changes</summary>
         public string? StudentUniqueId { get; set; }
 
-        /// <summary>
-        /// Student's national ID or passport number
-        /// Provided by the teacher when registering the student
-        /// </summary>
+        /// <summary>Student's national ID or passport number — unique across all students</summary>
         public string? IdPassportNo { get; set; }
 
-        /// <summary>
-        /// Student's first name
-        /// </summary>
+        /// <summary>Student's first name</summary>
         public string? FirstName { get; set; }
-        /// <summary>
-        /// Student's last name
-        /// </summary>
+
+        /// <summary>Student's last name</summary>
         public string? LastName { get; set; }
-        /// <summary>
-        /// Student's email address
-        /// </summary>
+
+        /// <summary>Student's email address</summary>
         public string? Email { get; set; }
-        /// <summary>
-        /// Student's phone number
-        /// </summary>
+
+        /// <summary>Student's phone number</summary>
         public string? Phone { get; set; }
-        /// <summary>
-        /// Student's grade or class level
-        /// </summary>
-        public string? Grade { get; set; }
-        /// <summary>
-        /// Score for first assessment (0-20)
-        /// </summary>
-        public decimal Assessment1 { get; set; }
-        /// <summary>
-        /// Score for second assessment (0-20)
-        /// </summary>
-        public decimal Assessment2 { get; set; }
-        /// <summary>
-        /// Score for third assessment (0-20)
-        /// </summary>
-        public decimal Assessment3 { get; set; }
-        /// <summary>
-        /// Date when student record was created
-        /// </summary>
+
+        /// <summary>FK → Grades.Id — enforces a controlled grade level (Grade 7–12)</summary>
+        public int GradeId { get; set; }
+
+        /// <summary>Navigation property to the Grade lookup entry</summary>
+        public Grade? GradeNavigation { get; set; }
+
+        /// <summary>FK → Teachers.Id — the teacher who owns/manages this student record</summary>
+        public int TeacherId { get; set; }
+
+        /// <summary>Navigation property to the owning teacher</summary>
+        public Teacher? Teacher { get; set; }
+
+        /// <summary>Collection of this student's individual assessments</summary>
+        public ICollection<StudentAssessment> Assessments { get; set; } = new List<StudentAssessment>();
+
+        /// <summary>Record creation timestamp</summary>
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        /// <summary>
-        /// Date when student record was last updated
-        /// </summary>
+
+        /// <summary>Record last-updated timestamp</summary>
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
-        /// <summary>
-        /// Calculates the total score from all three assessments
-        /// Domain Logic: Business rule enforced at entity level
-        /// </summary>
-        public decimal GetTotalScore() => Assessment1 + Assessment2 + Assessment3;
+        /// <summary>Sum of all assessment scores</summary>
+        public decimal GetTotalScore() => Assessments.Sum(a => a.Score);
+
+        /// <summary>Sum of all assessment max scores (the total possible marks)</summary>
+        public decimal GetMaxPossible() => Assessments.Sum(a => a.MaxScore);
 
         /// <summary>
-        /// Calculates the average score
-        /// Domain Logic: Divides total by number of assessments
+        /// Percentage based on actual max possible — not a hardcoded value.
+        /// Returns 0 when no assessments exist.
         /// </summary>
-        public decimal GetAverageScore() => GetTotalScore() / 3;
+        public decimal GetPercentage()
+        {
+            var max = GetMaxPossible();
+            return max == 0 ? 0 : Math.Round((GetTotalScore() / max) * 100, 2);
+        }
 
         /// <summary>
-        /// Calculates the percentage out of 60 (max possible score)
-        /// Domain Logic: (Total / 60) * 100
+        /// Average score-as-percentage across all assessments.
+        /// Returns 0 when no assessments exist.
         /// </summary>
-        public decimal GetPercentage() => (GetTotalScore() / 60) * 100;
+        public decimal GetAverageScore()
+        {
+            if (!Assessments.Any()) return 0;
+            return Math.Round(Assessments.Average(a => a.MaxScore == 0 ? 0 : (a.Score / a.MaxScore) * 100), 2);
+        }
 
-        /// <summary>
-        /// Determines performance level based on percentage
-        /// Domain Logic: Business rules for classification
-        /// </summary>
+        /// <summary>Performance classification based on overall percentage</summary>
         public string GetPerformanceLevel()
         {
+            if (!Assessments.Any()) return "No Assessments";
             var percentage = GetPercentage();
             return percentage switch
             {

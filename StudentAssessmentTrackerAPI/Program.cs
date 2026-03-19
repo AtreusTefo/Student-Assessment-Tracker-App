@@ -121,6 +121,7 @@ builder.Services.AddScoped<IRepository<Teacher>, Repository<Teacher>>();
 // Register Service layer
 builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<ITeacherService, TeacherService>();
+builder.Services.AddScoped<IStudentAssessmentService, StudentAssessmentService>();
 
 // Register Validation
 builder.Services

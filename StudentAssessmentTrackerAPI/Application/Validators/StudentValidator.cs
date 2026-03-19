@@ -37,18 +37,11 @@ namespace StudentAssessmentTracker.Application.Validators
                 .NotEmpty().WithMessage("Phone is required")
                 .Matches(@"^\d{8}$").WithMessage("Phone must be exactly 8 digits");
 
-            RuleFor(x => x.Grade)
-                .NotEmpty().WithMessage("Grade is required")
-                .Length(1, 10).WithMessage("Grade must be 1-10 characters");
+            RuleFor(x => x.GradeId)
+                .GreaterThan(0).WithMessage("A valid grade must be selected");
 
-            RuleFor(x => x.Assessment1)
-                .InclusiveBetween(0, 20).WithMessage("Assessment 1 must be between 0-20");
-
-            RuleFor(x => x.Assessment2)
-                .InclusiveBetween(0, 20).WithMessage("Assessment 2 must be between 0-20");
-
-            RuleFor(x => x.Assessment3)
-                .InclusiveBetween(0, 20).WithMessage("Assessment 3 must be between 0-20");
+            RuleFor(x => x.TeacherId)
+                .GreaterThan(0).WithMessage("Teacher ID is required");
         }
     }
 
@@ -86,18 +79,8 @@ namespace StudentAssessmentTracker.Application.Validators
                 .NotEmpty().WithMessage("Phone is required")
                 .Matches(@"^\d{8}$").WithMessage("Phone must be exactly 8 digits");
 
-            RuleFor(x => x.Grade)
-                .NotEmpty().WithMessage("Grade is required")
-                .Length(1, 10).WithMessage("Grade must be 1-10 characters");
-
-            RuleFor(x => x.Assessment1)
-                .InclusiveBetween(0, 20).WithMessage("Assessment 1 must be between 0-20");
-
-            RuleFor(x => x.Assessment2)
-                .InclusiveBetween(0, 20).WithMessage("Assessment 2 must be between 0-20");
-
-            RuleFor(x => x.Assessment3)
-                .InclusiveBetween(0, 20).WithMessage("Assessment 3 must be between 0-20");
+            RuleFor(x => x.GradeId)
+                .GreaterThan(0).WithMessage("A valid grade must be selected");
         }
     }
 }
