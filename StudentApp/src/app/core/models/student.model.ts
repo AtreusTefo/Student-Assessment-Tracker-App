@@ -39,11 +39,19 @@ export interface Student {
   updatedAt?: string;
 }
 
-/** Student List DTO - Minimal data for list views */
+/** Student List DTO - Data for list table view */
 export interface StudentListDto {
   id: number;
+  studentUniqueId: string;
   firstName: string;
   lastName: string;
+  email: string;
+  gradeName: string;
+  totalScore: number;
+  maxPossible: number;
+  percentage: number;
+  performanceLevel: string;
+  assessmentCount?: number;
 }
 
 /** Student Detail DTO - Complete data with calculated performance fields */

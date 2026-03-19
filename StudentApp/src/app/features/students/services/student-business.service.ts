@@ -73,11 +73,18 @@ export class StudentBusinessService {
 
     return this.studentApi.create(studentData).pipe(
       tap(createdStudent => {
-        // Add to list state
+        // Add to list state with all fields required by StudentListDto
         const listStudent: StudentListDto = {
           id: createdStudent.id,
+          studentUniqueId: createdStudent.studentUniqueId,
           firstName: createdStudent.firstName,
-          lastName: createdStudent.lastName
+          lastName: createdStudent.lastName,
+          email: createdStudent.email,
+          gradeName: createdStudent.gradeName,
+          totalScore: createdStudent.totalScore,
+          maxPossible: createdStudent.maxPossible,
+          percentage: createdStudent.percentage,
+          performanceLevel: createdStudent.performanceLevel
         };
         this.studentState.addStudent(listStudent);
         this.studentState.setLoading(false);
@@ -99,11 +106,8 @@ export class StudentBusinessService {
 
     return this.studentApi.update(id, studentData).pipe(
       tap(() => {
-        // Update in list state
-        this.studentState.updateStudent(id, {
-          firstName: studentData.firstName,
-          lastName: studentData.lastName
-        });
+        // Reload the full list to keep all StudentListDto fields in sync after an update
+        this.loadStudents().subscribe();
         this.studentState.setLoading(false);
       }),
       catchError(error => {

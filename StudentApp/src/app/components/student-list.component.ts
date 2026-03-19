@@ -35,16 +35,32 @@ import DataTable from 'datatables.net-dt';
           <thead>
             <tr>
               <th>Student ID</th>
-              <th>First Name</th>
-              <th>Last Name</th>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Grade</th>
+              <th>Score</th>
+              <th>Performance</th>
+              <!-- hidden column used by DataTables to sort Performance by percentage -->
+              <th></th>
               <th>Actions</th>
             </tr>
           </thead>
           <tbody>
             <tr *ngFor="let student of students">
-              <td>{{ student.id }}</td>
-              <td>{{ student.firstName }}</td>
-              <td>{{ student.lastName }}</td>
+              <td>{{ student.studentUniqueId }}</td>
+              <td>{{ student.firstName }} {{ student.lastName }}</td>
+              <td>{{ student.email }}</td>
+              <td>{{ student.gradeName }}</td>
+              <td>
+                <span *ngIf="student.maxPossible > 0">{{ student.totalScore | number:'1.0-1' }} / {{ student.maxPossible | number:'1.0-1' }}</span>
+                <span *ngIf="student.maxPossible === 0" class="muted">No assessments</span>
+              </td>
+              <td>
+                <span *ngIf="student.maxPossible > 0" class="badge" [ngClass]="getPerformanceClass(student.performanceLevel)">{{ student.performanceLevel }}</span>
+                <span *ngIf="student.maxPossible === 0" class="muted">—</span>
+              </td>
+              <!-- hidden percentage value for sorting -->
+              <td style="display:none">{{ student.percentage }}</td>
               <td class="action-cell">
                 <button data-action="view" [attr.data-id]="student.id" class="btn btn-info btn-sm">View</button>
                 <button data-action="edit" [attr.data-id]="student.id" class="btn btn-warning btn-sm">Edit</button>
@@ -446,6 +462,27 @@ import DataTable from 'datatables.net-dt';
       padding: 10px 20px;
     }
     
+    /* Performance Badge */
+    .badge {
+      display: inline-block;
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      white-space: nowrap;
+    }
+
+    .badge-excellent    { background-color: #d4edda; color: #155724; }
+    .badge-good         { background-color: #cce5ff; color: #004085; }
+    .badge-satisfactory { background-color: #fff3cd; color: #856404; }
+    .badge-needs-support{ background-color: #f8d7da; color: #721c24; }
+
+    .muted {
+      color: #aaa;
+      font-style: italic;
+      font-size: 12px;
+    }
+
     /* Responsive Design */
     @media (max-width: 768px) {
       .container {
@@ -610,7 +647,16 @@ export class StudentListComponent implements OnInit, AfterViewInit, OnDestroy {
         },
         columnDefs: [
           {
-            targets: 3, // Actions column
+            targets: 6, // hidden percentage column
+            visible: false,
+            searchable: false
+          },
+          {
+            targets: 5, // Performance column — sort by hidden percentage col
+            orderData: [6]
+          },
+          {
+            targets: 7, // Actions column
             orderable: false,
             searchable: false
           }
@@ -701,5 +747,14 @@ export class StudentListComponent implements OnInit, AfterViewInit, OnDestroy {
     this.showConfirmDialog = false;
     this.studentToDelete = null;
     this.cdr.detectChanges(); // Ensure modal is dismissed
+  }
+
+  getPerformanceClass(level: string): { [key: string]: boolean } {
+    return {
+      'badge-excellent': level === 'Excellent',
+      'badge-good': level === 'Good',
+      'badge-satisfactory': level === 'Satisfactory',
+      'badge-needs-support': level === 'Needs Support'
+    };
   }
 }

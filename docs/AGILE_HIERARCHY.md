@@ -61,7 +61,7 @@ EPIC-02: Student Management
 
 EPIC-03: Assessment & Scoring
     └── FEAT-07: Score Entry
-            └── US-11: Enter assessment scores (0–20)
+            └── US-11: Add named assessments with flexible scoring
     └── FEAT-08: Automatic Score Calculations
             └── US-12: View total, average, and percentage
             └── US-13: View performance level badge
@@ -79,6 +79,13 @@ EPIC-05: API & Backend
             └── US-18: Reject invalid data server-side
     └── FEAT-12: API Documentation
             └── US-19: Explore API via Swagger UI
+
+EPIC-06: Grade & Assessment Management
+    └── FEAT-13: Grade Level Lookup
+            └── US-20: Select grade from controlled dropdown
+    └── FEAT-14: Individual Assessment CRUD
+            └── US-21: Add a named assessment to a student
+            └── US-22: Edit and delete an individual assessment
 ```
 
 ---
@@ -106,7 +113,7 @@ Scrum is an Agile framework that organizes work into short, time-boxed iteration
 ### Scrum Artifacts
 
 #### 1. Product Backlog
-A living, prioritized list of all work needed for the product. All 19 User Stories reside here, estimated in story points and ordered by business priority. The Product Owner is responsible for its content and ordering.
+A living, prioritized list of all work needed for the product. All 22 User Stories reside here, estimated in story points and ordered by business priority. The Product Owner is responsible for its content and ordering.
 
 #### 2. Sprint Backlog
 The set of Product Backlog items selected for a given Sprint, along with the Sprint Goal and the plan for delivering the Increment. Each Sprint section below contains its own Sprint Backlog.
@@ -156,7 +163,7 @@ A User Story is **Done** only when ALL of the following criteria are satisfied:
 
 ### Product Backlog
 
-All 19 User Stories, prioritized by business value, with story point estimates and Sprint assignments. **Total estimated effort: 64 story points**.
+All 22 User Stories, prioritized by business value, with story point estimates and Sprint assignments. **Total estimated effort: 76 story points**.
 
 | ID | User Story | Priority | Points | Sprint |
 |----|-----------|----------|:------:|:------:|
@@ -174,12 +181,15 @@ All 19 User Stories, prioritized by business value, with story point estimates a
 | US-09 | Update student information | Medium | 5 | Sprint 3 |
 | US-10 | Delete a student record | Medium | 3 | Sprint 3 |
 | US-17 | Consume teacher API from frontend | Medium | 3 | Sprint 3 |
-| US-11 | Enter assessment scores (0–20) | Medium | 3 | Sprint 4 |
+| US-20 | Select grade from controlled dropdown | Medium | 2 | Sprint 3 |
+| US-11 | Add named assessments with flexible scoring | Medium | 5 | Sprint 4 |
+| US-21 | Add a named assessment to a student | Medium | 3 | Sprint 4 |
+| US-22 | Edit and delete an individual assessment | Medium | 3 | Sprint 4 |
 | US-12 | View total, average, and percentage | Medium | 3 | Sprint 4 |
 | US-13 | View performance level badge | Medium | 2 | Sprint 4 |
 | US-14 | Sort students by column | Low | 2 | Sprint 4 |
 | US-15 | Search and filter students | Low | 2 | Sprint 4 |
-| **Total** | | | **64** | |
+| **Total** | | | **76** | |
 
 ---
 
@@ -236,10 +246,10 @@ All 19 User Stories, prioritized by business value, with story point estimates a
 
 ---
 
-#### Sprint 3 — Student Lifecycle & Views
+#### Sprint 3 — Student Lifecycle, Views & Data Model Refactoring
 **Dates**: March 16–22, 2026
-**Sprint Goal**: *Complete the full student management lifecycle — list view, detail view, edit, and delete — and finalize teacher API integration in the Angular frontend.*
-**Velocity**: 19 story points
+**Sprint Goal**: *Complete the full student management lifecycle — list view, detail view, edit, and delete — finalise teacher API integration in Angular, and refactor the data model to support grade lookup and flexible per-student assessments.*
+**Velocity**: 21 story points
 
 | Story | Title | Points | Status |
 |-------|-------|:------:|:------:|
@@ -248,9 +258,10 @@ All 19 User Stories, prioritized by business value, with story point estimates a
 | US-09 | Update student information | 5 | Done |
 | US-10 | Delete a student record | 3 | Done |
 | US-17 | Consume teacher API from frontend | 3 | Done |
-| **Total** | | **19** | |
+| US-20 | Select grade from controlled dropdown | 2 | Done |
+| **Total** | | **21** | |
 
-**Sprint Review**: Full CRUD lifecycle for students is complete. Teachers can view all students, open individual detail pages, edit records, and delete with a confirmation step. All Angular routes (`/`, `/detail/:id`, `/edit/:id`) are functional. Teacher API integration (registration and login) is wired to the Angular frontend.
+**Sprint Review**: Full CRUD lifecycle for students is complete. Teachers can view all students, open individual detail pages, edit records, and delete with a confirmation step. All Angular routes (`/`, `/detail/:id`, `/edit/:id`) are functional. Teacher API integration is wired to the Angular frontend. Data model refactored: Grade is now a seeded lookup table (Grade 7–12), students reference it via `GradeId` FK; `IdPassportNo` and `StudentUniqueId` fields added; assessment scores extracted into the separate `StudentAssessments` table (EF Core migration `AddGradesAndAssessmentsRefactoring` applied March 18). Student list table expanded to show: Student ID (`StudentUniqueId`), Full Name, Email, Grade, Score (`totalScore/maxPossible`), and a colour-coded Performance Level badge; `StudentListDto` updated to carry all these fields from the API; DataTables `columnDefs` configured so the Performance column sorts by hidden numeric percentage.
 
 **Sprint Retrospective**:
 
@@ -262,21 +273,23 @@ All 19 User Stories, prioritized by business value, with story point estimates a
 
 ---
 
-#### Sprint 4 — Assessment Scoring & DataTables Polish
+#### Sprint 4 — Assessment CRUD, Scoring & DataTables Polish
 **Dates**: March 23–29, 2026
-**Sprint Goal**: *Implement automated assessment score calculations with performance level labels, and enhance the student table with DataTables sorting, searching, and pagination.*
-**Velocity**: 12 story points
+**Sprint Goal**: *Implement the full individual-assessment workflow (add, edit, delete), automated score calculations with performance level labels, and enhance the student table with DataTables sorting, searching, and pagination.*
+**Velocity**: 20 story points
 
 | Story | Title | Points | Status |
 |-------|-------|:------:|:------:|
-| US-11 | Enter assessment scores (0–20) | 3 | Done |
-| US-12 | View total, average, and percentage | 3 | Done |
-| US-13 | View performance level badge | 2 | Done |
-| US-14 | Sort students by column | 2 | Done |
-| US-15 | Search and filter students | 2 | Done |
-| **Total** | | **12** | |
+| US-11 | Add named assessments with flexible scoring | 5 | — |
+| US-21 | Add a named assessment to a student | 3 | — |
+| US-22 | Edit and delete an individual assessment | 3 | — |
+| US-12 | View total, average, and percentage | 3 | — |
+| US-13 | View performance level badge | 2 | — |
+| US-14 | Sort students by column | 2 | — |
+| US-15 | Search and filter students | 2 | — |
+| **Total** | | **20** | |
 
-**Sprint Review**: Assessment scores (0–20 each) are captured, stored, and validated. Total, average, and percentage are auto-calculated. Performance level badges (Needs Support / Satisfactory / Good / Excellent) display correctly in both list and detail views. DataTables is integrated, providing real-time search, column sorting, and pagination across the student table.
+**Sprint Review**: *(Pending Sprint 4 completion — March 23–29, 2026.)*
 
 **Sprint Retrospective**:
 
@@ -403,12 +416,13 @@ All 19 User Stories, prioritized by business value, with story point estimates a
 **so that** their performance can be tracked in the system.
 
 **Acceptance Criteria:**
-- [ ] Create form collects: first name, last name, email, phone, grade, Assessment1, Assessment2, Assessment3.
+- [ ] Create form collects: ID/Passport No., first name, last name, email, phone, grade (selected from a controlled dropdown).
+- [ ] A system-generated StudentUniqueId (e.g., `STU-A1B2C3D4`) is assigned automatically on creation.
 - [ ] On successful submission, the student appears in the list.
 - [ ] The teacher is redirected to the students list after creation.
 
 **App Example:**
-> Mrs. Smith clicks "Add Student", fills in: `John Doe, john@school.com, 12345678, Grade 10, Assessment1: 18, Assessment2: 15, Assessment3: 17`, and clicks Submit. John Doe now appears in the students table with a Total of 50, Average of 16.67, and a performance level of "Excellent".
+> Mrs. Smith clicks "Add Student", fills in: `ID/Passport No.: 123456789, John Doe, john@school.com, 12345678, Grade 10`, and clicks Create. John Doe appears in the students table. She can then open his profile and add individual assessments from the detail page.
 
 ---
 
@@ -421,13 +435,16 @@ All 19 User Stories, prioritized by business value, with story point estimates a
 **so that** only clean and correct data is saved to the system.
 
 **Acceptance Criteria:**
-- [ ] Assessment scores: required, integer, 0–20 inclusive.
-- [ ] Names, email, phone follow the same rules as registration.
+- [ ] ID/Passport No.: required, exactly 9 characters, letters/numbers/hyphens only.
+- [ ] First/Last name: required, 2–50 characters, letters/spaces/hyphens only.
+- [ ] Email: required, valid email format, max 100 characters.
+- [ ] Phone: required, exactly 8 digits.
+- [ ] Grade: required, must select a valid grade level from the dropdown (GradeId > 0).
 - [ ] Invalid fields display inline error messages.
 - [ ] Backend (FluentValidation) rejects invalid payloads with a 400 response.
 
 **App Example:**
-> Mrs. Smith enters `25` for Assessment1 (exceeding the max of 20). The form shows: *"Assessment score must be between 0 and 20"* and blocks submission.
+> Mrs. Smith leaves the Grade field on "-- Select Grade --" and submits. The form shows: *"A valid grade must be selected"* and blocks submission. If the API is called directly with `GradeId: 0`, FluentValidation returns `400 Bad Request` with the same message.
 
 ---
 
@@ -447,11 +464,14 @@ All 19 User Stories, prioritized by business value, with story point estimates a
 
 **Acceptance Criteria:**
 - [ ] The home page (`/`) displays a table of all students.
-- [ ] The table shows key columns: name, email, grade, total score, performance level.
+- [ ] The table shows the following columns: Student ID (`StudentUniqueId`), Full Name, Email, Grade, Score (`totalScore / maxPossible` or "No assessments"), and Performance Level.
+- [ ] Performance Level is displayed as a colour-coded badge (green = Excellent, blue = Good, yellow = Satisfactory, red = Needs Support).
+- [ ] Students with no assessments show a muted "No assessments" score and no badge.
 - [ ] The table is rendered using the DataTables library with sorting and pagination.
+- [ ] The Performance column sorts by the underlying percentage value, not alphabetically by label.
 
 **App Example:**
-> Mrs. Smith opens the app and sees a table listing all 25 students in her class, with columns for Name, Email, Grade, Total Score (e.g., 50/60), and Performance Level (e.g., "Excellent").
+> Mrs. Smith opens the app and sees a table listing all 25 students in her class, with columns: Student ID (e.g., `STU-A1B2C3D4`), Full Name, Email, Grade, Score (e.g., `144/170`), and a colour-coded Performance badge (e.g., **Excellent** in green). Students with no assessments show "No assessments" in the Score column.
 
 ---
 
@@ -464,13 +484,16 @@ All 19 User Stories, prioritized by business value, with story point estimates a
 **so that** I can see all their details and individual assessment scores.
 
 **Acceptance Criteria:**
-- [ ] A detail page at `/detail/:id` shows all student fields.
-- [ ] Shows Assessment1, Assessment2, Assessment3 scores individually.
-- [ ] Shows calculated Total, Average, Percentage, and Performance Level.
+- [ ] A detail page at `/detail/:id` shows all student fields: StudentUniqueId, ID/Passport No., name, email, phone, grade.
+- [ ] Shows the student's dynamic assessment list as a table: Name, Score/MaxScore, Percentage, Due Date.
+- [ ] Overdue assessments are flagged with an "Overdue" badge.
+- [ ] An inline Add Assessment form allows adding a new named assessment with a custom MaxScore and optional due date.
+- [ ] Edit and Delete buttons on each assessment row allow updating or removing assessments inline.
+- [ ] Performance Summary shows: Total Score/MaxPossible, Average %, Percentage, and Performance Level badge.
 - [ ] Provides navigation back to the list and to the edit page.
 
 **App Example:**
-> Mrs. Smith clicks "View" on John Doe's row. She is taken to `/detail/1` where she sees all his details: *Assessment1: 18, Assessment2: 15, Assessment3: 17, Total: 50, Average: 16.67, Percentage: 83.3%, Level: Excellent*.
+> Mrs. Smith clicks "View" on John Doe's row. She sees `/detail/1` with his ID (`STU-A1B2C3D4`), personal info, and a table of his assessments: *Test 1: 18/20 (90%), Assignment 2: 44/50 (88%)*. The Performance Summary shows *Total: 62/70, Percentage: 88.6%, Level: Excellent*. She can add, edit, or delete individual assessments without leaving the page.
 
 ---
 
@@ -489,13 +512,13 @@ All 19 User Stories, prioritized by business value, with story point estimates a
 **so that** I can correct mistakes or update their assessment scores.
 
 **Acceptance Criteria:**
-- [ ] Edit form at `/edit/:id` pre-populates with the student's current values.
-- [ ] Teacher can change any field.
+- [ ] Edit form at `/edit/:id` pre-populates personal details: ID/Passport No., first name, last name, email, phone, grade.
+- [ ] Teacher can change any personal detail field.
 - [ ] On save, the record is updated and the teacher is redirected to the detail view.
-- [ ] Calculated fields (total, average, percentage, level) automatically update.
+- [ ] Assessment scores are managed separately via the inline assessment controls on the detail page.
 
 **App Example:**
-> Mrs. Smith realizes she entered John Doe's Assessment2 score as 15 instead of 19. She navigates to `/edit/1`, changes Assessment2 to 19, and saves. John's new Total is 54, Percentage is 90%, and Level is still "Excellent".
+> Mrs. Smith realizes she mis-entered John Doe's email. She navigates to `/edit/1`, corrects the email, and clicks Update. She is redirected to `/detail/1` where all personal info is updated. His assessment history and performance summary are unchanged.
 
 ---
 
@@ -532,25 +555,27 @@ All 19 User Stories, prioritized by business value, with story point estimates a
 
 ### FEAT-07: Score Entry
 
-> **Description**: Allow teachers to record up to three assessment scores per student.
+> **Description**: Allow teachers to add any number of named assessment entries to a student, each with its own teacher-defined maximum score and an optional due date.
 
 ---
 
-#### US-11: Enter Assessment Scores (0–20)
+#### US-11: Add Named Assessments with Flexible Scoring
 
-> **Story Points**: 3 &nbsp;|&nbsp; **Sprint**: Sprint 4
+> **Story Points**: 5 &nbsp;|&nbsp; **Sprint**: Sprint 4
 
 **As a** teacher,
-**I want** to enter three separate assessment scores for each student,
-**so that** the system can calculate their overall performance.
+**I want** to add individually named assessment entries to a student's profile, each with its own maximum score,
+**so that** I can record any assessment type (test, assignment, exam) on any marking scale I choose.
 
 **Acceptance Criteria:**
-- [ ] Three score fields: Assessment1, Assessment2, Assessment3.
-- [ ] Each score must be an integer between 0 and 20.
-- [ ] Scores are stored and retrievable via the API.
+- [ ] From the student detail page, a teacher can add an assessment with a custom Name (e.g., "Test 1", "Final Exam").
+- [ ] Each assessment has a teacher-defined MaxScore (any positive value: 20, 50, 100, etc.).
+- [ ] Score must be ≥ 0 and ≤ MaxScore for that assessment.
+- [ ] An optional DueDate can be recorded; overdue assessments are flagged with an "Overdue" badge in the UI.
+- [ ] Assessments are stored independently and retrievable via `GET /api/students/{id}/assessments`.
 
 **App Example:**
-> When adding John Doe, Mrs. Smith enters: `Assessment1: 18, Assessment2: 19, Assessment3: 17`. These are saved with his record.
+> After creating John Doe's record, Mrs. Smith opens his detail page and adds: "Test 1" (MaxScore: 20, Score: 18, Due: 05/03/2026), "Assignment 2" (MaxScore: 50, Score: 44), "Final Exam" (MaxScore: 100, Score: 82). Each is saved immediately and reflected in the performance summary.
 
 ---
 
@@ -569,13 +594,15 @@ All 19 User Stories, prioritized by business value, with story point estimates a
 **so that** I don't have to calculate them manually.
 
 **Acceptance Criteria:**
-- [ ] Total = Assessment1 + Assessment2 + Assessment3 (max: 60)
-- [ ] Average = Total / 3
-- [ ] Percentage = (Total / 60) × 100
-- [ ] Results are displayed on the student detail page and in the list table.
+- [ ] Total Score = sum of Score across all student assessments.
+- [ ] Max Possible = sum of MaxScore across all student assessments.
+- [ ] Percentage = (Total Score / Max Possible) × 100.
+- [ ] Average = mean of per-assessment percentage: avg((score / maxScore) × 100) across all assessments.
+- [ ] Results are displayed in the Performance Summary section on the student detail page and in the list table.
+- [ ] When no assessments exist the system displays "No Assessments" instead of calculated values.
 
 **App Example:**
-> John Doe's scores: 18, 19, 17. The system displays: *Total: 54, Average: 18.00, Percentage: 90.0%* automatically — no manual input needed.
+> John Doe has three assessments: Test 1 (18/20), Assignment 2 (44/50), Final Exam (82/100). The system displays: *Total: 144/170, Percentage: 84.7%, Average: 85.2%, Level: Excellent* — updated automatically each time an assessment is added, edited, or deleted.
 
 ---
 
@@ -672,13 +699,18 @@ All 19 User Stories, prioritized by business value, with story point estimates a
 **Acceptance Criteria:**
 - [ ] `GET /api/students` — retrieves all students.
 - [ ] `POST /api/students` — creates a new student.
-- [ ] `GET /api/students/{id}` — retrieves a single student.
-- [ ] `PUT /api/students/{id}` — updates a student.
-- [ ] `DELETE /api/students/{id}` — deletes a student.
-- [ ] All responses use consistent JSON shapes (StudentDto).
+- [ ] `GET /api/students/{id}` — retrieves a single student with their assessments.
+- [ ] `PUT /api/students/{id}` — updates a student's personal details.
+- [ ] `DELETE /api/students/{id}` — deletes a student and all their assessments (cascade).
+- [ ] `GET /api/grades` — retrieves all grade levels for dropdown population.
+- [ ] `GET /api/students/{id}/assessments` — retrieves all assessments for a student.
+- [ ] `POST /api/students/{id}/assessments` — adds a new assessment to a student.
+- [ ] `PUT /api/students/{id}/assessments/{assessmentId}` — updates a single assessment.
+- [ ] `DELETE /api/students/{id}/assessments/{assessmentId}` — deletes a single assessment.
+- [ ] All responses use consistent JSON shapes (StudentDto, GradeDto, StudentAssessmentDto).
 
 **App Example:**
-> When Mrs. Smith loads the homepage, the Angular `StudentService` fires `GET /api/students` → the API returns a JSON array of `StudentDto` objects → DataTables renders them in the table.
+> When Mrs. Smith loads the homepage, Angular fires `GET /api/students` → the API returns `StudentDto[]` → DataTables renders them. When she opens a detail page, `GET /api/students/{id}` returns the student with embedded assessments. Adding an assessment calls `POST /api/students/{id}/assessments`.
 
 ---
 
@@ -717,10 +749,11 @@ All 19 User Stories, prioritized by business value, with story point estimates a
 **Acceptance Criteria:**
 - [ ] Any request violating validation rules returns HTTP 400 Bad Request.
 - [ ] The response body contains a structured list of validation errors.
-- [ ] Validation rules mirror the frontend rules (names, email, phone, scores 0–20).
+- [ ] Student validation rules: IdPassportNo (9 chars), names (2–50 chars), email, phone (8 digits), GradeId (> 0).
+- [ ] Assessment validation rules: Name required (max 100 chars), MaxScore > 0, Score ≥ 0 and ≤ MaxScore.
 
 **App Example:**
-> If a direct API call is made via Postman with `Assessment1: -5`, the API responds: `400 Bad Request` with body: `{ "errors": { "Assessment1": ["Assessment score must be between 0 and 20"] } }`.
+> A direct API call via Postman adds an assessment with `Score: 25` and `MaxScore: 20`. The API responds: `400 Bad Request` with body: `{ "errors": { "Score": ["Score cannot exceed the max score for this assessment"] } }`.
 
 ---
 
@@ -749,6 +782,82 @@ All 19 User Stories, prioritized by business value, with story point estimates a
 
 ---
 
+## EPIC-06: Grade & Assessment Management
+
+> **Goal**: Prevent free-text data inconsistency by using a controlled grade-level lookup, and give teachers the flexibility to record any number of individually named assessments on any marking scale.
+
+---
+
+### FEAT-13: Grade Level Lookup
+
+> **Description**: Expose a read-only Grades API endpoint that the frontend consumes to populate the grade dropdown, replacing the old free-text grade field with a validated FK reference.
+
+---
+
+#### US-20: Select Grade from Controlled Dropdown
+
+> **Story Points**: 2 &nbsp;|&nbsp; **Sprint**: Sprint 3
+
+**As a** teacher,
+**I want** to select a student's grade level from a predefined dropdown (Grade 7–12),
+**so that** grade data is consistent across all student records.
+
+**Acceptance Criteria:**
+- [ ] Student create and edit forms load available grades from `GET /api/grades`.
+- [ ] The dropdown shows grade labels (e.g., "Grade 7", "Grade 8") ordered by level.
+- [ ] A GradeId FK is stored on the student record instead of a free-text string.
+- [ ] Selecting "-- Select Grade --" (GradeId = 0) is blocked by frontend and backend validation.
+
+**App Example:**
+> Mrs. Smith opens the Create Student form. The Grade dropdown is pre-populated with Grade 7 through Grade 12. She selects "Grade 10". The saved student record links to the `Grades` table row for Grade 10, not a string.
+
+---
+
+### FEAT-14: Individual Assessment CRUD
+
+> **Description**: Allow teachers to add, edit, and delete individually named assessment entries on a student's detail page, each with a teacher-defined maximum score and an optional due date.
+
+---
+
+#### US-21: Add a Named Assessment to a Student
+
+> **Story Points**: 3 &nbsp;|&nbsp; **Sprint**: Sprint 4
+
+**As a** teacher,
+**I want** to add a named assessment entry to a student's profile from the detail page,
+**so that** I can record any test, assignment, or exam result using the scale I choose.
+
+**Acceptance Criteria:**
+- [ ] An inline "Add Assessment" form on the detail page collects: Name, MaxScore, Score, and optional DueDate.
+- [ ] `POST /api/students/{id}/assessments` creates the entry and returns 201 Created.
+- [ ] The assessment table and performance summary update immediately after adding.
+- [ ] FluentValidation rejects: empty name, MaxScore ≤ 0, Score < 0, Score > MaxScore.
+
+**App Example:**
+> Mrs. Smith opens John Doe's detail page and fills in: Name = "Test 1", MaxScore = 20, Score = 17. She clicks Add. The assessment appears in the table and the Performance Summary recalculates instantly.
+
+---
+
+#### US-22: Edit and Delete an Individual Assessment
+
+> **Story Points**: 3 &nbsp;|&nbsp; **Sprint**: Sprint 4
+
+**As a** teacher,
+**I want** to edit or delete an individual assessment record inline on the student detail page,
+**so that** I can correct entry mistakes without affecting the rest of the student's record.
+
+**Acceptance Criteria:**
+- [ ] An "Edit" button on each assessment row switches the row into an editable form.
+- [ ] `PUT /api/students/{id}/assessments/{assessmentId}` updates the record on save.
+- [ ] A "Delete" button on each row requests confirmation before calling `DELETE /api/students/{id}/assessments/{assessmentId}`.
+- [ ] On success, the table and performance summary update immediately.
+- [ ] The API returns 404 if the assessment does not belong to the specified student.
+
+**App Example:**
+> Mrs. Smith notices "Test 1" was entered with Score 17 instead of 19. She clicks Edit on that row, changes Score to 19, and clicks Save. The row updates and the Performance Summary increases.
+
+---
+
 ## Summary Table
 
 | ID | Level | Title | Parent | Points | Sprint |
@@ -773,7 +882,7 @@ All 19 User Stories, prioritized by business value, with story point estimates a
 | US-10 | User Story | Delete a Student Record | FEAT-06 | 3 | Sprint 3 |
 | EPIC-03 | Epic | Assessment & Scoring | — | — | — |
 | FEAT-07 | Feature | Score Entry | EPIC-03 | — | — |
-| US-11 | User Story | Enter Assessment Scores (0–20) | FEAT-07 | 3 | Sprint 4 |
+| US-11 | User Story | Add Named Assessments with Flexible Scoring | FEAT-07 | 5 | Sprint 4 |
 | FEAT-08 | Feature | Automatic Score Calculations | EPIC-03 | — | — |
 | US-12 | User Story | View Total, Average, and Percentage | FEAT-08 | 3 | Sprint 4 |
 | US-13 | User Story | View Performance Level Badge | FEAT-08 | 2 | Sprint 4 |
@@ -789,4 +898,10 @@ All 19 User Stories, prioritized by business value, with story point estimates a
 | US-18 | User Story | Reject Invalid Data Server-Side | FEAT-11 | 3 | Sprint 1 |
 | FEAT-12 | Feature | API Documentation | EPIC-05 | — | — |
 | US-19 | User Story | Explore API via Swagger UI | FEAT-12 | 2 | Sprint 1 |
-| **Totals** | | **19 User Stories** | | **64 pts** | **4 Sprints** |
+| EPIC-06 | Epic | Grade & Assessment Management | — | — | — |
+| FEAT-13 | Feature | Grade Level Lookup | EPIC-06 | — | — |
+| US-20 | User Story | Select Grade from Controlled Dropdown | FEAT-13 | 2 | Sprint 3 |
+| FEAT-14 | Feature | Individual Assessment CRUD | EPIC-06 | — | — |
+| US-21 | User Story | Add a Named Assessment to a Student | FEAT-14 | 3 | Sprint 4 |
+| US-22 | User Story | Edit and Delete an Individual Assessment | FEAT-14 | 3 | Sprint 4 |
+| **Totals** | | **22 User Stories** | | **76 pts** | **4 Sprints** |
