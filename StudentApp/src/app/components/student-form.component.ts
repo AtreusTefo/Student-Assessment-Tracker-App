@@ -38,19 +38,21 @@ import { takeUntil } from 'rxjs/operators';
         
         <div class="form-group">
           <label for="firstName">First Name:</label>
-          <input type="text" id="firstName" [(ngModel)]="student.firstName" name="firstName" #firstName="ngModel" autocomplete="given-name" required minlength="2" maxlength="50" [disabled]="loading" />
+          <input type="text" id="firstName" [(ngModel)]="student.firstName" name="firstName" #firstName="ngModel" autocomplete="given-name" required minlength="2" maxlength="50" pattern="^[a-zA-Z]+$" (keypress)="allowOnlyLetters($event)" [disabled]="loading" />
           <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('required')">First name is required</span>
           <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('minlength')">First name must be at least 2 characters</span>
           <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('maxlength')">First name cannot exceed 50 characters</span>
+          <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('pattern')">First name can only contain letters</span>
           <span class="error" *ngIf="fieldErrors['firstName'] && fieldErrors['firstName'].length">{{ fieldErrors['firstName'].join('\n') }}</span>
         </div>
         
         <div class="form-group">
           <label for="lastName">Last Name:</label>
-          <input type="text" id="lastName" [(ngModel)]="student.lastName" name="lastName" #lastName="ngModel" autocomplete="family-name" required minlength="2" maxlength="50" [disabled]="loading" />
+          <input type="text" id="lastName" [(ngModel)]="student.lastName" name="lastName" #lastName="ngModel" autocomplete="family-name" required minlength="2" maxlength="50" pattern="^[a-zA-Z]+$" (keypress)="allowOnlyLetters($event)" [disabled]="loading" />
           <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('required')">Last name is required</span>
           <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('minlength')">Last name must be at least 2 characters</span>
           <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('maxlength')">Last name cannot exceed 50 characters</span>
+          <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('pattern')">Last name can only contain letters</span>
           <span class="error" *ngIf="fieldErrors['lastName'] && fieldErrors['lastName'].length">{{ fieldErrors['lastName'].join('\n') }}</span>
         </div>
         
@@ -321,6 +323,13 @@ export class StudentFormComponent implements OnInit, OnDestroy {
   allowOnlyNumbers(event: KeyboardEvent): void {
     const char = String.fromCharCode(event.which);
     if (!/[0-9]/.test(char)) {
+      event.preventDefault();
+    }
+  }
+
+  allowOnlyLetters(event: KeyboardEvent): void {
+    const char = String.fromCharCode(event.which);
+    if (!/[a-zA-Z]/.test(char)) {
       event.preventDefault();
     }
   }

@@ -5,6 +5,14 @@
  */
 
 /**
+ * Subject lookup DTO — returned by GET /api/subjects
+ */
+export interface SubjectDto {
+  id: number;
+  name: string;
+}
+
+/**
  * Core Teacher entity - matches backend domain model
  */
 export interface Teacher {
@@ -13,7 +21,8 @@ export interface Teacher {
   lastName: string;
   email: string;
   phone: string;
-  subject: string;
+  subjectId: number;
+  subjectName: string;
   createdAt: string;
   updatedAt?: string;
 }
@@ -26,7 +35,7 @@ export interface CreateTeacherDto {
   lastName: string;
   email: string;
   phone: string;
-  subject: string;
+  subjectId: number;
   password: string;
 }
 
@@ -49,7 +58,8 @@ export interface TeacherLoginResponse {
     lastName: string;
     email: string;
     phone: string;
-    subject: string;
+    subjectId: number;
+    subjectName: string;
     enrollmentDate: string;
     createdDate: string;
   };
@@ -63,5 +73,5 @@ export interface UpdateTeacherDto {
   lastName: string;
   email: string;
   phone: string;
-  subject: string;
+  subjectId: number;
 }

@@ -113,7 +113,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // ============================================================================
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IRepository<Student>, StudentRepository>();
-builder.Services.AddScoped<IRepository<Teacher>, Repository<Teacher>>();
+builder.Services.AddScoped<IRepository<Teacher>, TeacherRepository>();
 
 // ============================================================================
 // APPLICATION LAYER - Business Logic

@@ -20,8 +20,11 @@ namespace StudentAssessmentTracker.Domain.Entities
         /// <summary>Gets or sets the teacher's phone number</summary>
         public string Phone { get; set; } = string.Empty;
 
-        /// <summary>Gets or sets the subject the teacher instructs</summary>
-        public string Subject { get; set; } = string.Empty;
+        /// <summary>Gets or sets the subject FK</summary>
+        public int SubjectId { get; set; }
+
+        /// <summary>Navigation property to the Subject lookup</summary>
+        public Subject? SubjectNavigation { get; set; }
 
         /// <summary>Gets or sets the hashed or stored password</summary>
         public string Password { get; set; } = string.Empty;

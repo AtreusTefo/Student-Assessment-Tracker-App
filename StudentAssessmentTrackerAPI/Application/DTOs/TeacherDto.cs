@@ -20,10 +20,11 @@ namespace StudentAssessmentTracker.Application.DTOs
         /// <summary>Gets or sets the phone number</summary>
         public string Phone { get; set; } = string.Empty;
 
-        /// <summary>Gets or sets the subject taught</summary>
-        public string Subject { get; set; } = string.Empty;
+        /// <summary>Gets or sets the subject identifier</summary>
+        public int SubjectId { get; set; }
 
-        // Password is intentionally excluded from the response DTO for security.
+        /// <summary>Gets or sets the subject display name</summary>
+        public string SubjectName { get; set; } = string.Empty;
 
         /// <summary>Gets or sets the enrollment date</summary>
         public DateTime EnrollmentDate { get; set; }
@@ -49,8 +50,8 @@ namespace StudentAssessmentTracker.Application.DTOs
         /// <summary>Gets or sets the phone number</summary>
         public string Phone { get; set; } = string.Empty;
 
-        /// <summary>Gets or sets the subject taught</summary>
-        public string Subject { get; set; } = string.Empty;
+        /// <summary>Gets or sets the subject identifier</summary>
+        public int SubjectId { get; set; }
 
         /// <summary>Gets or sets the password</summary>
         public string Password { get; set; } = string.Empty;
@@ -76,8 +77,8 @@ namespace StudentAssessmentTracker.Application.DTOs
         /// <summary>Gets or sets the phone number</summary>
         public string Phone { get; set; } = string.Empty;
 
-        /// <summary>Gets or sets the subject taught</summary>
-        public string Subject { get; set; } = string.Empty;
+        /// <summary>Gets or sets the subject identifier</summary>
+        public int SubjectId { get; set; }
 
         /// <summary>Gets or sets the password</summary>
         public string Password { get; set; } = string.Empty;

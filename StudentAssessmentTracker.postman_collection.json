@@ -16,10 +16,15 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/students",
-              "protocol": "http",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "students"]
-            }
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "students"
+              ]
+            },
+            "description": "Returns all students with assessments, grade name and performance summary."
           },
           "response": []
         },
@@ -30,10 +35,16 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/students/{{studentId}}",
-              "protocol": "http",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "students", "{{studentId}}"]
-            }
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "students",
+                "{{studentId}}"
+              ]
+            },
+            "description": "Returns a single student with full detail including assessments and calculated performance fields."
           },
           "response": []
         },
@@ -49,7 +60,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"idPassportNo\": \"A12345678\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"12345678\",\n  \"grade\": \"A\",\n  \"assessment1\": 18,\n  \"assessment2\": 19,\n  \"assessment3\": 17\n}",
+              "raw": "{\n  \"idPassportNo\": \"A12345678\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"12345678\",\n  \"gradeId\": 1,\n  \"teacherId\": 1\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -58,10 +69,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/students",
-              "protocol": "http",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "students"]
-            }
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "students"
+              ]
+            },
+            "description": "Creates a new student. gradeId must be a valid ID from GET /api/grades. teacherId must be a valid teacher ID. Assessments are added separately via POST /api/students/{id}/assessments."
           },
           "response": []
         },
@@ -77,7 +93,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"idPassportNo\": \"B23456789\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"email\": \"jane.smith@example.com\",\n  \"phone\": \"87654321\",\n  \"grade\": \"A+\",\n  \"assessment1\": 20,\n  \"assessment2\": 20,\n  \"assessment3\": 19\n}",
+              "raw": "{\n  \"idPassportNo\": \"B23456789\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"email\": \"jane.smith@example.com\",\n  \"phone\": \"87654321\",\n  \"gradeId\": 2\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -86,10 +102,16 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/students/{{studentId}}",
-              "protocol": "http",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "students", "{{studentId}}"]
-            }
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "students",
+                "{{studentId}}"
+              ]
+            },
+            "description": "Updates student profile fields. teacherId cannot be changed via update. Assessments are managed separately."
           },
           "response": []
         },
@@ -100,9 +122,155 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/students/{{studentId}}",
-              "protocol": "http",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "students", "{{studentId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "students",
+                "{{studentId}}"
+              ]
+            },
+            "description": "Deletes a student and all their assessments (cascade delete)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Student Assessments",
+      "description": "Nested under /api/students/{studentId}/assessments. Each assessment has its own name, maxScore, score and optional dueDate.",
+      "item": [
+        {
+          "name": "Get All Assessments for Student",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/students/{{studentId}}/assessments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "students",
+                "{{studentId}}",
+                "assessments"
+              ]
+            },
+            "description": "Returns all assessments for the specified student."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Assessment by ID",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/students/{{studentId}}/assessments/{{assessmentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "students",
+                "{{studentId}}",
+                "assessments",
+                "{{assessmentId}}"
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Assessment to Student",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test 1\",\n  \"maxScore\": 50,\n  \"score\": 42,\n  \"dueDate\": \"2026-04-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/students/{{studentId}}/assessments",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "students",
+                "{{studentId}}",
+                "assessments"
+              ]
+            },
+            "description": "Adds a new assessment to a student. score must be between 0 and maxScore. dueDate is optional (ISO date string)."
+          },
+          "response": []
+        },
+        {
+          "name": "Update Assessment",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test 1 revised\",\n  \"maxScore\": 50,\n  \"score\": 47,\n  \"dueDate\": \"2026-04-15\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/students/{{studentId}}/assessments/{{assessmentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "students",
+                "{{studentId}}",
+                "assessments",
+                "{{assessmentId}}"
+              ]
+            },
+            "description": "Updates a single assessment. Only the fields of this assessment are changed."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Assessment",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/students/{{studentId}}/assessments/{{assessmentId}}",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "students",
+                "{{studentId}}",
+                "assessments",
+                "{{assessmentId}}"
+              ]
             }
           },
           "response": []
@@ -119,10 +287,15 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/teachers",
-              "protocol": "http",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "teachers"]
-            }
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "teachers"
+              ]
+            },
+            "description": "Returns all teachers. Returns 404 with { message: 'No teachers found.' } if the table is empty."
           },
           "response": []
         },
@@ -133,15 +306,20 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/teachers/{{teacherId}}",
-              "protocol": "http",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "teachers", "{{teacherId}}"]
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "teachers",
+                "{{teacherId}}"
+              ]
             }
           },
           "response": []
         },
         {
-          "name": "Create New Teacher",
+          "name": "Register Teacher",
           "request": {
             "method": "POST",
             "header": [
@@ -152,7 +330,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"firstName\": \"Alice\",\n  \"lastName\": \"Johnson\",\n  \"email\": \"alice.johnson@example.com\",\n  \"phone\": \"5551234567\",\n  \"subject\": \"Mathematics\",\n  \"password\": \"Pass@123\",\n  \"enrollmentDate\": \"2024-01-15T00:00:00Z\"\n}",
+              "raw": "{\n  \"firstName\": \"Alice\",\n  \"lastName\": \"Johnson\",\n  \"email\": \"alice.johnson@example.com\",\n  \"phone\": \"55512345\",\n  \"subjectId\": 8,\n  \"password\": \"Pass@123\",\n  \"enrollmentDate\": \"2024-01-15T00:00:00Z\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -161,10 +339,15 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/teachers",
-              "protocol": "http",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "teachers"]
-            }
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "teachers"
+              ]
+            },
+            "description": "Registers a new teacher. subjectId must be a valid ID from GET /api/subjects. Phone must be exactly 8 digits. Password minimum 6 characters.\n\nSubject IDs:\n1=Accounting, 2=Art, 3=Business Studies, 4=English, 5=Geography, 6=History, 7=ICT, 8=Mathematics, 9=Multimedia, 10=Music, 11=Physical Education, 12=Science"
           },
           "response": []
         },
@@ -180,7 +363,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"firstName\": \"Alice\",\n  \"lastName\": \"Johnson\",\n  \"email\": \"alice.johnson@example.com\",\n  \"phone\": \"5551234567\",\n  \"subject\": \"Science\",\n  \"password\": \"Pass@123\",\n  \"enrollmentDate\": \"2024-02-01T00:00:00Z\"\n}",
+              "raw": "{\n  \"firstName\": \"Alice\",\n  \"lastName\": \"Johnson\",\n  \"email\": \"alice.johnson@example.com\",\n  \"phone\": \"55512345\",\n  \"subjectId\": 12,\n  \"password\": \"Pass@123\",\n  \"enrollmentDate\": \"2024-02-01T00:00:00Z\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -189,10 +372,16 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/teachers/{{teacherId}}",
-              "protocol": "http",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "teachers", "{{teacherId}}"]
-            }
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "teachers",
+                "{{teacherId}}"
+              ]
+            },
+            "description": "Updates teacher profile. subjectId must be a valid ID from GET /api/subjects. Returns 200 with { message: 'Teacher with ID {id} successfully updated.' } on success, or 404 if not found."
           },
           "response": []
         },
@@ -203,10 +392,16 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/teachers/{{teacherId}}",
-              "protocol": "http",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "teachers", "{{teacherId}}"]
-            }
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "teachers",
+                "{{teacherId}}"
+              ]
+            },
+            "description": "Returns 200 with { message: 'Teacher with ID {id} successfully deleted.' } on success, or 404 if not found. Cannot delete a teacher who still has students assigned (RESTRICT FK)."
           },
           "response": []
         },
@@ -231,10 +426,66 @@
             },
             "url": {
               "raw": "{{baseUrl}}/api/teachers/login",
-              "protocol": "http",
-              "host": ["{{baseUrl}}"],
-              "path": ["api", "teachers", "login"]
-            }
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "teachers",
+                "login"
+              ]
+            },
+            "description": "Returns a demo token and teacher data (subjectId + subjectName included, password excluded)."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Grades",
+      "description": "Read-only lookup. Seeded: Grade 7-12. Use gradeId in student create/update.",
+      "item": [
+        {
+          "name": "Get All Grades",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/grades",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "grades"
+              ]
+            },
+            "description": "Returns all grade levels ordered by level number. Response: [{ id, name, level }]. Use id as gradeId when creating/updating students."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Subjects",
+      "description": "Read-only lookup. Seeded: 12 subjects. Use subjectId in teacher register/update.",
+      "item": [
+        {
+          "name": "Get All Subjects",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/api/subjects",
+              "host": [
+                "{{baseUrl}}"
+              ],
+              "path": [
+                "api",
+                "subjects"
+              ]
+            },
+            "description": "Returns all subjects ordered alphabetically. Response: [{ id, name }].\n\nSeeded subjects: Accounting(1), Art(2), Business Studies(3), English(4), Geography(5), History(6), ICT(7), Mathematics(8), Multimedia(9), Music(10), Physical Education(11), Science(12).\n\nUse id as subjectId when registering or updating a teacher."
           },
           "response": []
         }

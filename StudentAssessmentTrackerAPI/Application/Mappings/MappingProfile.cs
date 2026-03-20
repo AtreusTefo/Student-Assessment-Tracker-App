@@ -14,6 +14,9 @@ namespace StudentAssessmentTracker.Application.Mappings
             // ── Grade Mappings ────────────────────────────────────────────────
             CreateMap<Grade, GradeDto>();
 
+            // ── Subject Mappings ──────────────────────────────────────────────
+            CreateMap<Subject, SubjectDto>();
+
             // ── StudentAssessment Mappings ────────────────────────────────────
             CreateMap<StudentAssessment, StudentAssessmentDto>();
             CreateMap<CreateStudentAssessmentDto, StudentAssessment>()
@@ -60,15 +63,19 @@ namespace StudentAssessmentTracker.Application.Mappings
             // ── Teacher Mappings ──────────────────────────────────────────────
 
             CreateMap<Teacher, TeacherResponseDto>()
-                .ForMember(dest => dest.TeacherId, opt => opt.MapFrom(src => src.Id));
+                .ForMember(dest => dest.TeacherId, opt => opt.MapFrom(src => src.Id))
+                .ForMember(dest => dest.SubjectName,
+                    opt => opt.MapFrom(src => src.SubjectNavigation != null ? src.SubjectNavigation.Name : string.Empty));
 
             CreateMap<TeacherRegisterDto, Teacher>()
                 .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow))
+                .ForMember(dest => dest.SubjectNavigation, opt => opt.Ignore())
                 .ForMember(dest => dest.Students, opt => opt.Ignore());
 
             CreateMap<TeacherUpdateDto, Teacher>()
                 .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.SubjectNavigation, opt => opt.Ignore())
                 .ForMember(dest => dest.Students, opt => opt.Ignore());
         }
     }

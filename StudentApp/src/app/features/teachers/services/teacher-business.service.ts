@@ -34,7 +34,8 @@ export class TeacherBusinessService {
           lastName: response.teacher.lastName,
           email: response.teacher.email,
           phone: response.teacher.phone,
-          subject: response.teacher.subject,
+          subjectId: response.teacher.subjectId,
+          subjectName: response.teacher.subjectName,
           createdAt: response.teacher.createdDate
         };
         this.teacherState.setCurrentTeacher(teacher);

@@ -2,9 +2,10 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
-import { CreateTeacherDto } from '../core/models';
+import { CreateTeacherDto, SubjectDto } from '../core/models';
 import { TeacherStateService } from '../core/services/state';
 import { TeacherBusinessService } from '../features/teachers/services/teacher-business.service';
+import { SubjectApiService } from '../core/services/http';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -27,18 +28,20 @@ import { takeUntil } from 'rxjs/operators';
       <form (ngSubmit)="onSubmit(form)" #form="ngForm" class="form">
         <div class="form-group">
           <label for="firstName">First Name:</label>
-          <input type="text" id="firstName" [(ngModel)]="teacher.firstName" name="firstName" #firstName="ngModel" autocomplete="given-name" required minlength="2" maxlength="50" [disabled]="loading" (input)="clearError()" />
+          <input type="text" id="firstName" [(ngModel)]="teacher.firstName" name="firstName" #firstName="ngModel" autocomplete="given-name" required minlength="2" maxlength="50" pattern="^[a-zA-Z]+$" (keypress)="allowOnlyLetters($event)" [disabled]="loading" (input)="clearError()" />
           <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('required')">First name is required</span>
           <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('minlength')">First name must be at least 2 characters</span>
           <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('maxlength')">First name cannot exceed 50 characters</span>
+          <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('pattern')">First name can only contain letters</span>
         </div>
         
         <div class="form-group">
           <label for="lastName">Last Name:</label>
-          <input type="text" id="lastName" [(ngModel)]="teacher.lastName" name="lastName" #lastName="ngModel" autocomplete="family-name" required minlength="2" maxlength="50" [disabled]="loading" (input)="clearError()" />
+          <input type="text" id="lastName" [(ngModel)]="teacher.lastName" name="lastName" #lastName="ngModel" autocomplete="family-name" required minlength="2" maxlength="50" pattern="^[a-zA-Z]+$" (keypress)="allowOnlyLetters($event)" [disabled]="loading" (input)="clearError()" />
           <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('required')">Last name is required</span>
           <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('minlength')">Last name must be at least 2 characters</span>
           <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('maxlength')">Last name cannot exceed 50 characters</span>
+          <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('pattern')">Last name can only contain letters</span>
         </div>
         
         <div class="form-group">
@@ -59,9 +62,11 @@ import { takeUntil } from 'rxjs/operators';
         
         <div class="form-group">
           <label for="subject">Subject:</label>
-          <input type="text" id="subject" [(ngModel)]="teacher.subject" name="subject" #subject="ngModel" placeholder="e.g., ICT, Multimedia" autocomplete="off" required maxlength="100" [disabled]="loading" (input)="clearError()" />
-          <span class="error" *ngIf="(form.submitted || subject.touched || subject.dirty) && subject.hasError('required')">Subject is required</span>
-          <span class="error" *ngIf="(form.submitted || subject.touched || subject.dirty) && subject.hasError('maxlength')">Subject cannot exceed 100 characters</span>
+          <select id="subject" [(ngModel)]="teacher.subjectId" name="subject" #subject="ngModel" required [disabled]="loading" (change)="clearError()">
+            <option [ngValue]="0" disabled>-- Select a subject --</option>
+            <option *ngFor="let s of subjects" [ngValue]="s.id">{{ s.name }}</option>
+          </select>
+          <span class="error" *ngIf="(form.submitted || subject.touched || subject.dirty) && (subject.hasError('required') || teacher.subjectId === 0)">Please select a subject</span>
         </div>
 
         <div class="form-group" *ngIf="!isEdit">
@@ -203,6 +208,28 @@ import { takeUntil } from 'rxjs/operators';
       background-color: #757575;
       color: white;
     }
+
+    .form-group select {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      box-sizing: border-box;
+      background-color: white;
+      cursor: pointer;
+    }
+
+    .form-group select:focus {
+      outline: none;
+      border-color: #2196F3;
+      box-shadow: 0 0 5px rgba(33, 150, 243, 0.3);
+    }
+
+    .form-group select:disabled {
+      background-color: #f5f5f5;
+      cursor: not-allowed;
+    }
     
     .error {
       color: #f44336;
@@ -235,10 +262,12 @@ export class SignUpFormComponent implements OnInit, OnDestroy {
     lastName: '',
     email: '',
     phone: '',
-    subject: '',
+    subjectId: 0,
     password: '',
     confirmPassword: ''
   };
+
+  subjects: SubjectDto[] = [];
 
   isEdit = false;
   loading = false;
@@ -254,6 +283,7 @@ export class SignUpFormComponent implements OnInit, OnDestroy {
     private router: Router,
     private teacherBusiness: TeacherBusinessService,
     private teacherState: TeacherStateService,
+    private subjectApi: SubjectApiService,
     private cdr: ChangeDetectorRef
   ) { }
 
@@ -266,6 +296,12 @@ export class SignUpFormComponent implements OnInit, OnDestroy {
   }
 
   ngOnInit(): void {
+    // Load subjects for the dropdown
+    this.subjectApi.getAll().subscribe(subjects => {
+      this.subjects = subjects;
+      this.cdr.markForCheck();
+    });
+
     // Detect edit mode from route param
     const id = this.route.snapshot.paramMap.get('id');
     if (id) {
@@ -301,7 +337,7 @@ export class SignUpFormComponent implements OnInit, OnDestroy {
             lastName: teacher.lastName || '',
             email: teacher.email || '',
             phone: teacher.phone || '',
-            subject: teacher.subject || '',
+            subjectId: teacher.subjectId || 0,
             password: '',
             confirmPassword: ''
           };
@@ -334,6 +370,13 @@ export class SignUpFormComponent implements OnInit, OnDestroy {
   allowOnlyNumbers(event: KeyboardEvent): void {
     const char = String.fromCharCode(event.which);
     if (!/[0-9]/.test(char)) {
+      event.preventDefault();
+    }
+  }
+
+  allowOnlyLetters(event: KeyboardEvent): void {
+    const char = String.fromCharCode(event.which);
+    if (!/[a-zA-Z]/.test(char)) {
       event.preventDefault();
     }
   }
@@ -389,12 +432,16 @@ export class SignUpFormComponent implements OnInit, OnDestroy {
       return;
     }
 
+    if (this.teacher.subjectId === 0) {
+      return;
+    }
+
     const createDto: CreateTeacherDto = {
       firstName: this.teacher.firstName,
       lastName: this.teacher.lastName,
       email: this.teacher.email,
       phone: this.teacher.phone,
-      subject: this.teacher.subject,
+      subjectId: this.teacher.subjectId,
       password: this.teacher.password
     };
 

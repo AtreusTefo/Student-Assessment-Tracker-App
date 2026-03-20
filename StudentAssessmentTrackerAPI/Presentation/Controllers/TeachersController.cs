@@ -36,13 +36,18 @@ namespace StudentAssessmentTracker.Presentation.Controllers
         /// </summary>
         /// <returns>List of all teachers</returns>
         /// <response code="200">Teachers retrieved successfully</response>
+        /// <response code="404">No teachers found</response>
         [HttpGet]
         [ProducesResponseType(typeof(IEnumerable<TeacherResponseDto>), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> GetAll()
         {
             _logger.LogInformation("GET /api/teachers");
             var teachers = await _teacherService.GetAllTeachersAsync();
-            return Ok(teachers);
+            var list = teachers?.ToList() ?? new List<TeacherResponseDto>();
+            if (list.Count == 0)
+                return NotFound(new { message = "No teachers found." });
+            return Ok(list);
         }
 
         // ====================================================================
@@ -99,11 +104,11 @@ namespace StudentAssessmentTracker.Presentation.Controllers
         /// </summary>
         /// <param name="id">The teacher identifier</param>
         /// <param name="dto">Updated teacher data</param>
-        /// <returns>No content on success</returns>
-        /// <response code="204">Teacher updated successfully</response>
+        /// <returns>Confirmation message on success</returns>
+        /// <response code="200">Teacher updated successfully</response>
         /// <response code="404">Teacher not found</response>
         [HttpPut("{id:int}")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Update(int id, [FromBody] TeacherUpdateDto dto)
         {
@@ -112,7 +117,7 @@ namespace StudentAssessmentTracker.Presentation.Controllers
 
             _logger.LogInformation("PUT /api/teachers/{Id}", id);
             var updated = await _teacherService.UpdateTeacherAsync(id, dto);
-            return updated ? NoContent() : NotFound(new { message = $"Teacher with ID {id} not found." });
+            return updated ? Ok(new { message = $"Teacher with ID {id} successfully updated." }) : NotFound(new { message = $"Teacher with ID {id} not found." });
         }
 
         // ====================================================================
@@ -123,17 +128,17 @@ namespace StudentAssessmentTracker.Presentation.Controllers
         /// Deletes a teacher by ID
         /// </summary>
         /// <param name="id">The teacher identifier</param>
-        /// <returns>No content on success</returns>
-        /// <response code="204">Teacher deleted successfully</response>
+        /// <returns>Confirmation message on success</returns>
+        /// <response code="200">Teacher deleted successfully</response>
         /// <response code="404">Teacher not found</response>
         [HttpDelete("{id:int}")]
-        [ProducesResponseType(StatusCodes.Status204NoContent)]
+        [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(int id)
         {
             _logger.LogInformation("DELETE /api/teachers/{Id}", id);
             var deleted = await _teacherService.DeleteTeacherAsync(id);
-            return deleted ? NoContent() : NotFound(new { message = $"Teacher with ID {id} not found." });
+            return deleted ? Ok(new { message = $"Teacher with ID {id} successfully deleted." }) : NotFound(new { message = $"Teacher with ID {id} not found." });
         }
 
         // ====================================================================

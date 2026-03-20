@@ -16,6 +16,7 @@ namespace StudentAssessmentTracker.Infrastructure.Data
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
         public DbSet<Grade> Grades { get; set; }
+        public DbSet<Subject> Subjects { get; set; }
         public DbSet<Student> Students { get; set; }
         public DbSet<StudentAssessment> StudentAssessments { get; set; }
         public DbSet<Teacher> Teachers { get; set; }
@@ -41,6 +42,30 @@ namespace StudentAssessmentTracker.Infrastructure.Data
                 new Grade { Id = 4, Name = "Grade 10", Level = 10 },
                 new Grade { Id = 5, Name = "Grade 11", Level = 11 },
                 new Grade { Id = 6, Name = "Grade 12", Level = 12 }
+            );
+
+            // ── Subjects lookup table (read-only seed data) ─────────────────
+            modelBuilder.Entity<Subject>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+                entity.HasIndex(e => e.Name).IsUnique();
+            });
+
+            // Seed fixed subjects — teachers select from this list, cannot create new ones
+            modelBuilder.Entity<Subject>().HasData(
+                new Subject { Id = 1, Name = "Accounting" },
+                new Subject { Id = 2, Name = "Art" },
+                new Subject { Id = 3, Name = "Business Studies" },
+                new Subject { Id = 4, Name = "English" },
+                new Subject { Id = 5, Name = "Geography" },
+                new Subject { Id = 6, Name = "History" },
+                new Subject { Id = 7, Name = "ICT" },
+                new Subject { Id = 8, Name = "Mathematics" },
+                new Subject { Id = 9, Name = "Multimedia" },
+                new Subject { Id = 10, Name = "Music" },
+                new Subject { Id = 11, Name = "Physical Education" },
+                new Subject { Id = 12, Name = "Science" }
             );
 
             // ── Students ──────────────────────────────────────────────────────
@@ -106,10 +131,15 @@ namespace StudentAssessmentTracker.Infrastructure.Data
                 entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
                 entity.HasIndex(e => e.Email).IsUnique();
                 entity.Property(e => e.Phone).IsRequired().HasMaxLength(8);
-                entity.Property(e => e.Subject).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.Password).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.EnrollmentDate).HasDefaultValueSql("GETUTCDATE()");
                 entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
+
+                // FK → Subjects (RESTRICT: cannot delete a subject that has teachers)
+                entity.HasOne(e => e.SubjectNavigation)
+                    .WithMany(s => s.Teachers)
+                    .HasForeignKey(e => e.SubjectId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
         }
     }

@@ -29,9 +29,8 @@ namespace StudentAssessmentTracker.Application.Validators
                 .NotEmpty().WithMessage("Phone number is required.")
                 .MaximumLength(8).WithMessage("Phone number must not exceed 8 characters.");
 
-            RuleFor(x => x.Subject)
-                .NotEmpty().WithMessage("Subject is required.")
-                .MaximumLength(100).WithMessage("Subject must not exceed 100 characters.");
+            RuleFor(x => x.SubjectId)
+                .GreaterThan(0).WithMessage("A valid subject must be selected.");
 
             RuleFor(x => x.Password)
                 .NotEmpty().WithMessage("Password is required.")
@@ -84,9 +83,8 @@ namespace StudentAssessmentTracker.Application.Validators
                 .NotEmpty().WithMessage("Phone number is required.")
                 .MaximumLength(8).WithMessage("Phone number must not exceed 8 characters.");
 
-            RuleFor(x => x.Subject)
-                .NotEmpty().WithMessage("Subject is required.")
-                .MaximumLength(100).WithMessage("Subject must not exceed 100 characters.");
+            RuleFor(x => x.SubjectId)
+                .GreaterThan(0).WithMessage("A valid subject must be selected.");
         }
     }
 }
