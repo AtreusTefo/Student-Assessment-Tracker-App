@@ -83,6 +83,17 @@
   transform: translateY(-2px);
 }
 
+.nav-btn.student-btn {
+  background-color: rgba(76, 175, 80, 0.25);
+  border: 1px solid rgba(76, 175, 80, 0.6);
+}
+
+.nav-btn.student-btn:hover {
+  background-color: #388e3c;
+  border-color: #388e3c;
+  transform: translateY(-2px);
+}
+
 .nav-greeting {
   color: rgba(255, 255, 255, 0.9);
   font-size: 0.9rem;

@@ -11,35 +11,20 @@ namespace StudentAssessmentTracker.Application.Services
     /// </summary>
     public interface IStudentService
     {
-        /// <summary>
-        /// Retrieves a student by their ID
-        /// </summary>
-        /// <param name="id">The student ID</param>
-        /// <returns>Student DTO with calculated fields</returns>
+        /// <summary>Retrieves a student by their ID</summary>
         Task<StudentDto> GetStudentByIdAsync(int id);
-        /// <summary>
-        /// Retrieves all students
-        /// </summary>
-        /// <returns>Collection of student DTOs</returns>
+        /// <summary>Retrieves all students</summary>
         Task<IEnumerable<StudentDto>> GetAllStudentsAsync();
-        /// <summary>
-        /// Creates a new student
-        /// </summary>
-        /// <param name="dto">Student creation data</param>
-        /// <returns>Created student DTO</returns>
+        /// <summary>Creates a new student</summary>
         Task<StudentDto> CreateStudentAsync(CreateStudentDto dto);
-        /// <summary>
-        /// Updates an existing student
-        /// </summary>
-        /// <param name="id">The student ID</param>
-        /// <param name="dto">Updated student data</param>
-        /// <returns>Updated student DTO</returns>
+        /// <summary>Updates an existing student</summary>
         Task<StudentDto> UpdateStudentAsync(int id, UpdateStudentDto dto);
-        /// <summary>
-        /// Deletes a student
-        /// </summary>
-        /// <param name="id">The student ID to delete</param>
+        /// <summary>Deletes a student</summary>
         Task DeleteStudentAsync(int id);
+        /// <summary>Activates a student account — links StudentUniqueId + Email to a new password</summary>
+        Task<StudentLoginResponseDto?> ActivateStudentAsync(StudentActivateDto dto);
+        /// <summary>Authenticates a student and returns a login response</summary>
+        Task<StudentLoginResponseDto?> LoginStudentAsync(StudentLoginDto dto);
     }
 
     /// <summary>
@@ -167,6 +152,89 @@ namespace StudentAssessmentTracker.Application.Services
             await _repository.DeleteAsync(id);
 
             _logger.LogInformation("Student with ID {StudentId} deleted successfully", id);
+        }
+
+        /// <summary>
+        /// Activates a student account. The student provides their teacher-assigned StudentUniqueId
+        /// and the email on file to prove identity, then sets a password for future logins.
+        /// </summary>
+        public async Task<StudentLoginResponseDto?> ActivateStudentAsync(StudentActivateDto dto)
+        {
+            _logger.LogInformation("Activation attempt for StudentUniqueId {UniqueId}", dto.StudentUniqueId);
+
+            var students = await _repository.GetAllAsync();
+            var student = students.FirstOrDefault(s =>
+                s.StudentUniqueId != null &&
+                s.StudentUniqueId.Equals(dto.StudentUniqueId, StringComparison.OrdinalIgnoreCase) &&
+                s.Email != null &&
+                s.Email.Equals(dto.Email, StringComparison.OrdinalIgnoreCase));
+
+            if (student is null)
+            {
+                _logger.LogWarning("Activation failed — no match for UniqueId {UniqueId}", dto.StudentUniqueId);
+                return null;
+            }
+
+            if (!string.IsNullOrEmpty(student.Password))
+            {
+                _logger.LogWarning("Activation rejected — account already activated for {UniqueId}", dto.StudentUniqueId);
+                throw new InvalidOperationException("This account has already been activated. Please use the login page.");
+            }
+
+            student.Password = dto.Password;
+            student.UpdatedAt = DateTime.UtcNow;
+            await _repository.UpdateAsync(student);
+
+            _logger.LogInformation("Student account activated for {UniqueId}", dto.StudentUniqueId);
+
+            // Re-fetch with navigation properties so the profile has GradeName and Assessments
+            var fullStudent = await _repository.GetByIdAsync(student.Id) ?? student;
+
+            return new StudentLoginResponseDto
+            {
+                Token = $"demo-student-token-{student.Id}-{Guid.NewGuid():N}",
+                Student = _mapper.Map<StudentProfileDto>(fullStudent)
+            };
+        }
+
+        /// <summary>
+        /// Authenticates a student using their StudentUniqueId and password.
+        /// </summary>
+        public async Task<StudentLoginResponseDto?> LoginStudentAsync(StudentLoginDto dto)
+        {
+            _logger.LogInformation("Student login attempt for {UniqueId}", dto.StudentUniqueId);
+
+            var students = await _repository.GetAllAsync();
+            var student = students.FirstOrDefault(s =>
+                s.StudentUniqueId != null &&
+                s.StudentUniqueId.Equals(dto.StudentUniqueId, StringComparison.OrdinalIgnoreCase));
+
+            if (student is null)
+            {
+                _logger.LogWarning("Student login failed — UniqueId {UniqueId} not found", dto.StudentUniqueId);
+                return null;
+            }
+
+            if (string.IsNullOrEmpty(student.Password))
+            {
+                _logger.LogWarning("Student login failed — account not activated for {UniqueId}", dto.StudentUniqueId);
+                throw new InvalidOperationException("Account not activated. Please use the sign-up page to activate your account first.");
+            }
+
+            if (student.Password != dto.Password)
+            {
+                _logger.LogWarning("Student login failed — wrong password for {UniqueId}", dto.StudentUniqueId);
+                return null;
+            }
+
+            // Re-fetch with navigation properties
+            var fullStudent = await _repository.GetByIdAsync(student.Id) ?? student;
+
+            return new StudentLoginResponseDto
+            {
+                Token = $"demo-student-token-{student.Id}-{Guid.NewGuid():N}",
+                Student = _mapper.Map<StudentProfileDto>(fullStudent)
+            };
         }
     }
 }

@@ -75,8 +75,26 @@ namespace StudentAssessmentTracker.Application.Mappings
             CreateMap<TeacherUpdateDto, Teacher>()
                 .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
+                .ForMember(dest => dest.Password, opt => opt.Ignore())
                 .ForMember(dest => dest.SubjectNavigation, opt => opt.Ignore())
                 .ForMember(dest => dest.Students, opt => opt.Ignore());
+
+            // ── Student Auth Mappings ─────────────────────────────────────────
+
+            // Student → StudentProfileDto (safe public view, no password)
+            CreateMap<Student, StudentProfileDto>()
+                .ForMember(dest => dest.GradeName,
+                    opt => opt.MapFrom(src => src.GradeNavigation != null ? src.GradeNavigation.Name : string.Empty))
+                .ForMember(dest => dest.TotalScore,
+                    opt => opt.MapFrom(src => src.GetTotalScore()))
+                .ForMember(dest => dest.MaxPossible,
+                    opt => opt.MapFrom(src => src.GetMaxPossible()))
+                .ForMember(dest => dest.AverageScore,
+                    opt => opt.MapFrom(src => src.GetAverageScore()))
+                .ForMember(dest => dest.Percentage,
+                    opt => opt.MapFrom(src => src.GetPercentage()))
+                .ForMember(dest => dest.PerformanceLevel,
+                    opt => opt.MapFrom(src => src.GetPerformanceLevel()));
         }
     }
 }

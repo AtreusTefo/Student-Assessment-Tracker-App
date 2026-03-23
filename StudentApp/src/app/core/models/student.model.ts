@@ -111,3 +111,46 @@ export interface UpdateStudentAssessmentDto {
   score: number;
   dueDate?: string | null;
 }
+
+// ── Student Authentication ──────────────────────────────────────────────────
+
+/** Safe student profile returned after login / activation (mirrors StudentProfileDto from API) */
+export interface StudentAuthUser {
+  id: number;
+  studentUniqueId: string;
+  idPassportNo: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  gradeId: number;
+  gradeName: string;
+  teacherId: number;
+  assessments: StudentAssessmentDto[];
+  totalScore: number;
+  maxPossible: number;
+  averageScore: number;
+  percentage: number;
+  performanceLevel: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
+/** DTO sent to POST /api/students/activate */
+export interface StudentActivateDto {
+  studentUniqueId: string;
+  email: string;
+  password: string;
+}
+
+/** DTO sent to POST /api/students/login */
+export interface StudentLoginDto {
+  studentUniqueId: string;
+  password: string;
+}
+
+/** Shape returned by POST /api/students/activate and POST /api/students/login */
+export interface StudentLoginResponseDto {
+  token: string;
+  student: StudentAuthUser;
+}

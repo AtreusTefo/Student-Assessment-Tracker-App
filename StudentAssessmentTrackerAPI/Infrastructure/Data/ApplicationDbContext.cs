@@ -88,6 +88,8 @@ namespace StudentAssessmentTracker.Infrastructure.Data
 
                 entity.Property(e => e.Phone).IsRequired().HasMaxLength(8);
 
+                entity.Property(e => e.Password).IsRequired(false).HasMaxLength(255);
+
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
 

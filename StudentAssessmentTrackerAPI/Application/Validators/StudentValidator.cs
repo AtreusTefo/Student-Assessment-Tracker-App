@@ -1,17 +1,10 @@
-using FluentValidation;
+﻿using FluentValidation;
 using StudentAssessmentTracker.Application.DTOs;
 
 namespace StudentAssessmentTracker.Application.Validators
 {
-    /// <summary>
-    /// Validator for CreateStudentDto
-    /// Enforces business rules for student creation
-    /// </summary>
     public class CreateStudentValidator : AbstractValidator<CreateStudentDto>
     {
-        /// <summary>
-        /// Initializes validation rules for creating students
-        /// </summary>
         public CreateStudentValidator()
         {
             RuleFor(x => x.IdPassportNo)
@@ -45,15 +38,8 @@ namespace StudentAssessmentTracker.Application.Validators
         }
     }
 
-    /// <summary>
-    /// Validator for UpdateStudentDto
-    /// Enforces business rules for student updates
-    /// </summary>
     public class UpdateStudentValidator : AbstractValidator<UpdateStudentDto>
     {
-        /// <summary>
-        /// Initializes validation rules for updating students
-        /// </summary>
         public UpdateStudentValidator()
         {
             RuleFor(x => x.IdPassportNo)
@@ -81,6 +67,36 @@ namespace StudentAssessmentTracker.Application.Validators
 
             RuleFor(x => x.GradeId)
                 .GreaterThan(0).WithMessage("A valid grade must be selected");
+        }
+    }
+
+    public class StudentActivateValidator : AbstractValidator<StudentActivateDto>
+    {
+        public StudentActivateValidator()
+        {
+            RuleFor(x => x.StudentUniqueId)
+                .NotEmpty().WithMessage("Student ID is required.")
+                .Matches(@"^STU-[A-Z0-9]{8}$").WithMessage("Student ID must be in the format STU-XXXXXXXX.");
+
+            RuleFor(x => x.Email)
+                .NotEmpty().WithMessage("Email is required.")
+                .EmailAddress().WithMessage("A valid email address is required.");
+
+            RuleFor(x => x.Password)
+                .NotEmpty().WithMessage("Password is required.")
+                .MinimumLength(6).WithMessage("Password must be at least 6 characters.");
+        }
+    }
+
+    public class StudentLoginValidator : AbstractValidator<StudentLoginDto>
+    {
+        public StudentLoginValidator()
+        {
+            RuleFor(x => x.StudentUniqueId)
+                .NotEmpty().WithMessage("Student ID is required.");
+
+            RuleFor(x => x.Password)
+                .NotEmpty().WithMessage("Password is required.");
         }
     }
 }

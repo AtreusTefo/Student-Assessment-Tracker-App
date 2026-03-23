@@ -188,5 +188,86 @@ namespace StudentAssessmentTracker.Presentation.Controllers
                 return StatusCode(500, new { message = "Internal server error while deleting student" });
             }
         }
+
+        // ====================================================================
+        // POST /api/students/activate
+        // ====================================================================
+
+        /// <summary>
+        /// Activates a student account using their teacher-assigned StudentUniqueId and registered email.
+        /// The student sets a password during this step.
+        /// </summary>
+        /// <param name="dto">Activation credentials: StudentUniqueId, Email, Password</param>
+        /// <returns>Token and student profile on success</returns>
+        /// <response code="200">Account activated successfully</response>
+        /// <response code="400">Account already activated or validation failed</response>
+        /// <response code="401">StudentUniqueId and email do not match any record</response>
+        [HttpPost("activate")]
+        [ProducesResponseType(typeof(StudentLoginResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> ActivateStudent([FromBody] StudentActivateDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                _logger.LogInformation("POST /api/students/activate for {UniqueId}", dto.StudentUniqueId);
+                var result = await _studentService.ActivateStudentAsync(dto);
+                return result is null
+                    ? Unauthorized(new { message = "No student found with that ID and email combination." })
+                    : Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error activating student {UniqueId}", dto.StudentUniqueId);
+                return StatusCode(500, new { message = "Internal server error during account activation." });
+            }
+        }
+
+        // ====================================================================
+        // POST /api/students/login
+        // ====================================================================
+
+        /// <summary>
+        /// Authenticates a student using their StudentUniqueId and password.
+        /// </summary>
+        /// <param name="dto">Login credentials: StudentUniqueId, Password</param>
+        /// <returns>Token and student profile on success</returns>
+        /// <response code="200">Login successful</response>
+        /// <response code="400">Account not activated</response>
+        /// <response code="401">Invalid credentials</response>
+        [HttpPost("login")]
+        [ProducesResponseType(typeof(StudentLoginResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> LoginStudent([FromBody] StudentLoginDto dto)
+        {
+            if (!ModelState.IsValid)
+                return BadRequest(ModelState);
+
+            try
+            {
+                _logger.LogInformation("POST /api/students/login for {UniqueId}", dto.StudentUniqueId);
+                var result = await _studentService.LoginStudentAsync(dto);
+                return result is null
+                    ? Unauthorized(new { message = "Invalid Student ID or password." })
+                    : Ok(result);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error logging in student {UniqueId}", dto.StudentUniqueId);
+                return StatusCode(500, new { message = "Internal server error during student login." });
+            }
+        }
     }
 }

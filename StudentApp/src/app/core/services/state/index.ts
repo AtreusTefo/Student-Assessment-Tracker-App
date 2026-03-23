@@ -4,4 +4,5 @@
  */
 
 export * from './student-state.service';
+export * from './student-auth-state.service';
 export * from './teacher-state.service';

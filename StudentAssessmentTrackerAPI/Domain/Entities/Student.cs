@@ -29,6 +29,9 @@ namespace StudentAssessmentTracker.Domain.Entities
         /// <summary>Student's phone number</summary>
         public string? Phone { get; set; }
 
+        /// <summary>Password set during account activation — null until the student activates their account</summary>
+        public string? Password { get; set; }
+
         /// <summary>FK → Grades.Id — enforces a controlled grade level (Grade 7–12)</summary>
         public int GradeId { get; set; }
 

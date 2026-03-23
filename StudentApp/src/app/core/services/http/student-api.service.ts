@@ -5,7 +5,10 @@ import {
   StudentListDto, 
   StudentDetailDto, 
   CreateStudentDto, 
-  UpdateStudentDto 
+  UpdateStudentDto,
+  StudentActivateDto,
+  StudentLoginDto,
+  StudentLoginResponseDto
 } from '../../models';
 
 /**
@@ -65,5 +68,21 @@ export class StudentApiService {
    */
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  /**
+   * Activate a student account (first-time sign-up)
+   * POST /api/students/activate
+   */
+  activate(dto: StudentActivateDto): Observable<StudentLoginResponseDto> {
+    return this.http.post<StudentLoginResponseDto>(`${this.apiUrl}/activate`, dto);
+  }
+
+  /**
+   * Authenticate a student
+   * POST /api/students/login
+   */
+  loginStudent(dto: StudentLoginDto): Observable<StudentLoginResponseDto> {
+    return this.http.post<StudentLoginResponseDto>(`${this.apiUrl}/login`, dto);
   }
 }
