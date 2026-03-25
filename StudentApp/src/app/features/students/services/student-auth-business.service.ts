@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, tap, catchError, throwError } from 'rxjs';
 import { StudentApiService } from '../../../core/services/http';
-import { StudentAuthStateService } from '../../../core/services/state';
+import { StudentAuthStateService, TeacherStateService } from '../../../core/services/state';
 import { StudentActivateDto, StudentLoginDto, StudentLoginResponseDto } from '../../../core/models';
 
 /**
@@ -15,7 +15,8 @@ import { StudentActivateDto, StudentLoginDto, StudentLoginResponseDto } from '..
 export class StudentAuthBusinessService {
   constructor(
     private studentApi: StudentApiService,
-    private studentAuthState: StudentAuthStateService
+    private studentAuthState: StudentAuthStateService,
+    private teacherState: TeacherStateService
   ) { }
 
   /**
@@ -28,6 +29,7 @@ export class StudentAuthBusinessService {
 
     return this.studentApi.activate(dto).pipe(
       tap(response => {
+        this.teacherState.logout(); // Clear any active teacher session
         this.studentAuthState.setCurrentStudent(response.student);
         this.studentAuthState.setLoading(false);
       }),
@@ -47,6 +49,7 @@ export class StudentAuthBusinessService {
 
     return this.studentApi.loginStudent(dto).pipe(
       tap(response => {
+        this.teacherState.logout(); // Clear any active teacher session
         this.studentAuthState.setCurrentStudent(response.student);
         this.studentAuthState.setLoading(false);
       }),

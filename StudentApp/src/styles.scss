@@ -34,34 +34,21 @@ html, body {
   }
 }
 
-// Global styles
-* {
-  box-sizing: border-box;
+// DataTables sort arrows — global overrides for dark table headers.
+// The default DataTables CSS uses opacity: 0.125 which is invisible on
+// dark backgrounds. These global rules bypass Angular view encapsulation.
+table.dataTable thead > tr > th.dt-orderable-asc .dt-column-order:before,
+table.dataTable thead > tr > th.dt-orderable-asc .dt-column-order:after,
+table.dataTable thead > tr > th.dt-orderable-desc .dt-column-order:before,
+table.dataTable thead > tr > th.dt-orderable-desc .dt-column-order:after,
+table.dataTable thead > tr > th.dt-ordering-asc .dt-column-order:before,
+table.dataTable thead > tr > th.dt-ordering-asc .dt-column-order:after,
+table.dataTable thead > tr > th.dt-ordering-desc .dt-column-order:before,
+table.dataTable thead > tr > th.dt-ordering-desc .dt-column-order:after {
+  color: white !important;
+  opacity: 0.5 !important;
 }
-
-body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Helvetica Neue', sans-serif;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-html, body {
-  height: 100%;
-  margin: 0;
-  padding: 0;
-}
-
-// DataTables customizations
-.dataTables_wrapper {
-  .dataTables_filter {
-    margin-bottom: 15px;
-    
-    input {
-      margin-left: 5px;
-    }
-  }
-  
-  .dataTables_paginate {
-    margin-top: 15px;
-  }
+table.dataTable thead > tr > th.dt-ordering-asc .dt-column-order:before,
+table.dataTable thead > tr > th.dt-ordering-desc .dt-column-order:after {
+  opacity: 1 !important;
 }

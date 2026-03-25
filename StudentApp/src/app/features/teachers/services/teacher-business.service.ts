@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { Observable, tap, catchError, throwError } from 'rxjs';
 import { TeacherApiService } from '../../../core/services/http';
-import { TeacherStateService } from '../../../core/services/state';
+import { TeacherStateService, StudentAuthStateService } from '../../../core/services/state';
 import { Teacher, CreateTeacherDto, LoginDto, TeacherLoginResponse } from '../../../core/models';
 
 /**
@@ -15,7 +15,8 @@ import { Teacher, CreateTeacherDto, LoginDto, TeacherLoginResponse } from '../..
 export class TeacherBusinessService {
   constructor(
     private teacherApi: TeacherApiService,
-    private teacherState: TeacherStateService
+    private teacherState: TeacherStateService,
+    private studentAuthState: StudentAuthStateService
   ) { }
 
   /**
@@ -38,6 +39,7 @@ export class TeacherBusinessService {
           subjectName: response.teacher.subjectName,
           createdAt: response.teacher.createdDate
         };
+        this.studentAuthState.logout(); // Clear any active student session
         this.teacherState.setCurrentTeacher(teacher);
         this.teacherState.setLoading(false);
       }),
@@ -72,6 +74,7 @@ export class TeacherBusinessService {
     
     return this.teacherApi.create(teacherData).pipe(
       tap(teacher => {
+        this.studentAuthState.logout(); // Clear any active student session
         this.teacherState.setCurrentTeacher(teacher);
         this.teacherState.setLoading(false);
       }),

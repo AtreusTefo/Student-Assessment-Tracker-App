@@ -483,6 +483,20 @@ import DataTable from 'datatables.net-dt';
       font-size: 12px;
     }
 
+    /* DataTables Sort Arrows — use !important to override DataTables' higher-specificity
+       opacity rules, and explicitly set color to white so arrows are visible on the
+       dark header (linear-gradient #ffffff → #ffffff). */
+    :host ::ng-deep table.dataTable thead > tr > th .dt-column-order:before,
+    :host ::ng-deep table.dataTable thead > tr > th .dt-column-order:after {
+      opacity: 0.55 !important;
+      color: white !important;
+    }
+    :host ::ng-deep table.dataTable thead > tr > th.dt-ordering-asc .dt-column-order:before,
+    :host ::ng-deep table.dataTable thead > tr > th.dt-ordering-desc .dt-column-order:after {
+      opacity: 1 !important;
+      color: white !important;
+    }
+
     /* Responsive Design */
     @media (max-width: 768px) {
       .container {

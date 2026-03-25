@@ -31,6 +31,7 @@
               }
             ],
             "styles": [
+              "node_modules/datatables.net-dt/css/dataTables.dataTables.css",
               "src/styles.scss"
             ]
           },

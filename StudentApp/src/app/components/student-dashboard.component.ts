@@ -31,7 +31,6 @@ import { takeUntil } from 'rxjs/operators';
             </div>
           </div>
         </div>
-        <button class="btn-logout" (click)="logout()">Logout</button>
       </div>
 
       <!-- ── Summary Cards ────────────────────────────────────────────────── -->
@@ -248,11 +247,7 @@ import { takeUntil } from 'rxjs/operators';
     .badge { padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 600; }
     .badge-id { background: rgba(255,255,255,0.15); color: #fff; }
     .badge-grade { background: #4caf50; color: #fff; }
-    .btn-logout {
-      background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.3);
-      color: #fff; padding: 8px 18px; border-radius: 6px; cursor: pointer; font-size: 14px;
-    }
-    .btn-logout:hover { background: rgba(255,255,255,0.22); }
+
 
     /* Cards */
     .cards-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
