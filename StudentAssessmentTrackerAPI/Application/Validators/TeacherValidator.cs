@@ -13,6 +13,11 @@ namespace StudentAssessmentTracker.Application.Validators
         /// </summary>
         public TeacherRegisterValidator()
         {
+            RuleFor(x => x.IdPassportNo)
+                .NotEmpty().WithMessage("ID/Passport No. is required.")
+                .Length(9).WithMessage("ID/Passport No. must be exactly 9 characters.")
+                .Matches("^[a-zA-Z0-9]+$").WithMessage("ID/Passport No. can only contain letters and numbers.");
+
             RuleFor(x => x.FirstName)
                 .NotEmpty().WithMessage("First name is required.")
                 .MaximumLength(50).WithMessage("First name must not exceed 50 characters.");
@@ -67,6 +72,11 @@ namespace StudentAssessmentTracker.Application.Validators
         /// </summary>
         public TeacherUpdateValidator()
         {
+            RuleFor(x => x.IdPassportNo)
+                .NotEmpty().WithMessage("ID/Passport No. is required.")
+                .Length(9).WithMessage("ID/Passport No. must be exactly 9 characters.")
+                .Matches("^[a-zA-Z0-9]+$").WithMessage("ID/Passport No. can only contain letters and numbers.");
+
             RuleFor(x => x.FirstName)
                 .NotEmpty().WithMessage("First name is required.")
                 .MaximumLength(50).WithMessage("First name must not exceed 50 characters.");

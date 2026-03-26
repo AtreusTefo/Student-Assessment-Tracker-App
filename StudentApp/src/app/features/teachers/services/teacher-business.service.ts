@@ -31,6 +31,7 @@ export class TeacherBusinessService {
         // Map teacherId → id to match the Angular Teacher interface
         const teacher: Teacher = {
           id: response.teacher.teacherId,
+          idPassportNo: response.teacher.idPassportNo || '',
           firstName: response.teacher.firstName,
           lastName: response.teacher.lastName,
           email: response.teacher.email,

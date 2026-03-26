@@ -27,6 +27,14 @@ import { takeUntil } from 'rxjs/operators';
       
       <form (ngSubmit)="onSubmit(form)" #form="ngForm" class="form">
         <div class="form-group">
+          <label for="idPassportNo">ID / Passport No.:</label>
+          <input type="text" id="idPassportNo" [(ngModel)]="teacher.idPassportNo" name="idPassportNo" #idPassportNo="ngModel" placeholder="e.g., 123416789 or PA1234567" autocomplete="off" required minlength="9" maxlength="9" pattern="^[a-zA-Z0-9]+$" [disabled]="loading" (keypress)="allowOnlyAlphanumeric($event)" (input)="clearError()" />
+          <span class="error" *ngIf="(form.submitted || idPassportNo.touched || idPassportNo.dirty) && idPassportNo.hasError('required')">ID/Passport No. is required</span>
+          <span class="error" *ngIf="(form.submitted || idPassportNo.touched || idPassportNo.dirty) && idPassportNo.hasError('pattern')">ID/Passport No. can only contain letters and numbers</span>
+          <span class="error" *ngIf="(form.submitted || idPassportNo.touched || idPassportNo.dirty) && (idPassportNo.hasError('minlength') || idPassportNo.hasError('maxlength'))">ID/Passport No. must be exactly 9 characters</span>
+        </div>
+        
+        <div class="form-group">
           <label for="firstName">First Name:</label>
           <input type="text" id="firstName" [(ngModel)]="teacher.firstName" name="firstName" #firstName="ngModel" autocomplete="given-name" required minlength="2" maxlength="50" pattern="^[a-zA-Z]+$" (keypress)="allowOnlyLetters($event)" [disabled]="loading" (input)="clearError()" />
           <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('required')">First name is required</span>
@@ -258,6 +266,7 @@ import { takeUntil } from 'rxjs/operators';
 export class SignUpFormComponent implements OnInit, OnDestroy {
   teacher = {
     teacherId: 0,
+    idPassportNo: '',
     firstName: '',
     lastName: '',
     email: '',
@@ -333,6 +342,7 @@ export class SignUpFormComponent implements OnInit, OnDestroy {
         if (teacher && this.isEdit) {
           this.teacher = {
             teacherId: teacher.id,
+            idPassportNo: teacher.idPassportNo || '',
             firstName: teacher.firstName || '',
             lastName: teacher.lastName || '',
             email: teacher.email || '',
@@ -377,6 +387,13 @@ export class SignUpFormComponent implements OnInit, OnDestroy {
   allowOnlyLetters(event: KeyboardEvent): void {
     const char = String.fromCharCode(event.which);
     if (!/[a-zA-Z]/.test(char)) {
+      event.preventDefault();
+    }
+  }
+
+  allowOnlyAlphanumeric(event: KeyboardEvent): void {
+    const char = String.fromCharCode(event.which);
+    if (!/[a-zA-Z0-9]/.test(char)) {
       event.preventDefault();
     }
   }
@@ -437,6 +454,7 @@ export class SignUpFormComponent implements OnInit, OnDestroy {
     }
 
     const createDto: CreateTeacherDto = {
+      idPassportNo: this.teacher.idPassportNo,
       firstName: this.teacher.firstName,
       lastName: this.teacher.lastName,
       email: this.teacher.email,

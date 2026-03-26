@@ -17,6 +17,7 @@ export interface SubjectDto {
  */
 export interface Teacher {
   id: number;
+  idPassportNo: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -31,6 +32,7 @@ export interface Teacher {
  * Create Teacher DTO - Data required for teacher registration
  */
 export interface CreateTeacherDto {
+  idPassportNo: string;
   firstName: string;
   lastName: string;
   email: string;
@@ -54,6 +56,7 @@ export interface TeacherLoginResponse {
   token: string;
   teacher: {
     teacherId: number;
+    idPassportNo: string;
     firstName: string;
     lastName: string;
     email: string;
@@ -69,6 +72,7 @@ export interface TeacherLoginResponse {
  * Update Teacher DTO - Data for updating teacher profile
  */
 export interface UpdateTeacherDto {
+  idPassportNo: string;
   firstName: string;
   lastName: string;
   email: string;

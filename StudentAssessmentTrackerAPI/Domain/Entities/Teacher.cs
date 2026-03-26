@@ -8,6 +8,9 @@ namespace StudentAssessmentTracker.Domain.Entities
         /// <summary>Gets or sets the unique identifier</summary>
         public int Id { get; set; }
 
+        /// <summary>Gets or sets the teacher's ID/Passport number</summary>
+        public string IdPassportNo { get; set; } = string.Empty;
+
         /// <summary>Gets or sets the teacher's first name</summary>
         public string FirstName { get; set; } = string.Empty;
 

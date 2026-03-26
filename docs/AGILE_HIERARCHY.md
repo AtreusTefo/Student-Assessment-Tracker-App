@@ -60,13 +60,13 @@ APPLICATION: Student Assessment Tracker
 ├── EPIC-01: Security
 │   ├── FEAT-01: Teacher Registration
 │   │   ├── US-01: Register with full profile
-│   │   │   ├── TASK-01: Create TeacherCreateDto with registration fields
+│   │   │   ├── TASK-01: Create TeacherRegisterDto with IdPassportNo and all registration fields
 │   │   │   ├── TASK-02: Implement POST /api/teachers controller action
 │   │   │   ├── TASK-03: Build Angular registration form component
 │   │   │   └── TASK-04: Connect Angular form to API via TeacherService
 │   │   └── US-02: Validate registration fields
-│   │       ├── TASK-05: Add Angular template-driven form validators
-│   │       ├── TASK-06: Implement TeacherCreateValidator (FluentValidation)
+│   │       ├── TASK-05: Add Angular template-driven form validators (including IdPassportNo alphanumeric pattern)
+│   │       ├── TASK-06: Implement TeacherRegisterValidator (FluentValidation) with IdPassportNo rules
 │   │       └── TASK-07: Display inline error messages on invalid fields
 │   ├── FEAT-02: Teacher Login
 │   │   ├── US-03: Log in with email and password
@@ -450,22 +450,23 @@ All 29 User Stories, prioritized by business value, with story point estimates a
 > **Story Points**: 5 &nbsp;|&nbsp; **Sprint**: Sprint 1
 
 **As a** teacher,
-**I want** to register an account with my name, email, phone, subject, and password,
+**I want** to register an account with my ID/Passport No., name, email, phone, subject, and password,
 **so that** I can access the Student Assessment Tracker.
 
 **Acceptance Criteria:**
-- [ ] Registration form collects: first name, last name, email, phone, subject, password.
+- [ ] Registration form collects: ID/Passport No., first name, last name, email, phone, subject, password.
+- [ ] ID/Passport No. is required, exactly 9 alphanumeric characters (letters and digits only — no hyphens or special characters).
 - [ ] On successful submission, the user is redirected to the Login page.
 - [ ] A success confirmation is shown before redirect.
 
 **Tasks:**
-- TASK-01: Create `TeacherCreateDto` with registration fields
+- TASK-01: Create `TeacherRegisterDto` with `IdPassportNo` and all registration fields
 - TASK-02: Implement `POST /api/teachers` controller action
 - TASK-03: Build Angular registration form component (`signup-form.component.ts`)
 - TASK-04: Connect Angular form to API via `TeacherService` and handle redirect
 
 **App Example:**
-> A teacher named "Mrs. Smith" opens the app for the first time. She navigates to `/register`, fills in her details (e.g., email: `smith@school.com`, subject: `Mathematics`, phone: `12345678`), clicks Register, and is redirected to the `/login` page.
+> A teacher named "Mrs. Smith" opens the app for the first time. She navigates to `/register`, fills in her details (e.g., ID: `AB1234567`, email: `smith@school.com`, subject: `Mathematics`, phone: `12345678`), clicks Register, and is redirected to the `/login` page.
 
 ---
 
@@ -478,6 +479,7 @@ All 29 User Stories, prioritized by business value, with story point estimates a
 **so that** I know exactly what needs to be corrected before submitting.
 
 **Acceptance Criteria:**
+- [ ] ID/Passport No.: required, exactly 9 alphanumeric characters (letters and digits only).
 - [ ] First/Last name: required, 2–50 characters.
 - [ ] Email: required, must be a valid email format.
 - [ ] Phone: required, exactly 8 digits.
@@ -487,12 +489,12 @@ All 29 User Stories, prioritized by business value, with story point estimates a
 - [ ] The form cannot be submitted while validation errors exist.
 
 **Tasks:**
-- TASK-05: Add Angular template-driven form validators (required, minlength, pattern)
-- TASK-06: Implement `TeacherCreateValidator` using FluentValidation rules
+- TASK-05: Add Angular template-driven form validators (required, minlength, pattern — including `^[a-zA-Z0-9]+$` for IdPassportNo)
+- TASK-06: Implement `TeacherRegisterValidator` using FluentValidation rules (NotEmpty, Length(9), Matches alphanumeric)
 - TASK-07: Display inline error messages next to each invalid field
 
 **App Example:**
-> Mrs. Smith types only `"A"` for her first name and submits. The form does not post; instead, an inline error appears: *"First name must be 2–50 characters"*. The backend (FluentValidation) also validates and returns a 400 error if incorrect data somehow reaches the API.
+> Mrs. Smith types only `"A"` for her first name and submits. The form does not post; instead, an inline error appears: *"First name must be 2–50 characters"*. If she enters `"AB-12345"` as her ID/Passport No. it is rejected as hyphens are not allowed — only letters and digits. The backend (FluentValidation) also validates and returns a 400 error if incorrect data somehow reaches the API.
 
 ---
 

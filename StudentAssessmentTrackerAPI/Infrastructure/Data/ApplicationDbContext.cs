@@ -128,6 +128,8 @@ namespace StudentAssessmentTracker.Infrastructure.Data
             modelBuilder.Entity<Teacher>(entity =>
             {
                 entity.HasKey(e => e.Id);
+                entity.Property(e => e.IdPassportNo).IsRequired().HasMaxLength(20);
+                entity.HasIndex(e => e.IdPassportNo).IsUnique();
                 entity.Property(e => e.FirstName).IsRequired().HasMaxLength(50);
                 entity.Property(e => e.LastName).IsRequired().HasMaxLength(50);
                 entity.Property(e => e.Email).IsRequired().HasMaxLength(255);

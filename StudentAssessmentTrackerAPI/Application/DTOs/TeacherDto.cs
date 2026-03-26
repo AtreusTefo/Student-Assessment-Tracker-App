@@ -8,6 +8,9 @@ namespace StudentAssessmentTracker.Application.DTOs
         /// <summary>Gets or sets the teacher's unique identifier</summary>
         public int TeacherId { get; set; }
 
+        /// <summary>Gets or sets the ID/Passport number</summary>
+        public string IdPassportNo { get; set; } = string.Empty;
+
         /// <summary>Gets or sets the first name</summary>
         public string FirstName { get; set; } = string.Empty;
 
@@ -38,6 +41,9 @@ namespace StudentAssessmentTracker.Application.DTOs
     /// </summary>
     public class TeacherRegisterDto
     {
+        /// <summary>Gets or sets the ID/Passport number</summary>
+        public string IdPassportNo { get; set; } = string.Empty;
+
         /// <summary>Gets or sets the first name</summary>
         public string FirstName { get; set; } = string.Empty;
 
@@ -65,6 +71,9 @@ namespace StudentAssessmentTracker.Application.DTOs
     /// </summary>
     public class TeacherUpdateDto
     {
+        /// <summary>Gets or sets the ID/Passport number</summary>
+        public string IdPassportNo { get; set; } = string.Empty;
+
         /// <summary>Gets or sets the first name</summary>
         public string FirstName { get; set; } = string.Empty;
 

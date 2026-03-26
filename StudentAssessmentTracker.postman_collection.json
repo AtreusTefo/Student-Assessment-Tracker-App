@@ -330,7 +330,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"firstName\": \"Alice\",\n  \"lastName\": \"Johnson\",\n  \"email\": \"alice.johnson@example.com\",\n  \"phone\": \"55512345\",\n  \"subjectId\": 8,\n  \"password\": \"Pass@123\",\n  \"enrollmentDate\": \"2024-01-15T00:00:00Z\"\n}",
+              "raw": "{\n  \"idPassportNo\": \"AB1234567\",\n  \"firstName\": \"Alice\",\n  \"lastName\": \"Johnson\",\n  \"email\": \"alice.johnson@example.com\",\n  \"phone\": \"55512345\",\n  \"subjectId\": 8,\n  \"password\": \"Pass@123\",\n  \"enrollmentDate\": \"2024-01-15T00:00:00Z\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -347,7 +347,7 @@
                 "teachers"
               ]
             },
-            "description": "Registers a new teacher. subjectId must be a valid ID from GET /api/subjects. Phone must be exactly 8 digits. Password minimum 6 characters.\n\nSubject IDs:\n1=Accounting, 2=Art, 3=Business Studies, 4=English, 5=Geography, 6=History, 7=ICT, 8=Mathematics, 9=Multimedia, 10=Music, 11=Physical Education, 12=Science"
+            "description": "Registers a new teacher. idPassportNo must be exactly 9 alphanumeric characters (letters and digits only). subjectId must be a valid ID from GET /api/subjects. Phone must be exactly 8 digits. Password minimum 6 characters.\n\nSubject IDs:\n1=Accounting, 2=Art, 3=Business Studies, 4=English, 5=Geography, 6=History, 7=ICT, 8=Mathematics, 9=Multimedia, 10=Music, 11=Physical Education, 12=Science"
           },
           "response": []
         },
@@ -363,7 +363,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"firstName\": \"Alice\",\n  \"lastName\": \"Johnson\",\n  \"email\": \"alice.johnson@example.com\",\n  \"phone\": \"55512345\",\n  \"subjectId\": 12,\n  \"password\": \"Pass@123\",\n  \"enrollmentDate\": \"2024-02-01T00:00:00Z\"\n}",
+              "raw": "{\n  \"idPassportNo\": \"AB1234567\",\n  \"firstName\": \"Alice\",\n  \"lastName\": \"Johnson\",\n  \"email\": \"alice.johnson@example.com\",\n  \"phone\": \"55512345\",\n  \"subjectId\": 12,\n  \"password\": \"Pass@123\",\n  \"enrollmentDate\": \"2024-02-01T00:00:00Z\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
