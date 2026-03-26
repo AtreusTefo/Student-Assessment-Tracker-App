@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
-import { StudentLoginDto } from '../core/models';
+import { StudentLoginDto, StudentActivateDto } from '../core/models';
 import { StudentAuthStateService } from '../core/services/state';
 import { StudentAuthBusinessService } from '../features/students/services/student-auth-business.service';
 import { Subject } from 'rxjs';
@@ -11,6 +11,7 @@ import { takeUntil } from 'rxjs/operators';
 /**
  * PRESENTATION LAYER - Student Login Component
  * Allows a student to authenticate using their StudentUniqueId and password.
+ * First-time students can toggle to "Activate" mode to set up their password.
  */
 @Component({
   selector: 'app-student-login',
@@ -21,8 +22,12 @@ import { takeUntil } from 'rxjs/operators';
       <div class="auth-card">
         <div class="auth-header">
           <div class="auth-icon">🎓</div>
-          <h2>Student Login</h2>
-          <p class="auth-subtitle">Sign in to view your marks and performance</p>
+          <h2>{{ activateMode ? 'Activate Your Account' : 'Student Login' }}</h2>
+          <p class="auth-subtitle">
+            {{ activateMode
+              ? 'First time? Set up your password using the Student ID given by your teacher'
+              : 'Sign in to view your marks and performance' }}
+          </p>
         </div>
 
         <div *ngIf="error" class="alert alert-error">{{ error }}</div>
@@ -34,31 +39,57 @@ import { takeUntil } from 'rxjs/operators';
             <input
               type="text"
               id="studentId"
-              [(ngModel)]="credentials.studentUniqueId"
+              [(ngModel)]="studentUniqueId"
               name="studentUniqueId"
-              #studentId="ngModel"
+              #studentIdRef="ngModel"
               placeholder="e.g. STU-AB12CD34"
               required
               maxlength="12"
               autocomplete="username"
               [disabled]="loading"
               (input)="clearError()"
+              [style.text-transform]="activateMode ? 'uppercase' : 'none'"
             />
-            <span class="field-error" *ngIf="(form.submitted || studentId.touched) && studentId.hasError('required')">
+            <span class="field-error" *ngIf="(form.submitted || studentIdRef.touched) && studentIdRef.hasError('required')">
               Student ID is required
             </span>
           </div>
 
+          <!-- Email — only shown in activate mode -->
+          <div class="form-group" *ngIf="activateMode">
+            <label for="email">Email <span class="hint">(registered by your teacher)</span></label>
+            <input
+              type="email"
+              id="email"
+              [(ngModel)]="email"
+              name="email"
+              #emailRef="ngModel"
+              placeholder="your.email@example.com"
+              required
+              email
+              maxlength="100"
+              autocomplete="email"
+              [disabled]="loading"
+              (input)="clearError()"
+            />
+            <span class="field-error" *ngIf="(form.submitted || emailRef.touched) && emailRef.hasError('required')">
+              Email is required
+            </span>
+            <span class="field-error" *ngIf="(form.submitted || emailRef.touched) && emailRef.hasError('email')">
+              Enter a valid email address
+            </span>
+          </div>
+
           <div class="form-group">
-            <label for="password">Password</label>
+            <label for="password">{{ activateMode ? 'Choose a Password' : 'Password' }}</label>
             <div class="input-group">
               <input
                 [type]="showPassword ? 'text' : 'password'"
                 id="password"
-                [(ngModel)]="credentials.password"
+                [(ngModel)]="password"
                 name="password"
-                #password="ngModel"
-                autocomplete="current-password"
+                #passwordRef="ngModel"
+                [autocomplete]="activateMode ? 'new-password' : 'current-password'"
                 required
                 minlength="6"
                 maxlength="50"
@@ -69,22 +100,54 @@ import { takeUntil } from 'rxjs/operators';
                 {{ showPassword ? 'Hide' : 'Show' }}
               </button>
             </div>
-            <span class="field-error" *ngIf="(form.submitted || password.touched) && password.hasError('required')">
+            <span class="field-error" *ngIf="(form.submitted || passwordRef.touched) && passwordRef.hasError('required')">
               Password is required
             </span>
-            <span class="field-error" *ngIf="(form.submitted || password.touched) && password.hasError('minlength')">
+            <span class="field-error" *ngIf="(form.submitted || passwordRef.touched) && passwordRef.hasError('minlength')">
               Password must be at least 6 characters
+            </span>
+          </div>
+
+          <!-- Confirm Password — only shown in activate mode -->
+          <div class="form-group" *ngIf="activateMode">
+            <label for="confirmPassword">Confirm Password</label>
+            <div class="input-group">
+              <input
+                [type]="showConfirmPassword ? 'text' : 'password'"
+                id="confirmPassword"
+                [(ngModel)]="confirmPassword"
+                name="confirmPassword"
+                #confirmPwdRef="ngModel"
+                autocomplete="new-password"
+                required
+                minlength="6"
+                maxlength="50"
+                [disabled]="loading"
+                (input)="clearError()"
+              />
+              <button type="button" class="toggle-btn" (click)="showConfirmPassword = !showConfirmPassword" tabindex="-1">
+                {{ showConfirmPassword ? 'Hide' : 'Show' }}
+              </button>
+            </div>
+            <span class="field-error" *ngIf="(form.submitted || confirmPwdRef.touched) && confirmPwdRef.hasError('required')">
+              Please confirm your password
+            </span>
+            <span class="field-error" *ngIf="(form.submitted || confirmPwdRef.touched) && !confirmPwdRef.hasError('required') && passwordMismatch">
+              Passwords do not match
             </span>
           </div>
 
           <button type="submit" class="btn-primary" [disabled]="loading">
             <span *ngIf="loading" class="spinner"></span>
-            {{ loading ? 'Signing in…' : 'Sign In' }}
+            {{ loading
+              ? (activateMode ? 'Activating…' : 'Signing in…')
+              : (activateMode ? 'Activate Account' : 'Sign In') }}
           </button>
         </form>
 
         <div class="auth-links">
-          <p>Don't have an account yet? <a routerLink="/student/activate">Sign up here</a></p>
+          <p *ngIf="!activateMode">First time logging in? <a (click)="toggleMode()" class="mode-link">Activate your account</a></p>
+          <p *ngIf="activateMode">Already activated? <a (click)="toggleMode()" class="mode-link">Sign in here</a></p>
           <p class="divider-text">Are you a teacher? <a routerLink="/login">Teacher login</a></p>
         </div>
       </div>
@@ -113,6 +176,7 @@ import { takeUntil } from 'rxjs/operators';
     .auth-icon { font-size: 48px; margin-bottom: 8px; }
     .auth-header h2 { margin: 0 0 6px; font-size: 24px; color: #1a1a2e; }
     .auth-subtitle { color: #666; font-size: 14px; margin: 0; }
+    .hint { font-weight: 400; color: #999; font-size: 12px; }
     .alert { padding: 12px 16px; border-radius: 6px; margin-bottom: 20px; font-size: 14px; }
     .alert-error { background: #fdecea; color: #c62828; border: 1px solid #ef9a9a; }
     .auth-form { display: flex; flex-direction: column; gap: 18px; }
@@ -166,14 +230,24 @@ import { takeUntil } from 'rxjs/operators';
     .auth-links p { margin: 8px 0; font-size: 14px; color: #555; }
     .auth-links a { color: #4caf50; text-decoration: none; font-weight: 600; }
     .auth-links a:hover { text-decoration: underline; }
+    .mode-link { cursor: pointer; }
     .divider-text { color: #999 !important; }
   `]
 })
 export class StudentLoginComponent implements OnInit, OnDestroy {
-  credentials: StudentLoginDto = { studentUniqueId: '', password: '' };
+  studentUniqueId = '';
+  email = '';
+  password = '';
+  confirmPassword = '';
   loading = false;
   error: string | null = null;
   showPassword = false;
+  showConfirmPassword = false;
+  activateMode = false;
+
+  get passwordMismatch(): boolean {
+    return this.password !== this.confirmPassword;
+  }
 
   private destroy$ = new Subject<void>();
 
@@ -204,12 +278,37 @@ export class StudentLoginComponent implements OnInit, OnDestroy {
     this.studentAuthBusiness.clearError();
   }
 
+  toggleMode(): void {
+    this.activateMode = !this.activateMode;
+    this.clearError();
+  }
+
   onSubmit(form: NgForm): void {
     if (form.invalid) return;
 
-    this.studentAuthBusiness.login(this.credentials).subscribe({
-      next: () => this.router.navigate(['/student/dashboard']),
-      error: () => { /* error handled by state service */ }
-    });
+    if (this.activateMode) {
+      if (this.passwordMismatch) return;
+
+      const dto: StudentActivateDto = {
+        studentUniqueId: this.studentUniqueId.toUpperCase().trim(),
+        email: this.email.trim(),
+        password: this.password
+      };
+
+      this.studentAuthBusiness.activate(dto).subscribe({
+        next: () => this.router.navigate(['/student/dashboard']),
+        error: () => { /* error handled by state service */ }
+      });
+    } else {
+      const dto: StudentLoginDto = {
+        studentUniqueId: this.studentUniqueId,
+        password: this.password
+      };
+
+      this.studentAuthBusiness.login(dto).subscribe({
+        next: () => this.router.navigate(['/student/dashboard']),
+        error: () => { /* error handled by state service */ }
+      });
+    }
   }
 }

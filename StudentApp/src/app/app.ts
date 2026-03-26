@@ -90,10 +90,6 @@ export class App implements OnInit, OnDestroy {
     this.router.navigate(['/student/login']);
   }
 
-  navigateToStudentActivate() {
-    this.router.navigate(['/student/activate']);
-  }
-
   navigateToStudentDashboard() {
     this.router.navigate(['/student/dashboard']);
   }

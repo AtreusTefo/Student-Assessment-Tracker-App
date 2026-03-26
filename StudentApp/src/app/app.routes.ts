@@ -5,7 +5,6 @@ import { StudentFormComponent } from './components/student-form.component';
 import { SignUpFormComponent } from './components/signup-form.component';
 import { LoginFormComponent } from './components/login-form.component';
 import { StudentLoginComponent } from './components/student-login.component';
-import { StudentActivateComponent } from './components/student-activate.component';
 import { StudentDashboardComponent } from './components/student-dashboard.component';
 import { authGuard } from './core/guards/auth.guard';
 import { guestGuard } from './core/guards/guest.guard';
@@ -25,7 +24,7 @@ export const routes: Routes = [
 
   // Student guest-only routes — redirect to dashboard if already logged in
   { path: 'student/login', component: StudentLoginComponent, canActivate: [studentGuestGuard] },
-  { path: 'student/activate', component: StudentActivateComponent, canActivate: [studentGuestGuard] },
+  { path: 'student/activate', redirectTo: 'student/login', pathMatch: 'full' },
 
   // Student protected routes — require student authentication
   { path: 'student/dashboard', component: StudentDashboardComponent, canActivate: [studentAuthGuard] },
