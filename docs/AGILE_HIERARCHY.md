@@ -37,11 +37,11 @@ A **User Story** describes a single piece of functionality from the end-user's p
 
 > **Format**: `US-XX: As a [role], I want [goal], so that [benefit].`
 >
-> Each story includes:
-> - **Description**: What is being built.
-> - **Acceptance Criteria**: The conditions that must be met for the story to be considered done.
+> **Each User Story must include:**
+> - **Description**: Clear explanation of what is being built and why.
+> - **Acceptance Criteria**: Specific, testable conditions that must be met for the story to be considered done or complete.
 > - **Tasks**: The concrete implementation steps required to deliver the story.
-> - **App Example**: A concrete example from the Student Assessment Tracker.
+> - **App Example**: A real-world scenario from the Student Assessment Tracker App project illustrating the story in action.
 
 ---
 
@@ -59,96 +59,96 @@ APPLICATION: Student Assessment Tracker
 │
 ├── EPIC-01: Security
 │   ├── FEAT-01: Teacher Registration
-│   │   ├── US-01: Register with full profile
+│   │   ├── US-01: As a teacher, I want to register with my full profile details, so that I can access the system securely.
 │   │   │   ├── TASK-01: Create TeacherRegisterDto with IdPassportNo and all registration fields
 │   │   │   ├── TASK-02: Implement POST /api/teachers controller action
 │   │   │   ├── TASK-03: Build Angular registration form component
 │   │   │   └── TASK-04: Connect Angular form to API via TeacherService
-│   │   └── US-02: Validate registration fields
-│   │       ├── TASK-05: Add Angular template-driven form validators (including IdPassportNo alphanumeric pattern)
-│   │       ├── TASK-06: Implement TeacherRegisterValidator (FluentValidation) with IdPassportNo rules
+│   │   └── US-02: As a teacher, I want registration fields to be validated, so that I cannot submit incomplete or invalid information.
+│   │       ├── TASK-05: Add Angular template-driven form validators
+│   │       ├── TASK-06: Implement TeacherRegisterValidator (FluentValidation)
 │   │       └── TASK-07: Display inline error messages on invalid fields
 │   ├── FEAT-02: Teacher Login
-│   │   ├── US-03: Log in with email and password
+│   │   ├── US-03: As a registered teacher, I want to log in using my email and password, so that I can access the student management dashboard.
 │   │   │   ├── TASK-08: Create TeacherLoginDto and login response model
 │   │   │   ├── TASK-09: Implement POST /api/teachers/login controller action
 │   │   │   ├── TASK-10: Build Angular login form component
 │   │   │   └── TASK-11: Store teacher session in TeacherStateService on success
-│   │   └── US-04: Handle invalid login credentials
+│   │   └── US-04: As a teacher, I want to see clear error messages when my login credentials are invalid, so that only registered teachers can log in and I understand why access is denied.
 │   │       ├── TASK-12: Return 401 Unauthorized for invalid credentials in API
 │   │       └── TASK-13: Display friendly error message in Angular on failed login
 │   └── FEAT-03: Input Validation
-│       ├── US-06: Validate student input fields
+│       ├── US-06: As a teacher, I want student input fields to be validated, so that I cannot submit incomplete or invalid student data.
 │       │   ├── TASK-14: Add Angular validators to student create/edit form
 │       │   ├── TASK-15: Implement StudentCreateValidator (FluentValidation)
 │       │   └── TASK-16: Show inline validation errors on form submission
-│       └── US-18: Reject invalid data server-side
+│       └── US-18: As a user, I want the server to reject invalid data, so that only valid information is saved in the system.
 │           ├── TASK-17: Register FluentValidation in Program.cs
 │           ├── TASK-18: Create validators for all DTOs (Teacher, Student, Assessment)
 │           └── TASK-19: Verify 400 Bad Request with structured error body in Postman
 │
 ├── EPIC-02: Student Management
 │   ├── FEAT-04: Create Student
-│   │   └── US-05: Add a new student record
+│   │   └── US-05: As a teacher, I want to add a new student record, so that I can manage my class list.
 │   │       ├── TASK-20: Create StudentCreateDto with required fields
 │   │       ├── TASK-21: Implement POST /api/students controller action
 │   │       ├── TASK-22: Generate StudentUniqueId (STU-XXXXXXXX) in service layer
 │   │       ├── TASK-23: Build Angular student creation form component
 │   │       └── TASK-24: Redirect to student list on successful creation
 │   ├── FEAT-05: View Students
-│   │   ├── US-07: View all students in a table
+│   │   ├── US-07: As a teacher, I want to view all my students and their performance, so that I can monitor progress and identify students who need support.
 │   │   │   ├── TASK-25: Create StudentListDto with all display fields
 │   │   │   ├── TASK-26: Implement GET /api/students returning StudentListDto array
 │   │   │   ├── TASK-27: Build Angular student list component
 │   │   │   └── TASK-28: Initialise DataTables with pagination, sorting, hidden % column
-│   │   ├── US-08: View detailed student profile
+│   │   ├── US-08: As a teacher, I want to view a detailed student profile, so that I can see individual performance and assessment history.
 │   │   │   ├── TASK-29: Create StudentDetailDto with embedded assessment list
 │   │   │   ├── TASK-30: Implement GET /api/students/{id} returning StudentDetailDto
 │   │   │   ├── TASK-31: Build Angular student detail component
 │   │   │   └── TASK-32: Display performance summary and assessment table on detail page
-│   │   └── US-20: Select grade from controlled dropdown
+│   │   └── US-20: As a teacher, I want to select a grade from a controlled dropdown, so that student records are consistent and accurate.
 │   │       ├── TASK-33: Create Grade entity and seed Grade 7–12 (EF Core migration)
 │   │       ├── TASK-34: Implement GET /api/grades read-only endpoint
 │   │       └── TASK-35: Populate grade dropdown in Angular forms from API response
 │   ├── FEAT-06: Edit Student
-│   │   └── US-09: Update student information
+│   │   └── US-09: As a teacher, I want to edit student details and assessments, so that I can keep student information up to date.
 │   │       ├── TASK-36: Create StudentUpdateDto for personal details
 │   │       ├── TASK-37: Implement PUT /api/students/{id} controller action
 │   │       ├── TASK-38: Build Angular edit form pre-populated with current student data
 │   │       └── TASK-39: Redirect to detail view on successful update
 │   ├── FEAT-07: Delete Student
-│   │   └── US-10: Delete a student record
+│   │   └── US-10: As a teacher, I want to delete a student record, so that I can remove students who are no longer in my class.
 │   │       ├── TASK-40: Implement DELETE /api/students/{id} with cascade delete
 │   │       ├── TASK-41: Add confirmation modal to Angular student list component
 │   │       └── TASK-42: Remove deleted row from DataTable on confirmed delete
 │   └── FEAT-08: Communication
-│       ├── US-16: Consume student API from frontend
+│       ├── US-16: As a developer, I want the Angular frontend to communicate with the student API endpoints, so that all student data operations are persisted via the backend.
 │       │   ├── TASK-43: Implement StudentApiService with all CRUD and assessment HTTP methods
 │       │   ├── TASK-44: Wire StudentBusinessService to call StudentApiService methods
 │       │   └── TASK-45: Handle API errors gracefully in Angular components
-│       └── US-17: Consume teacher API from frontend
+│       └── US-17: As a developer, I want the Angular frontend to communicate with the teacher API endpoints, so that registration and login functionality works end-to-end.
 │           ├── TASK-46: Implement TeacherApiService (register and login HTTP methods)
 │           └── TASK-47: Wire TeacherBusinessService to call TeacherApiService methods
 │
 ├── EPIC-03: Assessment
 │   └── FEAT-09: Scoring
-│       ├── US-11: Add named assessments with flexible scoring
+│       ├── US-11: As a teacher, I want to add named assessments with flexible scoring, so that I can track different types of student performance.
 │       │   ├── TASK-48: Create StudentAssessment entity and EF Core migration
 │       │   ├── TASK-49: Implement POST /api/students/{id}/assessments endpoint
 │       │   ├── TASK-50: Build inline Add Assessment form on Angular detail page
 │       │   └── TASK-51: Recalculate and refresh performance summary after add
-│       ├── US-12: View total, average, and percentage
+│       ├── US-12: As a teacher, I want to view total, average, and percentage scores, so that I can quickly assess student performance.
 │       │   ├── TASK-52: Implement score calculation logic in StudentService (total, avg, %)
 │       │   ├── TASK-53: Include calculated fields in StudentDetailDto and StudentListDto
 │       │   └── TASK-54: Display Performance Summary section on Angular detail page
-│       ├── US-13: View performance level badge
+│       ├── US-13: As a teacher, I want each student to have a performance level badge, so that I can quickly identify students who need support.
 │       │   ├── TASK-55: Implement GetPerformanceLevel(percentage) helper in service layer
 │       │   └── TASK-56: Apply colour-coded badge CSS classes in Angular list and detail templates
-│       ├── US-21: Add a named assessment to a student
+│       ├── US-21: As a teacher, I want to add a named assessment to a student, so that I can record specific achievements or tests.
 │       │   ├── TASK-57: Create StudentAssessmentCreateDto with validation rules
 │       │   ├── TASK-58: Build inline add-assessment form on detail page with validation
 │       │   └── TASK-59: Refresh assessment table and performance summary on success
-│       └── US-22: Edit and delete an individual assessment
+│       └── US-22: As a teacher, I want to edit and delete an individual assessment, so that I can correct mistakes or remove outdated records.
 │           ├── TASK-60: Implement PUT /api/students/{id}/assessments/{assessmentId} endpoint
 │           ├── TASK-61: Implement DELETE /api/students/{id}/assessments/{assessmentId} endpoint
 │           ├── TASK-62: Build inline edit row mode with save/cancel in Angular detail component
@@ -156,51 +156,51 @@ APPLICATION: Student Assessment Tracker
 │
 ├── EPIC-04: Data Display & Interaction
 │   └── FEAT-10: DataTables Integration
-│       ├── US-14: Sort students by column
+│       ├── US-14: As a teacher, I want to sort students by column, so that I can organize the list by performance or other criteria.
 │       │   ├── TASK-64: Configure DataTables columnDefs to sort Performance by hidden % value
 │       │   └── TASK-65: Verify all columns sort correctly ascending and descending
-│       └── US-15: Search and filter students
+│       └── US-15: As a teacher, I want to search and filter students, so that I can quickly find specific students or groups.
 │           ├── TASK-66: Enable DataTables global search input
 │           └── TASK-67: Verify search filters all visible columns in real-time
 │
 ├── EPIC-05: API & Documentation
 │   └── FEAT-11: API Documentation
-│       └── US-19: Explore API via Swagger UI
+│       └── US-19: As a developer, I want to explore the API via Swagger UI, so that I can understand and test available endpoints.
 │           ├── TASK-68: Register Swagger/OpenAPI in Program.cs
 │           ├── TASK-69: Add XML doc comments to all controller actions
 │           └── TASK-70: Verify Swagger UI lists all endpoints with request/response models
 │
 └── EPIC-06: Student Portal
     ├── FEAT-12: Student Account Activation
-    │   ├── US-23: Activate student account
+    │   ├── US-23: As a student, I want to activate my account using my Student ID and email, so that I can set a password and access my dashboard.
     │   │   ├── TASK-71: Create StudentActivateDto with StudentUniqueId, Email, Password fields
     │   │   ├── TASK-72: Implement POST /api/students/activate controller action
     │   │   ├── TASK-73: Build Angular student activate component (student-activate.component.ts)
     │   │   └── TASK-74: Redirect to /student/dashboard on successful account activation
-    │   └── US-24: Validate activation form fields
+    │   └── US-24: As a student, I want activation form fields to be validated, so that I cannot submit incomplete or invalid information.
     │       ├── TASK-75: Add Angular validators (required, STU-format pattern, email, minlength 6)
     │       ├── TASK-76: Implement StudentActivateValidator using FluentValidation rules
     │       └── TASK-77: Show confirmPassword mismatch error on frontend before submission
     ├── FEAT-13: Student Login
-    │   ├── US-25: Log in with Student ID and password
+    │   ├── US-25: As a student, I want to log in with my Student ID and password, so that I can access my personal performance dashboard.
     │   │   ├── TASK-78: Create StudentLoginDto and StudentLoginResponseDto
     │   │   ├── TASK-79: Implement POST /api/students/login controller action
     │   │   ├── TASK-80: Build Angular student login component (student-login.component.ts)
     │   │   └── TASK-81: Store student session in StudentAuthStateService on successful response
-    │   └── US-26: Handle invalid student credentials
+    │   └── US-26: As a student, I want to see clear error messages when my login credentials are invalid, so that I understand why access is denied.
     │       ├── TASK-82: Return 401 Unauthorized for wrong credentials / 400 for unactivated account
     │       └── TASK-83: Display friendly error message in Angular on failed student login
     └── FEAT-14: Student Dashboard
-        ├── US-27: View personal performance summary
+        ├── US-27: As a student, I want to view my personal performance summary, so that I can track my academic progress.
         │   ├── TASK-84: Create StudentProfileDto with calculated score fields
         │   ├── TASK-85: Return StudentProfileDto with computed scores on login/activation response
         │   ├── TASK-86: Build Angular student dashboard with performance summary cards
         │   └── TASK-87: Display progress bar with colour-coded performance band legend
-        ├── US-28: View personal assessment list
+        ├── US-28: As a student, I want to view my personal assessment list, so that I can see all my results in one place.
         │   ├── TASK-88: Include assessments array in StudentProfileDto from API response
         │   ├── TASK-89: Render assessments table in Angular student dashboard
         │   └── TASK-90: Apply Overdue/Submitted status badge based on due date
-        └── US-29: View personal profile information
+        └── US-29: As a student, I want to view my personal profile information, so that I can verify my details are correct.
             ├── TASK-91: Map all student personal fields in StudentProfileDto
             └── TASK-92: Render My Profile section in Angular student dashboard component
 ```
@@ -220,10 +220,10 @@ Scrum is an Agile framework that organizes work into short, time-boxed iteration
 | Role | Person | Responsibilities |
 |------|--------|-----------------|
 | **Product Owner** | School Administrator | Owns and prioritizes the Product Backlog; defines user stories based on business value; accepts completed increments at Sprint Reviews. |
-| **Scrum Master** | Developer.03 | Facilitates all Scrum events; removes impediments; ensures adherence to Scrum practices; coaches the team on Agile principles. |
-| **Development Team** | Developer.03 | Self-organizing, cross-functional team responsible for designing, building, and testing each Sprint increment — covering backend (ASP.NET Core), frontend (Angular), database (EF Core + SQL Server), and API testing (Postman). |
+| **Scrum Master** | Atreus Tefo Ramokate | Facilitates all Scrum events; removes impediments; ensures adherence to Scrum practices; coaches the team on Agile principles. |
+| **Development Team** | Atreus Tefo Ramokate | Self-organizing, cross-functional team responsible for designing, building, and testing each Sprint increment — covering backend (ASP.NET Core), frontend (Angular), database (EF Core + SQL Server), and API testing (Postman). |
 
-> **Note**: In this solo student project, Developer.03 fulfills both the Scrum Master and Development Team roles, while the Product Owner perspective represents the teacher end-user's needs.
+> **Note**: In this solo student project, Atreus Tefo Ramokate fulfills both the Scrum Master and Development Team roles, while the Product Owner perspective represents the teacher end-user's needs.
 
 ---
 

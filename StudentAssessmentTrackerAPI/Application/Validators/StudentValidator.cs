@@ -3,8 +3,14 @@ using StudentAssessmentTracker.Application.DTOs;
 
 namespace StudentAssessmentTracker.Application.Validators
 {
+    /// <summary>
+    /// Validates the data required to create a new student.
+    /// </summary>
     public class CreateStudentValidator : AbstractValidator<CreateStudentDto>
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="CreateStudentValidator"/> class.
+        /// </summary>
         public CreateStudentValidator()
         {
             RuleFor(x => x.IdPassportNo)
@@ -38,8 +44,14 @@ namespace StudentAssessmentTracker.Application.Validators
         }
     }
 
+    /// <summary>
+    /// Validates the data required to update a student.
+    /// </summary>
     public class UpdateStudentValidator : AbstractValidator<UpdateStudentDto>
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="UpdateStudentValidator"/> class.
+        /// </summary>
         public UpdateStudentValidator()
         {
             RuleFor(x => x.IdPassportNo)
@@ -70,8 +82,14 @@ namespace StudentAssessmentTracker.Application.Validators
         }
     }
 
+    /// <summary>
+    /// Validates the data required to activate a student account.
+    /// </summary>
     public class StudentActivateValidator : AbstractValidator<StudentActivateDto>
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StudentActivateValidator"/> class.
+        /// </summary>
         public StudentActivateValidator()
         {
             RuleFor(x => x.StudentUniqueId)
@@ -88,8 +106,14 @@ namespace StudentAssessmentTracker.Application.Validators
         }
     }
 
+    /// <summary>
+    /// Validates the data required for student login.
+    /// </summary>
     public class StudentLoginValidator : AbstractValidator<StudentLoginDto>
     {
+        /// <summary>
+        /// Initializes a new instance of the <see cref="StudentLoginValidator"/> class.
+        /// </summary>
         public StudentLoginValidator()
         {
             RuleFor(x => x.StudentUniqueId)
