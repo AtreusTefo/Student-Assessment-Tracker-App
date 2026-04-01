@@ -38,8 +38,11 @@ namespace StudentAssessmentTracker.Domain.Entities
         /// <summary>Gets or sets the creation date</summary>
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
-        /// <summary>Students registered under this teacher</summary>
-        public ICollection<Student> Students { get; set; } = new List<Student>();
+        /// <summary>
+        /// Many-to-many: the students this teacher is currently assigned to instruct.
+        /// Each entry in this collection represents one student–teacher pairing.
+        /// </summary>
+        public ICollection<TeacherStudent> StudentAssignments { get; set; } = new List<TeacherStudent>();
 
         /// <summary>Gets the teacher's full name</summary>
         public string GetFullName() => $"{FirstName} {LastName}";

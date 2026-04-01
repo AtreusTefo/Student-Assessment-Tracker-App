@@ -8,19 +8,29 @@ namespace StudentAssessmentTracker.Infrastructure.Data
     /// Improvements applied:
     ///   - Grades lookup table (seeded Grade 7–12) replaces free-text Grade column
     ///   - StudentAssessments table replaces hardcoded Assessment1/2/3 columns
-    ///   - TeacherId FK on Students for referential integrity
-    ///   - IdPassportNo unique index prevents duplicate student registrations
+    ///   - TeacherStudents join table replaces the old single TeacherId FK, enabling
+    ///     many-to-many Teacher↔Student assignments (one student, multiple subject teachers)
+    ///   - IdPassportNo unique index prevents duplicate student/teacher registrations
     /// </summary>
     public class ApplicationDbContext : DbContext
     {
+        /// <summary>Initialises the DbContext with the provided EF Core options.</summary>
         public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
+        /// <summary>DbSet for the Grades lookup table.</summary>
         public DbSet<Grade> Grades { get; set; }
+        /// <summary>DbSet for the Subjects lookup table.</summary>
         public DbSet<Subject> Subjects { get; set; }
+        /// <summary>DbSet for student records.</summary>
         public DbSet<Student> Students { get; set; }
+        /// <summary>DbSet for student assessment records.</summary>
         public DbSet<StudentAssessment> StudentAssessments { get; set; }
+        /// <summary>DbSet for teacher records.</summary>
         public DbSet<Teacher> Teachers { get; set; }
+        /// <summary>DbSet for the Teacher↔Student many-to-many join table.</summary>
+        public DbSet<TeacherStudent> TeacherStudents { get; set; }
 
+        /// <summary>Configures entity relationships, indexes, constraints, and seed data.</summary>
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -98,12 +108,27 @@ namespace StudentAssessmentTracker.Infrastructure.Data
                     .WithMany()
                     .HasForeignKey(e => e.GradeId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
 
-                // FK → Teachers (RESTRICT: cannot delete a teacher who still has students)
+            // ── TeacherStudents (many-to-many join table) ─────────────────────────────────
+            modelBuilder.Entity<TeacherStudent>(entity =>
+            {
+                // Composite PK ensures at most one row per (teacher, student) pair
+                entity.HasKey(e => new { e.TeacherId, e.StudentId });
+
+                entity.Property(e => e.AssignedAt).HasDefaultValueSql("GETUTCDATE()");
+
+                // FK → Teachers (CASCADE: deleting a teacher removes their student assignments)
                 entity.HasOne(e => e.Teacher)
-                    .WithMany(t => t.Students)
+                    .WithMany(t => t.StudentAssignments)
                     .HasForeignKey(e => e.TeacherId)
-                    .OnDelete(DeleteBehavior.Restrict);
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // FK → Students (CASCADE: deleting a student removes their teacher assignments)
+                entity.HasOne(e => e.Student)
+                    .WithMany(s => s.TeacherAssignments)
+                    .HasForeignKey(e => e.StudentId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
 
             // ── StudentAssessments ────────────────────────────────────────────

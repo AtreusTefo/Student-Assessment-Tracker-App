@@ -10,6 +10,7 @@ namespace StudentAssessmentTracker.Application.Validators
     /// </summary>
     public class CreateStudentAssessmentValidator : AbstractValidator<CreateStudentAssessmentDto>
     {
+        /// <summary>Initialises validation rules for creating a student assessment.</summary>
         public CreateStudentAssessmentValidator()
         {
             RuleFor(x => x.Name)
@@ -31,6 +32,7 @@ namespace StudentAssessmentTracker.Application.Validators
     /// </summary>
     public class UpdateStudentAssessmentValidator : AbstractValidator<UpdateStudentAssessmentDto>
     {
+        /// <summary>Initialises validation rules for updating a student assessment.</summary>
         public UpdateStudentAssessmentValidator()
         {
             RuleFor(x => x.Name)

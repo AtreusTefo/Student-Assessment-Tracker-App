@@ -3,6 +3,7 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { Teacher } from '../../models';
 
 const AUTH_STORAGE_KEY = 'sat_current_teacher';
+const TOKEN_STORAGE_KEY = 'sat_teacher_token';
 
 /**
  * STATE MANAGEMENT LAYER - Teacher State Service
@@ -92,6 +93,7 @@ export class TeacherStateService {
    */
   logout(): void {
     localStorage.removeItem(AUTH_STORAGE_KEY);
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
     this.currentTeacherSubject.next(null);
     this.isAuthenticatedSubject.next(false);
     this.clearError();
@@ -102,11 +104,20 @@ export class TeacherStateService {
    */
   clearState(): void {
     localStorage.removeItem(AUTH_STORAGE_KEY);
+    localStorage.removeItem(TOKEN_STORAGE_KEY);
     this.currentTeacherSubject.next(null);
     this.teachersSubject.next([]);
     this.isAuthenticatedSubject.next(false);
     this.loadingSubject.next(false);
     this.errorSubject.next(null);
+  }
+
+  setToken(token: string): void {
+    localStorage.setItem(TOKEN_STORAGE_KEY, token);
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem(TOKEN_STORAGE_KEY);
   }
 
   /**

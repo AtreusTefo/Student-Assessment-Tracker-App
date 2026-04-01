@@ -38,11 +38,12 @@ namespace StudentAssessmentTracker.Domain.Entities
         /// <summary>Navigation property to the Grade lookup entry</summary>
         public Grade? GradeNavigation { get; set; }
 
-        /// <summary>FK → Teachers.Id — the teacher who owns/manages this student record</summary>
-        public int TeacherId { get; set; }
-
-        /// <summary>Navigation property to the owning teacher</summary>
-        public Teacher? Teacher { get; set; }
+        /// <summary>
+        /// Many-to-many: the teachers currently assigned to instruct this student.
+        /// A Grade-10 student can have a Maths teacher, an English teacher, etc. —
+        /// each represented by one <see cref="TeacherStudent"/> row.
+        /// </summary>
+        public ICollection<TeacherStudent> TeacherAssignments { get; set; } = new List<TeacherStudent>();
 
         /// <summary>Collection of this student's individual assessments</summary>
         public ICollection<StudentAssessment> Assessments { get; set; } = new List<StudentAssessment>();

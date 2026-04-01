@@ -1,4 +1,7 @@
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 using FluentValidation;
 using FluentValidation.AspNetCore;
 using Serilog;
@@ -69,6 +72,28 @@ builder.Services.AddSwaggerGen(options =>
     {
         options.IncludeXmlComments(xmlFile);
     }
+
+    // Bearer token support in Swagger UI
+    options.AddSecurityDefinition("Bearer", new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+    {
+        Name = "Authorization",
+        Type = Microsoft.OpenApi.Models.SecuritySchemeType.Http,
+        Scheme = "bearer",
+        BearerFormat = "JWT",
+        In = Microsoft.OpenApi.Models.ParameterLocation.Header,
+        Description = "Paste the JWT returned by POST /api/teachers/login (no 'Bearer' prefix needed)."
+    });
+    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
+    {
+        {
+            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
+            {
+                Reference = new Microsoft.OpenApi.Models.OpenApiReference
+                    { Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
 });
 
 // ============================================================================
@@ -87,6 +112,28 @@ builder.Services.AddCors(options =>
 // ============================================================================
 // INFRASTRUCTURE LAYER - Database (SQL Server LocalDB)
 // ============================================================================
+
+// ── JWT Authentication ──────────────────────────────────────────────────────
+var jwtKey = builder.Configuration["Jwt:Key"]
+    ?? throw new InvalidOperationException("Jwt:Key is not configured. Add it to appsettings.");
+
+builder.Services
+    .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"],
+            ValidAudience = builder.Configuration["Jwt:Audience"],
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtKey)),
+            ClockSkew = TimeSpan.Zero
+        };
+    });
+
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
     ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
 
@@ -112,8 +159,12 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 // INFRASTRUCTURE LAYER - Repositories (Data Access)
 // ============================================================================
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
-builder.Services.AddScoped<IRepository<Student>, StudentRepository>();
-builder.Services.AddScoped<IRepository<Teacher>, TeacherRepository>();
+builder.Services.AddScoped<IStudentRepository, StudentRepository>();
+builder.Services.AddScoped<ITeacherRepository, TeacherRepository>();
+builder.Services.AddScoped<IStudentAssessmentRepository, StudentAssessmentRepository>();
+// Resolve generic IRepository<T> requests via the specialized implementations
+builder.Services.AddScoped<IRepository<Student>>(sp => sp.GetRequiredService<IStudentRepository>());
+builder.Services.AddScoped<IRepository<Teacher>>(sp => sp.GetRequiredService<ITeacherRepository>());
 
 // ============================================================================
 // APPLICATION LAYER - Business Logic
@@ -165,6 +216,9 @@ app.UseSerilogRequestLogging();
 app.UseDefaultFiles();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseCors("AllowAngular");
+app.UseAuthentication();
+app.UseAuthorization();
 
 // ============================================================================
 // SWAGGER UI - API DOCUMENTATION
@@ -180,9 +234,6 @@ app.UseSwaggerUI(options =>
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "Student Assessment Tracker API v1");
     options.RoutePrefix = "swagger";
 });
-
-app.UseCors("AllowAngular");
-app.UseAuthorization();
 
 app.MapControllers();
 app.MapFallbackToFile("index.html");

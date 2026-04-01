@@ -38,9 +38,7 @@ namespace StudentAssessmentTracker.Application.Validators
 
             RuleFor(x => x.GradeId)
                 .GreaterThan(0).WithMessage("A valid grade must be selected");
-
-            RuleFor(x => x.TeacherId)
-                .GreaterThan(0).WithMessage("Teacher ID is required");
+            // TeacherId is no longer part of the request body — it is extracted from the authenticated teacher's JWT
         }
     }
 

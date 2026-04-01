@@ -42,6 +42,7 @@ export class TeacherBusinessService {
         };
         this.studentAuthState.logout(); // Clear any active student session
         this.teacherState.setCurrentTeacher(teacher);
+        this.teacherState.setToken(response.token); // Store JWT for subsequent API calls
         this.teacherState.setLoading(false);
       }),
       catchError(error => {

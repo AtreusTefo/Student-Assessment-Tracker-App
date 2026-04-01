@@ -18,6 +18,7 @@ namespace StudentAssessmentTracker.Presentation.Controllers
         private readonly ApplicationDbContext _context;
         private readonly IMapper _mapper;
 
+        /// <summary>Initialises the controller with the database context and mapper.</summary>
         public GradesController(ApplicationDbContext context, IMapper mapper)
         {
             _context = context;

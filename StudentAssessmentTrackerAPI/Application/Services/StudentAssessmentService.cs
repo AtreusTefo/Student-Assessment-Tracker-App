@@ -1,21 +1,42 @@
 using AutoMapper;
-using Microsoft.EntityFrameworkCore;
 using StudentAssessmentTracker.Application.DTOs;
 using StudentAssessmentTracker.Domain.Entities;
-using StudentAssessmentTracker.Infrastructure.Data;
+using StudentAssessmentTracker.Domain.Interfaces;
 
 namespace StudentAssessmentTracker.Application.Services
 {
     /// <summary>
-    /// Service interface for managing student assessments
+    /// Defines the contract for assessment lifecycle operations scoped to a student
+    /// and validated against the calling teacher's ownership.
     /// </summary>
     public interface IStudentAssessmentService
     {
-        Task<IEnumerable<StudentAssessmentDto>> GetByStudentIdAsync(int studentId);
-        Task<StudentAssessmentDto> GetByIdAsync(int studentId, int assessmentId);
-        Task<StudentAssessmentDto> AddAsync(int studentId, CreateStudentAssessmentDto dto);
-        Task<StudentAssessmentDto> UpdateAsync(int studentId, int assessmentId, UpdateStudentAssessmentDto dto);
-        Task DeleteAsync(int studentId, int assessmentId);
+        /// <summary>Returns all assessments for <paramref name="studentId"/>, verified to belong to <paramref name="teacherId"/>.</summary>
+        Task<IEnumerable<StudentAssessmentDto>> GetByStudentIdAsync(int studentId, int teacherId);
+
+        /// <summary>
+        /// Returns the assessment with <paramref name="assessmentId"/> for the given student.
+        /// Throws <see cref="KeyNotFoundException"/> when the student or assessment is not found.
+        /// </summary>
+        Task<StudentAssessmentDto> GetByIdAsync(int studentId, int assessmentId, int teacherId);
+
+        /// <summary>
+        /// Creates a new assessment record for <paramref name="studentId"/>.
+        /// Throws <see cref="KeyNotFoundException"/> when the student does not belong to the teacher.
+        /// </summary>
+        Task<StudentAssessmentDto> AddAsync(int studentId, CreateStudentAssessmentDto dto, int teacherId);
+
+        /// <summary>
+        /// Updates an existing assessment for <paramref name="studentId"/>.
+        /// Throws <see cref="KeyNotFoundException"/> when the student or assessment is not found.
+        /// </summary>
+        Task<StudentAssessmentDto> UpdateAsync(int studentId, int assessmentId, UpdateStudentAssessmentDto dto, int teacherId);
+
+        /// <summary>
+        /// Deletes the assessment with <paramref name="assessmentId"/> from the given student.
+        /// Throws <see cref="KeyNotFoundException"/> when the student or assessment is not found.
+        /// </summary>
+        Task DeleteAsync(int studentId, int assessmentId, int teacherId);
     }
 
     /// <summary>
@@ -25,95 +46,87 @@ namespace StudentAssessmentTracker.Application.Services
     /// </summary>
     public class StudentAssessmentService : IStudentAssessmentService
     {
-        private readonly ApplicationDbContext _context;
+        private readonly IStudentAssessmentRepository _assessmentRepository;
+        private readonly IStudentRepository _studentRepository;
         private readonly IMapper _mapper;
         private readonly ILogger<StudentAssessmentService> _logger;
 
+        /// <summary>Initialises the service with the assessment repository, student repository, mapper, and logger.</summary>
         public StudentAssessmentService(
-            ApplicationDbContext context,
+            IStudentAssessmentRepository assessmentRepository,
+            IStudentRepository studentRepository,
             IMapper mapper,
             ILogger<StudentAssessmentService> logger)
         {
-            _context = context;
+            _assessmentRepository = assessmentRepository;
+            _studentRepository = studentRepository;
             _mapper = mapper;
             _logger = logger;
         }
 
-        public async Task<IEnumerable<StudentAssessmentDto>> GetByStudentIdAsync(int studentId)
+        /// <inheritdoc />
+        public async Task<IEnumerable<StudentAssessmentDto>> GetByStudentIdAsync(int studentId, int teacherId)
         {
-            await EnsureStudentExistsAsync(studentId);
-
-            var assessments = await _context.StudentAssessments
-                .AsNoTracking()
-                .Where(a => a.StudentId == studentId)
-                .OrderBy(a => a.DueDate)
-                .ThenBy(a => a.Name)
-                .ToListAsync();
-
+            await EnsureStudentBelongsToTeacherAsync(studentId, teacherId);
+            var assessments = await _assessmentRepository.GetByStudentIdAsync(studentId);
             return _mapper.Map<IEnumerable<StudentAssessmentDto>>(assessments);
         }
 
-        public async Task<StudentAssessmentDto> GetByIdAsync(int studentId, int assessmentId)
+        /// <inheritdoc />
+        public async Task<StudentAssessmentDto> GetByIdAsync(int studentId, int assessmentId, int teacherId)
         {
+            await EnsureStudentBelongsToTeacherAsync(studentId, teacherId);
             var assessment = await FindAssessmentAsync(studentId, assessmentId);
             return _mapper.Map<StudentAssessmentDto>(assessment);
         }
 
-        public async Task<StudentAssessmentDto> AddAsync(int studentId, CreateStudentAssessmentDto dto)
+        /// <inheritdoc />
+        public async Task<StudentAssessmentDto> AddAsync(int studentId, CreateStudentAssessmentDto dto, int teacherId)
         {
-            await EnsureStudentExistsAsync(studentId);
-
+            await EnsureStudentBelongsToTeacherAsync(studentId, teacherId);
             var assessment = _mapper.Map<StudentAssessment>(dto);
             assessment.StudentId = studentId;
             assessment.CreatedAt = DateTime.UtcNow;
             assessment.UpdatedAt = DateTime.UtcNow;
-
-            _context.StudentAssessments.Add(assessment);
-            await _context.SaveChangesAsync();
-
+            await _assessmentRepository.AddAsync(assessment);
             _logger.LogInformation("Assessment '{Name}' added to student {StudentId}", dto.Name, studentId);
             return _mapper.Map<StudentAssessmentDto>(assessment);
         }
 
-        public async Task<StudentAssessmentDto> UpdateAsync(int studentId, int assessmentId, UpdateStudentAssessmentDto dto)
+        /// <inheritdoc />
+        public async Task<StudentAssessmentDto> UpdateAsync(int studentId, int assessmentId, UpdateStudentAssessmentDto dto, int teacherId)
         {
+            await EnsureStudentBelongsToTeacherAsync(studentId, teacherId);
             var assessment = await FindAssessmentAsync(studentId, assessmentId);
-
             _mapper.Map(dto, assessment);
             assessment.UpdatedAt = DateTime.UtcNow;
-
-            await _context.SaveChangesAsync();
-
+            await _assessmentRepository.UpdateAsync(assessment);
             _logger.LogInformation("Assessment {AssessmentId} for student {StudentId} updated", assessmentId, studentId);
             return _mapper.Map<StudentAssessmentDto>(assessment);
         }
 
-        public async Task DeleteAsync(int studentId, int assessmentId)
+        /// <inheritdoc />
+        public async Task DeleteAsync(int studentId, int assessmentId, int teacherId)
         {
+            await EnsureStudentBelongsToTeacherAsync(studentId, teacherId);
             var assessment = await FindAssessmentAsync(studentId, assessmentId);
-
-            _context.StudentAssessments.Remove(assessment);
-            await _context.SaveChangesAsync();
-
+            await _assessmentRepository.DeleteAsync(assessment.Id);
             _logger.LogInformation("Assessment {AssessmentId} for student {StudentId} deleted", assessmentId, studentId);
         }
 
-        private async Task EnsureStudentExistsAsync(int studentId)
+        // Verifies the student exists AND is assigned to the calling teacher — prevents cross-teacher data access
+        private async Task EnsureStudentBelongsToTeacherAsync(int studentId, int teacherId)
         {
-            var exists = await _context.Students.AnyAsync(s => s.Id == studentId);
-            if (!exists)
-                throw new KeyNotFoundException($"Student with ID {studentId} not found");
+            var owned = await _studentRepository.IsAssignedToTeacherAsync(studentId, teacherId);
+            if (!owned)
+                throw new KeyNotFoundException($"Student {studentId} not found or not assigned to you.");
         }
 
         private async Task<StudentAssessment> FindAssessmentAsync(int studentId, int assessmentId)
         {
-            var assessment = await _context.StudentAssessments
-                .FirstOrDefaultAsync(a => a.Id == assessmentId && a.StudentId == studentId);
-
+            var assessment = await _assessmentRepository.GetByIdForStudentAsync(studentId, assessmentId);
             if (assessment == null)
-                throw new KeyNotFoundException(
-                    $"Assessment {assessmentId} for student {studentId} not found");
-
+                throw new KeyNotFoundException($"Assessment {assessmentId} for student {studentId} not found");
             return assessment;
         }
     }

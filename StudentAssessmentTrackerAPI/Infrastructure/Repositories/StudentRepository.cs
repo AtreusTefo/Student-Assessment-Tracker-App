@@ -88,17 +88,18 @@ namespace StudentAssessmentTracker.Infrastructure.Repositories
     }
 
     /// <summary>
-    /// Student-specific repository extending the generic repository.
-    /// Overrides GetAllAsync and GetByIdAsync to eagerly load Assessments
-    /// and GradeNavigation — required for domain method calculations.
+    /// Concrete student repository — implements IStudentRepository which extends
+    /// IRepository&lt;Student&gt; with teacher-scoped queries that enforce data isolation.
+    /// All teacher-facing operations must use GetAllByTeacherAsync / GetByIdForTeacherAsync
+    /// instead of the unfiltered base methods.
     /// </summary>
-    public class StudentRepository : Repository<Student>
+    public class StudentRepository : Repository<Student>, IStudentRepository
     {
+        /// <summary>Initialises the repository with the application database context.</summary>
         public StudentRepository(ApplicationDbContext context) : base(context) { }
 
-        /// <summary>
-        /// Gets all students with assessments and grade info included
-        /// </summary>
+        // Unscoped overrides — kept for student self-service paths (activation / login)
+        /// <summary>Returns all students regardless of teacher ownership — used only by internal self-service paths.</summary>
         public override async Task<IEnumerable<Student>> GetAllAsync()
         {
             return await _context.Students
@@ -110,15 +111,127 @@ namespace StudentAssessmentTracker.Infrastructure.Repositories
                 .ToListAsync();
         }
 
-        /// <summary>
-        /// Gets a single student with assessments and grade info included
-        /// </summary>
+        /// <summary>Returns the student with <paramref name="id"/>, including assessments and grade navigation.</summary>
         public override async Task<Student?> GetByIdAsync(int id)
         {
             return await _context.Students
                 .Include(s => s.Assessments)
                 .Include(s => s.GradeNavigation)
                 .FirstOrDefaultAsync(s => s.Id == id);
+        }
+
+        /// <inheritdoc />
+        public async Task<IEnumerable<Student>> GetAllByTeacherAsync(int teacherId)
+        {
+            return await _context.Students
+                .AsNoTracking()
+                .Where(s => s.TeacherAssignments.Any(ta => ta.TeacherId == teacherId))
+                .Include(s => s.Assessments)
+                .Include(s => s.GradeNavigation)
+                .Include(s => s.TeacherAssignments)
+                    .ThenInclude(ta => ta.Teacher)
+                    .ThenInclude(t => t.SubjectNavigation)
+                .OrderBy(s => s.LastName)
+                .ThenBy(s => s.FirstName)
+                .ToListAsync();
+        }
+
+        /// <inheritdoc />
+        public async Task<Student?> GetByIdForTeacherAsync(int id, int teacherId)
+        {
+            return await _context.Students
+                .Where(s => s.Id == id && s.TeacherAssignments.Any(ta => ta.TeacherId == teacherId))
+                .Include(s => s.Assessments)
+                .Include(s => s.GradeNavigation)
+                .Include(s => s.TeacherAssignments)
+                    .ThenInclude(ta => ta.Teacher)
+                    .ThenInclude(t => t.SubjectNavigation)
+                .FirstOrDefaultAsync();
+        }
+
+        /// <inheritdoc />
+        public async Task<bool> ExistsForTeacherAsync(int id, int teacherId)
+        {
+            return await _context.Students
+                .AsNoTracking()
+                .AnyAsync(s => s.Id == id && s.TeacherAssignments.Any(ta => ta.TeacherId == teacherId));
+        }
+
+        /// <inheritdoc />
+        public async Task<Student?> FindByUniqueIdAsync(string uniqueId)
+        {
+            // Normalize the lookup value in C# so the column comparison is a simple
+            // indexed equality check — avoids calling a SQL function on the column.
+            var normalized = uniqueId.ToUpperInvariant();
+            return await _context.Students
+                .Include(s => s.Assessments)
+                .Include(s => s.GradeNavigation)
+                .FirstOrDefaultAsync(s => s.StudentUniqueId == normalized);
+        }
+
+        /// <inheritdoc />
+        public async Task<bool> ExistsByEmailAsync(string email, int excludeStudentId = 0)
+        {
+            var normalizedEmail = email.ToLowerInvariant();
+            return await _context.Students
+                .AsNoTracking()
+                .AnyAsync(s => s.Email != null && s.Email.ToLower() == normalizedEmail && s.Id != excludeStudentId);
+        }
+
+        /// <inheritdoc />
+        public async Task<bool> ExistsByIdPassportNoAsync(string idPassportNo, int excludeStudentId = 0)
+        {
+            var normalized = idPassportNo.ToUpperInvariant();
+            return await _context.Students
+                .AsNoTracking()
+                .AnyAsync(s => s.IdPassportNo != null && s.IdPassportNo.ToUpper() == normalized && s.Id != excludeStudentId);
+        }
+
+        /// <inheritdoc />
+        public async Task AssignToTeacherAsync(int studentId, int teacherId)
+        {
+            // Idempotent — skip if the assignment already exists
+            var exists = await _context.TeacherStudents
+                .AsNoTracking()
+                .AnyAsync(ts => ts.TeacherId == teacherId && ts.StudentId == studentId);
+            if (!exists)
+            {
+                _context.TeacherStudents.Add(new TeacherStudent
+                {
+                    TeacherId = teacherId,
+                    StudentId = studentId,
+                    AssignedAt = DateTime.UtcNow
+                });
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task UnassignFromTeacherAsync(int studentId, int teacherId)
+        {
+            var assignment = await _context.TeacherStudents
+                .FirstOrDefaultAsync(ts => ts.TeacherId == teacherId && ts.StudentId == studentId);
+            if (assignment is not null)
+            {
+                _context.TeacherStudents.Remove(assignment);
+                await _context.SaveChangesAsync();
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<bool> IsAssignedToTeacherAsync(int studentId, int teacherId)
+        {
+            return await _context.TeacherStudents
+                .AsNoTracking()
+                .AnyAsync(ts => ts.TeacherId == teacherId && ts.StudentId == studentId);
+        }
+
+        /// <inheritdoc />
+        public async Task<int> CountTeacherAssignmentsAsync(int studentId)
+        {
+            return await _context.TeacherStudents
+                .AsNoTracking()
+                .CountAsync(ts => ts.StudentId == studentId);
         }
     }
 }

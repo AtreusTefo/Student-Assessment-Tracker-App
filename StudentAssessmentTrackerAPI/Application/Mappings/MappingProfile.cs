@@ -9,6 +9,7 @@ namespace StudentAssessmentTracker.Application.Mappings
     /// </summary>
     public class MappingProfile : Profile
     {
+        /// <summary>Registers all entity-to-DTO and DTO-to-entity mappings.</summary>
         public MappingProfile()
         {
             // ── Grade Mappings ────────────────────────────────────────────────
@@ -30,10 +31,23 @@ namespace StudentAssessmentTracker.Application.Mappings
 
             // ── Student Mappings ──────────────────────────────────────────────
 
-            // Student → StudentDto with calculated fields and resolved grade name
+            // TeacherStudent → TeacherSummaryDto (used when embedding teacher list inside StudentDto)
+            CreateMap<TeacherStudent, TeacherSummaryDto>()
+                .ForMember(dest => dest.TeacherId,
+                    opt => opt.MapFrom(src => src.TeacherId))
+                .ForMember(dest => dest.FullName,
+                    opt => opt.MapFrom(src => src.Teacher != null ? src.Teacher.GetFullName() : string.Empty))
+                .ForMember(dest => dest.SubjectName,
+                    opt => opt.MapFrom(src => src.Teacher != null && src.Teacher.SubjectNavigation != null
+                        ? src.Teacher.SubjectNavigation.Name
+                        : string.Empty));
+
+            // Student → StudentDto with calculated fields, resolved grade name, and teacher list
             CreateMap<Student, StudentDto>()
                 .ForMember(dest => dest.GradeName,
                     opt => opt.MapFrom(src => src.GradeNavigation != null ? src.GradeNavigation.Name : string.Empty))
+                .ForMember(dest => dest.Teachers,
+                    opt => opt.MapFrom(src => src.TeacherAssignments))
                 .ForMember(dest => dest.TotalScore,
                     opt => opt.MapFrom(src => src.GetTotalScore()))
                 .ForMember(dest => dest.MaxPossible,
@@ -45,19 +59,18 @@ namespace StudentAssessmentTracker.Application.Mappings
                 .ForMember(dest => dest.PerformanceLevel,
                     opt => opt.MapFrom(src => src.GetPerformanceLevel()));
 
-            // CreateStudentDto → Student (StudentUniqueId generated in service)
+            // CreateStudentDto → Student (StudentUniqueId generated in service; teacher assigned via join table)
             CreateMap<CreateStudentDto, Student>()
                 .ForMember(dest => dest.StudentUniqueId, opt => opt.Ignore())
                 .ForMember(dest => dest.GradeNavigation, opt => opt.Ignore())
-                .ForMember(dest => dest.Teacher, opt => opt.Ignore())
+                .ForMember(dest => dest.TeacherAssignments, opt => opt.Ignore())
                 .ForMember(dest => dest.Assessments, opt => opt.Ignore());
 
-            // UpdateStudentDto → Student (StudentUniqueId, TeacherId, Assessments must never be overwritten via update)
+            // UpdateStudentDto → Student (StudentUniqueId, teacher assignments, Assessments must never be overwritten via update)
             CreateMap<UpdateStudentDto, Student>()
                 .ForMember(dest => dest.StudentUniqueId, opt => opt.Ignore())
-                .ForMember(dest => dest.TeacherId, opt => opt.Ignore())
                 .ForMember(dest => dest.GradeNavigation, opt => opt.Ignore())
-                .ForMember(dest => dest.Teacher, opt => opt.Ignore())
+                .ForMember(dest => dest.TeacherAssignments, opt => opt.Ignore())
                 .ForMember(dest => dest.Assessments, opt => opt.Ignore());
 
             // ── Teacher Mappings ──────────────────────────────────────────────
@@ -70,14 +83,14 @@ namespace StudentAssessmentTracker.Application.Mappings
             CreateMap<TeacherRegisterDto, Teacher>()
                 .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForMember(dest => dest.SubjectNavigation, opt => opt.Ignore())
-                .ForMember(dest => dest.Students, opt => opt.Ignore());
+                .ForMember(dest => dest.StudentAssignments, opt => opt.Ignore());
 
             CreateMap<TeacherUpdateDto, Teacher>()
                 .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.Password, opt => opt.Ignore())
                 .ForMember(dest => dest.SubjectNavigation, opt => opt.Ignore())
-                .ForMember(dest => dest.Students, opt => opt.Ignore());
+                .ForMember(dest => dest.StudentAssignments, opt => opt.Ignore());
 
             // ── Student Auth Mappings ─────────────────────────────────────────
 
@@ -85,6 +98,8 @@ namespace StudentAssessmentTracker.Application.Mappings
             CreateMap<Student, StudentProfileDto>()
                 .ForMember(dest => dest.GradeName,
                     opt => opt.MapFrom(src => src.GradeNavigation != null ? src.GradeNavigation.Name : string.Empty))
+                .ForMember(dest => dest.Teachers,
+                    opt => opt.MapFrom(src => src.TeacherAssignments))
                 .ForMember(dest => dest.TotalScore,
                     opt => opt.MapFrom(src => src.GetTotalScore()))
                 .ForMember(dest => dest.MaxPossible,

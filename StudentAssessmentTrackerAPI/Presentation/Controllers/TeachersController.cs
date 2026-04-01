@@ -1,4 +1,6 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 using StudentAssessmentTracker.Application.DTOs;
 using StudentAssessmentTracker.Application.Services;
 
@@ -85,14 +87,24 @@ namespace StudentAssessmentTracker.Presentation.Controllers
         [HttpPost]
         [ProducesResponseType(typeof(TeacherResponseDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> Create([FromBody] TeacherRegisterDto dto)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
             _logger.LogInformation("POST /api/teachers — registering {Email}", dto.Email);
-            var created = await _teacherService.CreateTeacherAsync(dto);
-            return CreatedAtAction(nameof(GetById), new { id = created.TeacherId }, created);
+            try
+            {
+                var created = await _teacherService.CreateTeacherAsync(dto);
+                return CreatedAtAction(nameof(GetById), new { id = created.TeacherId }, created);
+            }
+            catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error creating teacher {Email}", dto.Email);
+                return StatusCode(500, new { message = "Internal server error while creating teacher." });
+            }
         }
 
         // ====================================================================
@@ -100,24 +112,45 @@ namespace StudentAssessmentTracker.Presentation.Controllers
         // ====================================================================
 
         /// <summary>
-        /// Updates an existing teacher
+        /// Updates the authenticated teacher's own profile.
+        /// Teachers may only update their own record — attempting to update another teacher's record returns 403.
         /// </summary>
-        /// <param name="id">The teacher identifier</param>
+        /// <param name="id">The teacher identifier (must match the authenticated teacher's ID)</param>
         /// <param name="dto">Updated teacher data</param>
         /// <returns>Confirmation message on success</returns>
         /// <response code="200">Teacher updated successfully</response>
+        /// <response code="401">Not authenticated</response>
+        /// <response code="403">Authenticated teacher does not own this record</response>
         /// <response code="404">Teacher not found</response>
+        [Authorize]
         [HttpPut("{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Update(int id, [FromBody] TeacherUpdateDto dto)
         {
+            if (!TryGetTeacherId(out var teacherId))
+                return Unauthorized(new { message = "Invalid or missing token." });
+            if (id != teacherId)
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "You may only update your own profile." });
+
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
 
-            _logger.LogInformation("PUT /api/teachers/{Id}", id);
-            var updated = await _teacherService.UpdateTeacherAsync(id, dto);
-            return updated ? Ok(new { message = $"Teacher with ID {id} successfully updated." }) : NotFound(new { message = $"Teacher with ID {id} not found." });
+            _logger.LogInformation("PUT /api/teachers/{Id} by authenticated teacher {TeacherId}", id, teacherId);
+            try
+            {
+                var updated = await _teacherService.UpdateTeacherAsync(id, dto);
+                return updated ? Ok(new { message = $"Teacher with ID {id} successfully updated." }) : NotFound(new { message = $"Teacher with ID {id} not found." });
+            }
+            catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
+            catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error updating teacher {TeacherId}", id);
+                return StatusCode(500, new { message = "Internal server error while updating teacher." });
+            }
         }
 
         // ====================================================================
@@ -125,20 +158,44 @@ namespace StudentAssessmentTracker.Presentation.Controllers
         // ====================================================================
 
         /// <summary>
-        /// Deletes a teacher by ID
+        /// Deletes the authenticated teacher's own account.
+        /// Teachers may only delete their own record — attempting to delete another teacher's record returns 403.
         /// </summary>
-        /// <param name="id">The teacher identifier</param>
+        /// <param name="id">The teacher identifier (must match the authenticated teacher's ID)</param>
         /// <returns>Confirmation message on success</returns>
         /// <response code="200">Teacher deleted successfully</response>
+        /// <response code="401">Not authenticated</response>
+        /// <response code="403">Authenticated teacher does not own this record</response>
         /// <response code="404">Teacher not found</response>
+        /// <response code="409">Teacher still has students assigned</response>
+        [Authorize]
         [HttpDelete("{id:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
         public async Task<IActionResult> Delete(int id)
         {
-            _logger.LogInformation("DELETE /api/teachers/{Id}", id);
-            var deleted = await _teacherService.DeleteTeacherAsync(id);
-            return deleted ? Ok(new { message = $"Teacher with ID {id} successfully deleted." }) : NotFound(new { message = $"Teacher with ID {id} not found." });
+            if (!TryGetTeacherId(out var teacherId))
+                return Unauthorized(new { message = "Invalid or missing token." });
+            if (id != teacherId)
+                return StatusCode(StatusCodes.Status403Forbidden, new { message = "You may only delete your own account." });
+
+            _logger.LogInformation("DELETE /api/teachers/{Id} by authenticated teacher {TeacherId}", id, teacherId);
+            try
+            {
+                var deleted = await _teacherService.DeleteTeacherAsync(id);
+                return deleted
+                    ? Ok(new { message = $"Teacher with ID {id} successfully deleted." })
+                    : NotFound(new { message = $"Teacher with ID {id} not found." });
+            }
+            catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error deleting teacher {TeacherId}", id);
+                return StatusCode(500, new { message = "Internal server error while deleting teacher." });
+            }
         }
 
         // ====================================================================
@@ -165,6 +222,16 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             return result is null
                 ? Unauthorized(new { message = "Invalid email or password." })
                 : Ok(result);
+        }
+
+        // ── Helpers ───────────────────────────────────────────────────────────
+
+        /// <summary>Extracts the teacherId claim from the validated JWT. Returns false when missing or non-numeric.</summary>
+        private bool TryGetTeacherId(out int teacherId)
+        {
+            teacherId = 0;
+            var value = User.FindFirstValue("teacherId");
+            return value != null && int.TryParse(value, out teacherId);
         }
     }
 }

@@ -955,6 +955,299 @@ See **`DAILY_REPORT_2026-03-05.md`** for the full session summary (March 5, 2026
 
 ---
 
-**Last Updated**: March 5, 2026  
-**Total Issues Documented**: 33 (13 frontend + 6 architecture + 6 infrastructure/tooling + 8 auth/UX/DataTables)  
+## 🚨 CRITICAL ISSUES (April 1, 2026)
+
+### 34. TeachersController PUT & DELETE Were Unauthenticated 🔐
+**Problem**: `PUT /api/teachers/{id}` and `DELETE /api/teachers/{id}` had no `[Authorize]` attribute — any anonymous caller could overwrite or delete any teacher record, including changing their password hash.  
+**Root Cause**: `[Authorize]` was applied to other controllers but accidentally omitted on the `Update` and `Delete` actions in `TeachersController`.  
+**Fix**:
+```csharp
+// Add [Authorize] to both actions
+[Authorize]
+[HttpPut("{id:int}")]
+public async Task<IActionResult> Update(int id, [FromBody] TeacherUpdateDto dto)
+{
+    // Extract JWT claim and enforce self-scope
+    if (!TryGetTeacherId(out var teacherId))
+        return Unauthorized(new { message = "Invalid or missing token." });
+    if (id != teacherId)
+        return StatusCode(403, new { message = "You may only update your own profile." });
+    // ...
+}
+
+[Authorize]
+[HttpDelete("{id:int}")]
+public async Task<IActionResult> Delete(int id)
+{
+    if (!TryGetTeacherId(out var teacherId))
+        return Unauthorized(new { message = "Invalid or missing token." });
+    if (id != teacherId)
+        return StatusCode(403, new { message = "You may only delete your own account." });
+    // ...
+}
+
+// Add helper at bottom of controller class
+private bool TryGetTeacherId(out int teacherId)
+{
+    teacherId = 0;
+    var value = User.FindFirstValue("teacherId");
+    return value != null && int.TryParse(value, out teacherId);
+}
+```
+Also add `using Microsoft.AspNetCore.Authorization;` and `using System.Security.Claims;` at the top of the file.  
+**File**: `Presentation/Controllers/TeachersController.cs`  
+**Prevention**: Add `[Authorize]` to the controller class level and only apply `[AllowAnonymous]` on public endpoints like `/login` and `/register`
+
+---
+
+### 35. UpdateTeacherAsync Had No Duplicate Email / ID-Passport Check
+**Problem**: Creating a teacher correctly rejects duplicate email/ID-Passport, but updating did not. Submitting a value that belongs to another teacher caused EF Core to throw a `DbUpdateException` → HTTP 500 with no useful message.  
+**Root Cause**: `CreateTeacherAsync` had the duplicate-detection logic; `UpdateTeacherAsync` did not.  
+**Fix**: Add exclude-self overloads to the repository and call them in the service:
+```csharp
+// ITeacherRepository — add two new method signatures:
+Task<bool> ExistsByEmailAsync(string email, int excludeTeacherId = 0);
+Task<bool> ExistsByIdPassportNoAsync(string idPassportNo, int excludeTeacherId);
+
+// TeacherRepository — implement both:
+public async Task<bool> ExistsByEmailAsync(string email, int excludeTeacherId = 0)
+{
+    var normalized = email.ToLowerInvariant();
+    return await _context.Teachers.AsNoTracking()
+        .AnyAsync(t => t.Email.ToLower() == normalized && t.Id != excludeTeacherId);
+}
+
+// TeacherService.UpdateTeacherAsync — add before mapping:
+if (await _repository.ExistsByEmailAsync(dto.Email, excludeTeacherId: id))
+    throw new InvalidOperationException($"A teacher with email '{dto.Email}' is already registered.");
+if (await _repository.ExistsByIdPassportNoAsync(dto.IdPassportNo, excludeTeacherId: id))
+    throw new InvalidOperationException($"A teacher with ID/Passport No. '{dto.IdPassportNo}' is already registered.");
+```
+Controller catches `InvalidOperationException` → returns `409 Conflict`.  
+**Files**: `Domain/Interfaces/ITeacherRepository.cs`, `Infrastructure/Repositories/TeacherRepository.cs`, `Application/Services/TeacherService.cs`  
+**Prevention**: Any service that has create+update paths must apply the same duplicate checks to both, using an `excludeId` parameter on the update path
+
+---
+
+### 36. SubjectId Not Validated Against the Subjects Table
+**Problem**: Validator only checked `SubjectId > 0`. A valid integer like `999` that doesn't correspond to any row in the `Subjects` table caused EF to throw an FK violation → HTTP 500.  
+**Root Cause**: Same gap that was previously fixed for `GradeId` on students was never applied to `SubjectId` on teachers.  
+**Fix**: Inject `IRepository<Subject>` into `TeacherService` and validate before saving:
+```csharp
+// TeacherService constructor — add IRepository<Subject>
+public TeacherService(
+    ITeacherRepository repository,
+    IRepository<Subject> subjectRepository,
+    // ...
+)
+
+// CreateTeacherAsync & UpdateTeacherAsync — add before duplicate checks:
+if (await _subjectRepository.GetByIdAsync(dto.SubjectId) is null)
+    throw new ArgumentException($"Subject with ID {dto.SubjectId} does not exist.");
+```
+Controller catches `ArgumentException` → returns `400 Bad Request`.  
+**Files**: `Application/Services/TeacherService.cs`  
+**Note**: The `IRepository<Subject>` registration `AddScoped(typeof(IRepository<>), typeof(Repository<>))` in `Program.cs` already covers this — no new DI registration needed  
+**Prevention**: For every FK field on any DTO, add a service-layer existence check that throws a descriptive exception rather than leaking DB errors
+
+---
+
+### 37. Last Teacher Unassign Leaves Orphaned Student
+**Problem**: `UnassignStudentFromTeacherAsync` removed the join row without checking if it was the student's final teacher. A student with zero entries in `TeacherStudents` becomes invisible — no teacher can query, update, or delete them.  
+**Root Cause**: Repository only removed the row; no minimum-1 constraint was enforced.  
+**Fix**: Add a count check before unassigning:
+```csharp
+// IStudentRepository — add:
+Task<int> CountTeacherAssignmentsAsync(int studentId);
+
+// StudentRepository — implement:
+public async Task<int> CountTeacherAssignmentsAsync(int studentId)
+{
+    return await _context.TeacherStudents
+        .AsNoTracking()
+        .CountAsync(ts => ts.StudentId == studentId);
+}
+
+// StudentService.UnassignStudentFromTeacherAsync — add guard:
+var assignmentCount = await _repository.CountTeacherAssignmentsAsync(studentId);
+if (assignmentCount <= 1)
+    throw new InvalidOperationException(
+        $"Cannot unassign: student {studentId} would have no teachers remaining. " +
+        "Assign another teacher first, or delete the student.");
+```
+**Files**: `Domain/Interfaces/IStudentRepository.cs`, `Infrastructure/Repositories/StudentRepository.cs`, `Application/Services/StudentService.cs`  
+**Prevention**: Any time you remove an element from a required-minimum collection, check the count first and return a descriptive error
+
+---
+
+### 38. StudentUniqueId Collision Not Handled at Application Level
+**Problem (1)**: `new Random()` created per call is not thread-safe — concurrent requests can produce identical sequences.  
+**Problem (2)**: No pre-check against the DB before saving — on a collision `SaveChangesAsync` throws `DbUpdateException` → HTTP 500.  
+**Root Cause**: Initial implementation used a simple one-line generator with no concurrency or uniqueness guarantees.  
+**Fix**:
+```csharp
+// BEFORE (WRONG):
+private static string GenerateStudentUniqueId()
+{
+    var random = new Random();  // ❌ not thread-safe
+    var suffix = new string(Enumerable.Repeat(chars, 8)
+        .Select(s => s[random.Next(s.Length)]).ToArray());
+    return $"STU-{suffix}";
+}
+
+// AFTER (CORRECT):
+private static string GenerateStudentUniqueId()
+{
+    // Random.Shared is thread-safe and available since .NET 6
+    var suffix = new string(Enumerable.Repeat(chars, 8)
+        .Select(s => s[Random.Shared.Next(s.Length)]).ToArray());
+    return $"STU-{suffix}";
+}
+
+// In CreateStudentAsync — retry until the generated ID is unique in the DB:
+string uniqueId;
+do
+{
+    uniqueId = GenerateStudentUniqueId();
+} while (await _repository.FindByUniqueIdAsync(uniqueId) is not null);
+student.StudentUniqueId = uniqueId;
+```
+**File**: `Application/Services/StudentService.cs`  
+**Prevention**: Always use `Random.Shared` instead of `new Random()` in .NET 6+. For any auto-generated unique key, add a DB uniqueness check with a retry loop
+
+---
+
+### 39. DeleteTeacherAsync Called SaveChangesAsync Twice
+**Problem**: The service called `await _repository.SaveChangesAsync()` immediately after `await _repository.DeleteAsync(id)`. The base `Repository<T>.DeleteAsync` already calls `SaveChangesAsync` internally, so the second call was a redundant empty DB roundtrip.  
+**Root Cause**: Inconsistency between the base repository implementation and the service code — `DeleteAsync` was treated as if it didn't persist like the other methods do.  
+**Fix**:
+```csharp
+// BEFORE (WRONG):
+await _repository.DeleteAsync(id);       // ← already saves
+await _repository.SaveChangesAsync();    // ← redundant second commit
+
+// AFTER (CORRECT):
+await _repository.DeleteAsync(id);       // ← saves, done
+```
+**File**: `Application/Services/TeacherService.cs`  
+**Prevention**: Check whether a repository method calls `SaveChangesAsync` internally before adding an explicit call. Convention: `AddAsync`, `UpdateAsync`, and `DeleteAsync` all call save internally in this codebase
+
+---
+
+### 40. StudentAssessmentService Directly Injected ApplicationDbContext
+**Problem**: `StudentAssessmentService` (Application layer) depended directly on `ApplicationDbContext` (Infrastructure layer). This violates Clean Architecture and couples the business logic to EF Core implementation details.  
+**Root Cause**: The assessment service was written before the repository pattern was consistently applied; it used `_context.StudentAssessments.Add/Remove/SaveChanges` directly.  
+**Fix**: Introduce a proper repository:
+```csharp
+// 1. Create Domain/Interfaces/IStudentAssessmentRepository.cs:
+public interface IStudentAssessmentRepository : IRepository<StudentAssessment>
+{
+    Task<IEnumerable<StudentAssessment>> GetByStudentIdAsync(int studentId);
+    Task<StudentAssessment?> GetByIdForStudentAsync(int studentId, int assessmentId);
+}
+
+// 2. Create Infrastructure/Repositories/StudentAssessmentRepository.cs:
+public class StudentAssessmentRepository : Repository<StudentAssessment>, IStudentAssessmentRepository
+{
+    public async Task<IEnumerable<StudentAssessment>> GetByStudentIdAsync(int studentId)
+        => await _context.StudentAssessments.AsNoTracking()
+            .Where(a => a.StudentId == studentId)
+            .OrderBy(a => a.DueDate).ThenBy(a => a.Name).ToListAsync();
+
+    public async Task<StudentAssessment?> GetByIdForStudentAsync(int studentId, int assessmentId)
+        => await _context.StudentAssessments
+            .FirstOrDefaultAsync(a => a.Id == assessmentId && a.StudentId == studentId);
+}
+
+// 3. Rewrite StudentAssessmentService constructor:
+public StudentAssessmentService(
+    IStudentAssessmentRepository assessmentRepository,
+    IStudentRepository studentRepository,   // for ownership check
+    IMapper mapper,
+    ILogger<StudentAssessmentService> logger)
+
+// 4. Register in Program.cs:
+builder.Services.AddScoped<IStudentAssessmentRepository, StudentAssessmentRepository>();
+```
+Remove `using StudentAssessmentTracker.Infrastructure.Data;` from the service — the Application layer must not reference Infrastructure namespaces.  
+**Files**: `Domain/Interfaces/IStudentAssessmentRepository.cs` *(new)*, `Infrastructure/Repositories/StudentAssessmentRepository.cs` *(new)*, `Application/Services/StudentAssessmentService.cs`, `Program.cs`  
+**Prevention**: Services in the Application layer must only inject Domain interfaces (`IRepository<T>`, `IXxxRepository`). If you find yourself typing `ApplicationDbContext` in a service file, stop and create a repository method instead
+
+---
+
+### 41. TeacherUpdateDto Allowed Blind Password Overwrite
+**Problem**: `TeacherUpdateDto` contained a `Password` field. While `MappingProfile` ignored it on the destination, callers could still submit any value and see it silently dropped — with no feedback and no secure change-password flow.  
+**Root Cause**: The original DTO was created by duplicating `TeacherRegisterDto`; the `Password` field was never explicitly removed when the update shape was finalized.  
+**Fix**: Remove `Password` from `TeacherUpdateDto`:
+```csharp
+// BEFORE (WRONG — password field present):
+public class TeacherUpdateDto
+{
+    public string IdPassportNo { get; set; } = string.Empty;
+    // ...
+    public string Password { get; set; } = string.Empty;  // ❌ REMOVED
+    public DateTime EnrollmentDate { get; set; }
+}
+
+// AFTER (CORRECT — password field absent):
+public class TeacherUpdateDto
+{
+    public string IdPassportNo { get; set; } = string.Empty;
+    // ...
+    public DateTime EnrollmentDate { get; set; }
+}
+```
+The `MappingProfile` `TeacherUpdateDto → Teacher` mapping retains `.ForMember(dest => dest.Password, opt => opt.Ignore())` as a defence-in-depth measure.  
+**File**: `Application/DTOs/TeacherDto.cs`  
+**Prevention**: Password changes require a dedicated endpoint that takes both `currentPassword` and `newPassword` and verifies the current password before hashing and persisting the new one. Never include `Password` on a general-purpose update DTO
+
+---
+
+## Diagnostic Checklist — Updated April 1, 2026
+
+**🔐 Anonymous callers can hit PUT/DELETE?**
+1. ✅ Add `[Authorize]` to the action (or the whole controller class)
+2. ✅ Add `[AllowAnonymous]` only on public endpoints (login, register)
+3. ✅ Add a self-scope check using `TryGetTeacherId()` + `if (id != teacherId) return Forbid()`
+
+**♻️ Update endpoint returns 500 on duplicate data?**
+1. ✅ Add an `excludeId` parameter to `ExistsByEmailAsync` / `ExistsByIdPassportNoAsync`
+2. ✅ Call both checks in the service before mapping/saving
+3. ✅ Catch `InvalidOperationException` in the controller → return `409 Conflict`
+
+**🏷️ FK field returns 500 on invalid ID?**
+1. ✅ Add `await _repository.GetByIdAsync(dto.FkId)` check in service
+2. ✅ Throw `ArgumentException` when null → controller returns `400 Bad Request`
+3. ✅ Apply the same check to both Create and Update paths
+
+**👤 Student becoming invisible/unmanageable?**
+1. ✅ Before unassigning a teacher, call `CountTeacherAssignmentsAsync`
+2. ✅ If count ≤ 1, throw `InvalidOperationException` → `400 Bad Request`
+
+**🎲 Auto-generated IDs colliding under load?**
+1. ✅ Replace `new Random()` with `Random.Shared` (thread-safe)
+2. ✅ Wrap generation in a `do { } while (DbAlreadyHasId)` retry loop
+3. ✅ Ensure the column has a unique index so the DB also rejects duplicates
+
+**🔁 DB showing double-commit behaviour / extra roundtrips?**
+1. ✅ Check if the repository method calls `SaveChangesAsync` internally
+2. ✅ Remove explicit `await _repository.SaveChangesAsync()` calls in the service
+3. ✅ Convention: `AddAsync`, `UpdateAsync`, `DeleteAsync` all save in this codebase
+
+**🏗️ Service file has `using ...Infrastructure.Data`?**
+1. ✅ Create `IXxxRepository` interface in `Domain/Interfaces/`
+2. ✅ Create concrete class in `Infrastructure/Repositories/` extending `Repository<T>`
+3. ✅ Replace `_context.*` calls with repository method calls
+4. ✅ Register `IXxxRepository → XxxRepository` in `Program.cs`
+5. ✅ Remove the Infrastructure `using` from the Application-layer service file
+
+**🔑 DTO exposes Password on a non-auth endpoint?**
+1. ✅ Remove `Password` from the update DTO entirely
+2. ✅ Keep `.ForMember(dest => dest.Password, opt => opt.Ignore())` in MappingProfile
+3. ✅ Implement a dedicated `POST /api/teachers/change-password` endpoint that verifies the current password
+
+---
+
+**Last Updated**: April 1, 2026  
+**Total Issues Documented**: 41 (13 frontend + 6 architecture + 6 infrastructure/tooling + 8 auth/UX/DataTables + 8 security/integrity/architecture Apr-2026)  
 **Keep this guide nearby when developing!** 🚀
