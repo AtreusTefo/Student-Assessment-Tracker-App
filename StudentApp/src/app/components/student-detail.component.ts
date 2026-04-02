@@ -2,10 +2,10 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef, ChangeDetectionStrateg
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { StudentDetailDto, StudentAssessmentDto, CreateStudentAssessmentDto, UpdateStudentAssessmentDto } from '../core/models';
+import { StudentDetailDto, StudentAssessmentDto, CreateStudentAssessmentDto, UpdateStudentAssessmentDto, AssessmentSubmissionDto } from '../core/models';
 import { StudentStateService } from '../core/services/state';
 import { StudentBusinessService } from '../features/students/services/student-business.service';
-import { StudentAssessmentApiService } from '../core/services/http';
+import { StudentAssessmentApiService, AssessmentSubmissionApiService } from '../core/services/http';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -72,6 +72,8 @@ import { takeUntil } from 'rxjs/operators';
                 <th>Score</th>
                 <th>%</th>
                 <th>Due Date</th>
+                <th>Assigned</th>
+                <th>Submissions</th>
                 <th>Actions</th>
               </tr>
             </thead>
@@ -85,6 +87,16 @@ import { takeUntil } from 'rxjs/operators';
                     {{ a.dueDate ? (a.dueDate | date: 'MM/dd/yyyy') : '—' }}
                     <span *ngIf="isPastDue(a.dueDate)" class="overdue-badge">Overdue</span>
                   </td>
+                  <td>
+                    <span *ngIf="a.isAssigned" class="badge badge-assigned">Yes</span>
+                    <span *ngIf="!a.isAssigned" class="badge badge-unassigned">No</span>
+                  </td>
+                  <td>
+                    <button class="btn btn-sm btn-outline" (click)="toggleSubmissions(a)" [disabled]="assessmentLoading">
+                      {{ a.submissionCount }} file{{ a.submissionCount !== 1 ? 's' : '' }}
+                      <span>{{ expandedSubmissionsId === a.id ? '▲' : '▼' }}</span>
+                    </button>
+                  </td>
                   <td class="action-btns">
                     <ng-container *ngIf="deletingId !== a.id">
                       <button class="btn btn-sm btn-outline" (click)="startEdit(a)" [disabled]="assessmentLoading">Edit</button>
@@ -97,6 +109,29 @@ import { takeUntil } from 'rxjs/operators';
                     </ng-container>
                   </td>
                 </tr>
+                <!-- Submissions panel (expands below the assessment row) -->
+                <tr *ngIf="expandedSubmissionsId === a.id" class="submissions-row">
+                  <td colspan="7">
+                    <div class="submissions-panel">
+                      <div *ngIf="submissionsLoading" class="sub-loading">Loading submissions…</div>
+                      <div *ngIf="!submissionsLoading && submissions.length === 0" class="no-submissions">No files submitted yet.</div>
+                      <table *ngIf="!submissionsLoading && submissions.length > 0" class="sub-table">
+                        <thead><tr><th>File</th><th>Size</th><th>Submitted</th><th></th></tr></thead>
+                        <tbody>
+                          <tr *ngFor="let s of submissions">
+                            <td>{{ s.fileName }}</td>
+                            <td>{{ formatFileSize(s.fileSize) }}</td>
+                            <td>{{ s.submittedAt | date:'MM/dd/yyyy HH:mm' }}</td>
+                            <td>
+                              <button class="btn btn-sm btn-outline" (click)="downloadSubmission(a, s)">Download</button>
+                              <button class="btn btn-sm btn-danger" (click)="deleteSubmission(a, s)">Delete</button>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </td>
+                </tr>
                 <tr *ngIf="editingId === a.id" class="editing-row">
                   <td><input type="text" [(ngModel)]="editForm.name" maxlength="100" [disabled]="assessmentLoading" class="edit-input" /></td>
                   <td>
@@ -106,9 +141,23 @@ import { takeUntil } from 'rxjs/operators';
                   </td>
                   <td>{{ editForm.maxScore > 0 ? ((editForm.score / editForm.maxScore) * 100 | number:'1.1-1') + '%' : '—' }}</td>
                   <td><input type="date" [(ngModel)]="editForm.dueDate" [disabled]="assessmentLoading" class="edit-input" /></td>
+                  <td>
+                    <label class="checkbox-label">
+                      <input type="checkbox" [(ngModel)]="editForm.isAssigned" [disabled]="assessmentLoading" />
+                      Assigned
+                    </label>
+                  </td>
+                  <td>—</td>
                   <td class="action-btns">
                     <button class="btn btn-sm btn-primary" (click)="saveEdit(a.id)" [disabled]="assessmentLoading">Save</button>
                     <button class="btn btn-sm btn-secondary" (click)="cancelEdit()" [disabled]="assessmentLoading">Cancel</button>
+                  </td>
+                </tr>
+                <!-- Instructions row shown when editing -->
+                <tr *ngIf="editingId === a.id" class="editing-row">
+                  <td colspan="7">
+                    <textarea [(ngModel)]="editForm.instructions" placeholder="Instructions (optional)" maxlength="2000"
+                      [disabled]="assessmentLoading" class="instructions-textarea"></textarea>
                   </td>
                 </tr>
               </ng-container>
@@ -124,7 +173,14 @@ import { takeUntil } from 'rxjs/operators';
               <input type="number" [(ngModel)]="newAssessment.maxScore" placeholder="Max Score" min="1" [disabled]="assessmentLoading" />
               <input type="number" [(ngModel)]="newAssessment.score" placeholder="Score" min="0" [disabled]="assessmentLoading" />
               <input type="date" [(ngModel)]="newAssessment.dueDate" [disabled]="assessmentLoading" />
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="newAssessment.isAssigned" [disabled]="assessmentLoading" /> Assign to student
+              </label>
               <button class="btn btn-primary btn-sm" (click)="addAssessment()" [disabled]="assessmentLoading">Add</button>
+            </div>
+            <div *ngIf="newAssessment.isAssigned" class="instructions-block">
+              <textarea [(ngModel)]="newAssessment.instructions" placeholder="Instructions (optional)" maxlength="2000"
+                [disabled]="assessmentLoading" class="instructions-textarea"></textarea>
             </div>
           </div>
         </div>
@@ -376,6 +432,88 @@ import { takeUntil } from 'rxjs/operators';
       background-color: #fffde7;
     }
 
+    .instructions-textarea {
+      width: 100%;
+      min-height: 70px;
+      padding: 6px 10px;
+      border: 1px solid #90caf9;
+      border-radius: 3px;
+      font-size: 13px;
+      box-sizing: border-box;
+      resize: vertical;
+    }
+
+    .instructions-block {
+      margin-top: 8px;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+
+    .badge-assigned {
+      background-color: #e8f5e9;
+      color: #2e7d32;
+      border: 1px solid #a5d6a7;
+    }
+
+    .badge-unassigned {
+      background-color: #fafafa;
+      color: #9e9e9e;
+      border: 1px solid #e0e0e0;
+    }
+
+    .submissions-row td {
+      padding: 0;
+    }
+
+    .submissions-panel {
+      padding: 12px 16px;
+      background: #f3f7ff;
+      border-top: 1px solid #dce8ff;
+    }
+
+    .sub-loading {
+      color: #1976d2;
+      font-style: italic;
+      font-size: 13px;
+    }
+
+    .no-submissions {
+      color: #9e9e9e;
+      font-style: italic;
+      font-size: 13px;
+    }
+
+    .sub-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+
+    .sub-table th, .sub-table td {
+      padding: 6px 10px;
+      border-bottom: 1px solid #dce8ff;
+      text-align: left;
+    }
+
+    .sub-table th {
+      background: #e8f0fe;
+      font-weight: 600;
+    }
+
+    .checkbox-label {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      font-size: 13px;
+      cursor: pointer;
+    }
+
     .edit-input {
       width: 100%;
       padding: 4px 6px;
@@ -442,14 +580,23 @@ export class StudentDetailComponent implements OnInit, OnDestroy {
   assessmentError: string | null = null;
   assessmentSuccess: string | null = null;
   editingId: number | null = null;
-  editForm: UpdateStudentAssessmentDto & { dueDate: string | null } = { name: '', maxScore: 20, score: 0, dueDate: null };
+  editForm: UpdateStudentAssessmentDto & { dueDate: string | null; isAssigned: boolean; instructions: string | null } = {
+    name: '', maxScore: 20, score: 0, dueDate: null, isAssigned: false, instructions: null
+  };
   deletingId: number | null = null;
-  newAssessment: Omit<CreateStudentAssessmentDto, 'maxScore' | 'score'> & { maxScore: number | null; score: number | null; dueDate: string | null } = {
+  newAssessment: { name: string; maxScore: number | null; score: number | null; dueDate: string | null; isAssigned: boolean; instructions: string | null } = {
     name: '',
     maxScore: null,
     score: null,
-    dueDate: null
+    dueDate: null,
+    isAssigned: false,
+    instructions: null
   };
+
+  // Submissions panel
+  expandedSubmissionsId: number | null = null;
+  submissions: AssessmentSubmissionDto[] = [];
+  submissionsLoading = false;
 
   private currentStudentId = 0;
   private successTimer: ReturnType<typeof setTimeout> | null = null;
@@ -460,6 +607,7 @@ export class StudentDetailComponent implements OnInit, OnDestroy {
     private studentBusiness: StudentBusinessService,
     private studentState: StudentStateService,
     private assessmentApi: StudentAssessmentApiService,
+    private submissionApi: AssessmentSubmissionApiService,
     private cdr: ChangeDetectorRef
   ) { }
 
@@ -503,6 +651,58 @@ export class StudentDetailComponent implements OnInit, OnDestroy {
     if (this.successTimer) clearTimeout(this.successTimer);
   }
 
+  toggleSubmissions(a: StudentAssessmentDto): void {
+    if (this.expandedSubmissionsId === a.id) {
+      this.expandedSubmissionsId = null;
+      this.submissions = [];
+      return;
+    }
+    this.expandedSubmissionsId = a.id;
+    this.submissions = [];
+    this.submissionsLoading = true;
+    this.submissionApi.getAll(this.currentStudentId, a.id).subscribe({
+      next: (subs) => {
+        this.submissions = subs;
+        this.submissionsLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: () => {
+        this.submissionsLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
+  }
+
+  downloadSubmission(a: StudentAssessmentDto, s: AssessmentSubmissionDto): void {
+    this.submissionApi.download(this.currentStudentId, a.id, s.id).subscribe(blob => {
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = s.fileName;
+      link.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  deleteSubmission(a: StudentAssessmentDto, s: AssessmentSubmissionDto): void {
+    this.submissionApi.delete(this.currentStudentId, a.id, s.id).subscribe({
+      next: () => {
+        this.submissions = this.submissions.filter(x => x.id !== s.id);
+        // Decrement count on the live assessment object
+        const assessment = this.student?.assessments?.find(x => x.id === a.id);
+        if (assessment && assessment.submissionCount > 0) assessment.submissionCount--;
+        this.cdr.markForCheck();
+      },
+      error: () => { /* Ignore silently; file already gone or permission denied */ }
+    });
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+  }
+
   loadStudent(id: number): void {
     this.studentBusiness.loadStudentById(id).subscribe();
   }
@@ -521,7 +721,7 @@ export class StudentDetailComponent implements OnInit, OnDestroy {
     this.assessmentApi.create(this.currentStudentId, this.newAssessment as CreateStudentAssessmentDto).subscribe({
       next: () => {
         this.assessmentLoading = false;
-        this.newAssessment = { name: '', maxScore: null, score: null, dueDate: null };
+        this.newAssessment = { name: '', maxScore: null, score: null, dueDate: null, isAssigned: false, instructions: null };
         this.showSuccess('Assessment added.');
         this.studentBusiness.loadStudentById(this.currentStudentId).subscribe();
         this.cdr.markForCheck();
@@ -554,7 +754,10 @@ export class StudentDetailComponent implements OnInit, OnDestroy {
 
   startEdit(a: StudentAssessmentDto): void {
     this.editingId = a.id;
-    this.editForm = { name: a.name, maxScore: a.maxScore, score: a.score, dueDate: a.dueDate ?? null };
+    this.editForm = {
+      name: a.name, maxScore: a.maxScore, score: a.score, dueDate: a.dueDate ?? null,
+      isAssigned: a.isAssigned ?? false, instructions: a.instructions ?? null
+    };
     this.deletingId = null;
     this.assessmentError = null;
   }

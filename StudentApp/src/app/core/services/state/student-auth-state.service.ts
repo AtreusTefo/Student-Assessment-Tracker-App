@@ -3,6 +3,7 @@ import { BehaviorSubject } from 'rxjs';
 import { StudentAuthUser } from '../../models';
 
 const STUDENT_AUTH_KEY = 'sat_current_student';
+const STUDENT_TOKEN_KEY = 'sat_student_token';
 
 /**
  * STATE MANAGEMENT LAYER - Student Auth State Service
@@ -17,7 +18,9 @@ export class StudentAuthStateService {
   private restoredStudent: StudentAuthUser | null = (() => {
     try {
       const raw = localStorage.getItem(STUDENT_AUTH_KEY);
-      return raw ? (JSON.parse(raw) as StudentAuthUser) : null;
+      const token = localStorage.getItem(STUDENT_TOKEN_KEY);
+      // Only restore if both the profile and token are present
+      return raw && token ? (JSON.parse(raw) as StudentAuthUser) : null;
     } catch {
       return null;
     }
@@ -61,6 +64,7 @@ export class StudentAuthStateService {
 
   logout(): void {
     localStorage.removeItem(STUDENT_AUTH_KEY);
+    localStorage.removeItem(STUDENT_TOKEN_KEY);
     this.currentStudentSubject.next(null);
     this.isAuthenticatedSubject.next(false);
     this.clearError();
@@ -72,5 +76,13 @@ export class StudentAuthStateService {
 
   isAuthenticated(): boolean {
     return this.isAuthenticatedSubject.value;
+  }
+
+  setToken(token: string): void {
+    localStorage.setItem(STUDENT_TOKEN_KEY, token);
+  }
+
+  getToken(): string | null {
+    return localStorage.getItem(STUDENT_TOKEN_KEY);
   }
 }

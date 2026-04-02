@@ -32,7 +32,7 @@ namespace StudentAssessmentTracker.Application.Validators
 
             RuleFor(x => x.Phone)
                 .NotEmpty().WithMessage("Phone number is required.")
-                .MaximumLength(8).WithMessage("Phone number must not exceed 8 characters.");
+                .Matches(@"^\d{8}$").WithMessage("Phone number must be exactly 8 digits.");
 
             RuleFor(x => x.SubjectId)
                 .GreaterThan(0).WithMessage("A valid subject must be selected.");
@@ -91,7 +91,7 @@ namespace StudentAssessmentTracker.Application.Validators
 
             RuleFor(x => x.Phone)
                 .NotEmpty().WithMessage("Phone number is required.")
-                .MaximumLength(8).WithMessage("Phone number must not exceed 8 characters.");
+                .Matches(@"^\d{8}$").WithMessage("Phone number must be exactly 8 digits.");
 
             RuleFor(x => x.SubjectId)
                 .GreaterThan(0).WithMessage("A valid subject must be selected.");

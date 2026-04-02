@@ -30,6 +30,7 @@ export class StudentAuthBusinessService {
     return this.studentApi.activate(dto).pipe(
       tap(response => {
         this.teacherState.logout(); // Clear any active teacher session
+        this.studentAuthState.setToken(response.token);
         this.studentAuthState.setCurrentStudent(response.student);
         this.studentAuthState.setLoading(false);
       }),
@@ -50,6 +51,7 @@ export class StudentAuthBusinessService {
     return this.studentApi.loginStudent(dto).pipe(
       tap(response => {
         this.teacherState.logout(); // Clear any active teacher session
+        this.studentAuthState.setToken(response.token);
         this.studentAuthState.setCurrentStudent(response.student);
         this.studentAuthState.setLoading(false);
       }),

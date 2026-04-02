@@ -19,15 +19,24 @@ namespace StudentAssessmentTracker.Application.Mappings
             CreateMap<Subject, SubjectDto>();
 
             // ── StudentAssessment Mappings ────────────────────────────────────
-            CreateMap<StudentAssessment, StudentAssessmentDto>();
+            CreateMap<StudentAssessment, StudentAssessmentDto>()
+                .ForMember(dest => dest.SubmissionCount,
+                    opt => opt.MapFrom(src => src.Submissions.Count));
             CreateMap<CreateStudentAssessmentDto, StudentAssessment>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.StudentId, opt => opt.Ignore())
-                .ForMember(dest => dest.Student, opt => opt.Ignore());
+                .ForMember(dest => dest.Student, opt => opt.Ignore())
+                .ForMember(dest => dest.Submissions, opt => opt.Ignore())
+                .ForMember(dest => dest.IsAssigned, opt => opt.MapFrom(src => src.IsAssigned ?? false));
             CreateMap<UpdateStudentAssessmentDto, StudentAssessment>()
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.StudentId, opt => opt.Ignore())
-                .ForMember(dest => dest.Student, opt => opt.Ignore());
+                .ForMember(dest => dest.Student, opt => opt.Ignore())
+                .ForMember(dest => dest.Submissions, opt => opt.Ignore())
+                .ForMember(dest => dest.IsAssigned, opt => opt.MapFrom(src => src.IsAssigned ?? false));
+
+            // ── AssessmentSubmission Mappings ────────────────────────────────
+            CreateMap<AssessmentSubmission, AssessmentSubmissionDto>();
 
             // ── Student Mappings ──────────────────────────────────────────────
 
@@ -82,6 +91,8 @@ namespace StudentAssessmentTracker.Application.Mappings
 
             CreateMap<TeacherRegisterDto, Teacher>()
                 .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow))
+                // EnrollmentDate is server-controlled — always set to UtcNow on first registration.
+                .ForMember(dest => dest.EnrollmentDate, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 .ForMember(dest => dest.SubjectNavigation, opt => opt.Ignore())
                 .ForMember(dest => dest.StudentAssignments, opt => opt.Ignore());
 
@@ -89,6 +100,8 @@ namespace StudentAssessmentTracker.Application.Mappings
                 .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
                 .ForMember(dest => dest.Id, opt => opt.Ignore())
                 .ForMember(dest => dest.Password, opt => opt.Ignore())
+                // EnrollmentDate must never be changed after registration.
+                .ForMember(dest => dest.EnrollmentDate, opt => opt.Ignore())
                 .ForMember(dest => dest.SubjectNavigation, opt => opt.Ignore())
                 .ForMember(dest => dest.StudentAssignments, opt => opt.Ignore());
 

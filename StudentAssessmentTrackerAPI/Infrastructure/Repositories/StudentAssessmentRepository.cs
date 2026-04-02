@@ -18,6 +18,7 @@ namespace StudentAssessmentTracker.Infrastructure.Repositories
         {
             return await _context.StudentAssessments
                 .AsNoTracking()
+                .Include(a => a.Submissions)
                 .Where(a => a.StudentId == studentId)
                 .OrderBy(a => a.DueDate)
                 .ThenBy(a => a.Name)
@@ -28,6 +29,7 @@ namespace StudentAssessmentTracker.Infrastructure.Repositories
         public async Task<StudentAssessment?> GetByIdForStudentAsync(int studentId, int assessmentId)
         {
             return await _context.StudentAssessments
+                .Include(a => a.Submissions)
                 .FirstOrDefaultAsync(a => a.Id == assessmentId && a.StudentId == studentId);
         }
     }

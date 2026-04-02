@@ -50,6 +50,16 @@ builder.Host.UseSerilog((context, services, loggerConfiguration) =>
 // ============================================================================
 builder.Services.AddControllers();
 
+// ── Multipart / file-upload request body limit (10 MB) ─────────────────────
+builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(options =>
+{
+    options.MultipartBodyLengthLimit = 10 * 1024 * 1024; // 10 MB
+});
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.Limits.MaxRequestBodySize = 10 * 1024 * 1024; // 10 MB
+});
+
 // ============================================================================
 // SWAGGER/OPENAPI DOCUMENTATION
 // ============================================================================
@@ -162,6 +172,7 @@ builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
 builder.Services.AddScoped<IStudentRepository, StudentRepository>();
 builder.Services.AddScoped<ITeacherRepository, TeacherRepository>();
 builder.Services.AddScoped<IStudentAssessmentRepository, StudentAssessmentRepository>();
+builder.Services.AddScoped<IAssessmentSubmissionRepository, AssessmentSubmissionRepository>();
 // Resolve generic IRepository<T> requests via the specialized implementations
 builder.Services.AddScoped<IRepository<Student>>(sp => sp.GetRequiredService<IStudentRepository>());
 builder.Services.AddScoped<IRepository<Teacher>>(sp => sp.GetRequiredService<ITeacherRepository>());
@@ -173,6 +184,7 @@ builder.Services.AddScoped<IRepository<Teacher>>(sp => sp.GetRequiredService<ITe
 builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<ITeacherService, TeacherService>();
 builder.Services.AddScoped<IStudentAssessmentService, StudentAssessmentService>();
+builder.Services.AddScoped<IAssessmentSubmissionService, AssessmentSubmissionService>();
 
 // Register Validation
 builder.Services
@@ -207,6 +219,12 @@ using (var scope = app.Services.CreateScope())
         throw;
     }
 }
+
+// ============================================================================
+// ENSURE UPLOADS DIRECTORY EXISTS (DO NOT serve via static files)
+// ============================================================================
+var uploadsRoot = Path.Combine(app.Environment.WebRootPath, "uploads", "submissions");
+Directory.CreateDirectory(uploadsRoot);
 
 // ============================================================================
 // MIDDLEWARE PIPELINE

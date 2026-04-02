@@ -2,6 +2,11 @@
 using StudentAssessmentTracker.Domain.Entities;
 using StudentAssessmentTracker.Domain.Interfaces;
 using AutoMapper;
+using Microsoft.Extensions.Configuration;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace StudentAssessmentTracker.Application.Services
 {
@@ -81,20 +86,23 @@ namespace StudentAssessmentTracker.Application.Services
         private readonly IRepository<Grade> _gradeRepository;
         private readonly IMapper _mapper;
         private readonly ILogger<StudentService> _logger;
+        private readonly IConfiguration _configuration;
 
-        /// <summary>Initialises the service with all required repositories, mapper, and logger.</summary>
+        /// <summary>Initialises the service with all required repositories, mapper, logger, and configuration.</summary>
         public StudentService(
             IStudentRepository repository,
             ITeacherRepository teacherRepository,
             IRepository<Grade> gradeRepository,
             IMapper mapper,
-            ILogger<StudentService> logger)
+            ILogger<StudentService> logger,
+            IConfiguration configuration)
         {
             _repository = repository;
             _teacherRepository = teacherRepository;
             _gradeRepository = gradeRepository;
             _mapper = mapper;
             _logger = logger;
+            _configuration = configuration;
         }
 
         /// <inheritdoc />
@@ -150,10 +158,10 @@ namespace StudentAssessmentTracker.Application.Services
             student.StudentUniqueId = uniqueId;
             student.CreatedAt = DateTime.UtcNow;
             student.UpdatedAt = DateTime.UtcNow;
-            await _repository.AddAsync(student);
 
-            // Auto-assign the creating teacher to the new student via the join table
-            await _repository.AssignToTeacherAsync(student.Id, teacherId);
+            // Atomic: INSERT student row + TeacherStudents join row in one SaveChangesAsync
+            // call so that a failure on either side never leaves an orphaned student.
+            await _repository.AddWithTeacherAssignmentAsync(student, teacherId);
 
             _logger.LogInformation("Student created with ID {StudentId}, UniqueId {UniqueId}, assigned to teacher {TeacherId}",
                 student.Id, student.StudentUniqueId, teacherId);
@@ -202,7 +210,7 @@ namespace StudentAssessmentTracker.Application.Services
         {
             _logger.LogInformation("Activation attempt for StudentUniqueId {UniqueId}", dto.StudentUniqueId);
             var student = await _repository.FindByUniqueIdAsync(dto.StudentUniqueId);
-            if (student is null || student.Email == null ||
+            if (student is null ||
                 !student.Email.Equals(dto.Email, StringComparison.OrdinalIgnoreCase))
             {
                 _logger.LogWarning("Activation failed - no match for UniqueId {UniqueId}", dto.StudentUniqueId);
@@ -216,7 +224,7 @@ namespace StudentAssessmentTracker.Application.Services
             var fullStudent = await _repository.GetByIdAsync(student.Id) ?? student;
             return new StudentLoginResponseDto
             {
-                Token = $"demo-student-token-{student.Id}-{Guid.NewGuid():N}",
+                Token = GenerateStudentJwtToken(student),
                 Student = _mapper.Map<StudentProfileDto>(fullStudent)
             };
         }
@@ -241,9 +249,37 @@ namespace StudentAssessmentTracker.Application.Services
             var fullStudent = await _repository.GetByIdAsync(student.Id) ?? student;
             return new StudentLoginResponseDto
             {
-                Token = $"demo-student-token-{student.Id}-{Guid.NewGuid():N}",
+                Token = GenerateStudentJwtToken(student),
                 Student = _mapper.Map<StudentProfileDto>(fullStudent)
             };
+        }
+
+        private string GenerateStudentJwtToken(Student student)
+        {
+            var keyBytes = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!);
+            var signingKey = new SymmetricSecurityKey(keyBytes);
+            var creds = new SigningCredentials(signingKey, SecurityAlgorithms.HmacSha256);
+
+            var expiresMinutes = double.TryParse(_configuration["Jwt:ExpiresInMinutes"], out var m) ? m : 480;
+
+            var claims = new[]
+            {
+                new Claim(JwtRegisteredClaimNames.Sub,   student.Id.ToString()),
+                new Claim(JwtRegisteredClaimNames.Email, student.Email),
+                new Claim(JwtRegisteredClaimNames.Jti,   Guid.NewGuid().ToString()),
+                // Custom claims — StudentAssessmentsController reads studentId to scope queries
+                new Claim("studentId", student.Id.ToString()),
+                new Claim(ClaimTypes.Role, "Student"),
+            };
+
+            var token = new JwtSecurityToken(
+                issuer: _configuration["Jwt:Issuer"],
+                audience: _configuration["Jwt:Audience"],
+                claims: claims,
+                expires: DateTime.UtcNow.AddMinutes(expiresMinutes),
+                signingCredentials: creds);
+
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
         private static string GenerateStudentUniqueId()

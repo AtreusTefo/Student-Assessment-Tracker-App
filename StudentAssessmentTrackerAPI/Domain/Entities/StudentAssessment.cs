@@ -31,10 +31,19 @@ namespace StudentAssessmentTracker.Domain.Entities
         /// <summary>Optional due / sitting date for this assessment</summary>
         public DateTime? DueDate { get; set; }
 
+        /// <summary>When true, the student is expected to upload a submission file for this assessment.</summary>
+        public bool IsAssigned { get; set; } = false;
+
+        /// <summary>Optional teacher instructions shown to the student on their dashboard.</summary>
+        public string? Instructions { get; set; }
+
         /// <summary>Record creation timestamp</summary>
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         /// <summary>Record last-updated timestamp</summary>
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
+        /// <summary>File submissions uploaded by the student for this assessment.</summary>
+        public ICollection<AssessmentSubmission> Submissions { get; set; } = new List<AssessmentSubmission>();
     }
 }

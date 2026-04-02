@@ -188,6 +188,23 @@ namespace StudentAssessmentTracker.Infrastructure.Repositories
         }
 
         /// <inheritdoc />
+        public async Task AddWithTeacherAssignmentAsync(Student student, int teacherId)
+        {
+            // Stage both the student row and the join row in the same change-tracker
+            // unit before calling SaveChangesAsync once.  EF Core resolves the
+            // auto-generated Student.Id FK via its shadow-key mechanism and issues
+            // both INSERTs inside one implicit database transaction, so either both
+            // rows are committed together or neither is — no orphaned students.
+            student.TeacherAssignments.Add(new TeacherStudent
+            {
+                TeacherId = teacherId,
+                AssignedAt = DateTime.UtcNow
+            });
+            await _context.Students.AddAsync(student);
+            await _context.SaveChangesAsync();
+        }
+
+        /// <inheritdoc />
         public async Task AssignToTeacherAsync(int studentId, int teacherId)
         {
             // Idempotent — skip if the assignment already exists

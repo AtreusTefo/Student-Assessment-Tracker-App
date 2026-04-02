@@ -38,6 +38,14 @@ namespace StudentAssessmentTracker.Domain.Interfaces
         Task<bool> ExistsByIdPassportNoAsync(string idPassportNo, int excludeStudentId = 0);
 
         /// <summary>
+        /// Atomically persists a new <paramref name="student"/> row <b>and</b> the corresponding
+        /// <see cref="TeacherStudent"/> assignment in a single <c>SaveChangesAsync</c> call.
+        /// This prevents the orphaned-student scenario that arises when the student INSERT
+        /// succeeds but the subsequent assignment INSERT fails in a separate transaction.
+        /// </summary>
+        Task AddWithTeacherAssignmentAsync(Student student, int teacherId);
+
+        /// <summary>
         /// Creates a <see cref="TeacherStudent"/> assignment linking <paramref name="studentId"/>
         /// to <paramref name="teacherId"/>.  Silently no-ops when the assignment already exists.
         /// </summary>

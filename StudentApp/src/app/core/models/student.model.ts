@@ -18,6 +18,9 @@ export interface StudentAssessmentDto {
   maxScore: number;
   score: number;
   dueDate: string | null;
+  isAssigned: boolean;
+  instructions: string | null;
+  submissionCount: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -102,6 +105,8 @@ export interface CreateStudentAssessmentDto {
   maxScore: number;
   score: number;
   dueDate?: string | null;
+  isAssigned?: boolean;
+  instructions?: string | null;
 }
 
 /** Update assessment DTO */
@@ -110,6 +115,8 @@ export interface UpdateStudentAssessmentDto {
   maxScore: number;
   score: number;
   dueDate?: string | null;
+  isAssigned?: boolean;
+  instructions?: string | null;
 }
 
 // ── Student Authentication ──────────────────────────────────────────────────
@@ -125,7 +132,7 @@ export interface StudentAuthUser {
   phone: string;
   gradeId: number;
   gradeName: string;
-  teacherId: number;
+  teachers: TeacherSummaryDto[];
   assessments: StudentAssessmentDto[];
   totalScore: number;
   maxPossible: number;
@@ -134,6 +141,13 @@ export interface StudentAuthUser {
   performanceLevel: string;
   createdAt: string;
   updatedAt?: string;
+}
+
+/** Minimal teacher reference embedded in student responses */
+export interface TeacherSummaryDto {
+  teacherId: number;
+  fullName: string;
+  subjectName: string;
 }
 
 /** DTO sent to POST /api/students/activate */
@@ -153,4 +167,15 @@ export interface StudentLoginDto {
 export interface StudentLoginResponseDto {
   token: string;
   student: StudentAuthUser;
+}
+
+/** Read-only DTO for a file submission uploaded by a student */
+export interface AssessmentSubmissionDto {
+  id: number;
+  studentAssessmentId: number;
+  studentId: number;
+  fileName: string;
+  contentType: string;
+  fileSize: number;
+  submittedAt: string;
 }

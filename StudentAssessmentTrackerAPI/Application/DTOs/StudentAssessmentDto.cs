@@ -17,6 +17,12 @@ namespace StudentAssessmentTracker.Application.DTOs
         public decimal Score { get; set; }
         /// <summary>Optional due date for the assessment.</summary>
         public DateTime? DueDate { get; set; }
+        /// <summary>When true, the student is expected to submit a file for this assessment.</summary>
+        public bool IsAssigned { get; set; }
+        /// <summary>Optional teacher instructions shown to the student.</summary>
+        public string? Instructions { get; set; }
+        /// <summary>Number of file submissions uploaded by the student for this assessment.</summary>
+        public int SubmissionCount { get; set; }
         /// <summary>UTC timestamp when the record was created.</summary>
         public DateTime CreatedAt { get; set; }
         /// <summary>UTC timestamp when the record was last updated.</summary>
@@ -36,6 +42,10 @@ namespace StudentAssessmentTracker.Application.DTOs
         public decimal Score { get; set; }
         /// <summary>Optional due date for the assessment.</summary>
         public DateTime? DueDate { get; set; }
+        /// <summary>Whether the student should submit a file for this assessment.</summary>
+        public bool? IsAssigned { get; set; }
+        /// <summary>Optional teacher instructions for the student.</summary>
+        public string? Instructions { get; set; }
     }
 
     /// <summary>
@@ -51,5 +61,9 @@ namespace StudentAssessmentTracker.Application.DTOs
         public decimal Score { get; set; }
         /// <summary>Optional due date for the assessment.</summary>
         public DateTime? DueDate { get; set; }
+        /// <summary>Whether the student should submit a file for this assessment.</summary>
+        public bool? IsAssigned { get; set; }
+        /// <summary>Optional teacher instructions for the student.</summary>
+        public string? Instructions { get; set; }
     }
 }

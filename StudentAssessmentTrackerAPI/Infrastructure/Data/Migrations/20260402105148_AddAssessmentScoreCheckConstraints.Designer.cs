@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StudentAssessmentTracker.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using StudentAssessmentTracker.Infrastructure.Data;
 namespace StudentAssessmentTracker.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260402105148_AddAssessmentScoreCheckConstraints")]
+    partial class AddAssessmentScoreCheckConstraints
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -21,52 +24,6 @@ namespace StudentAssessmentTracker.Infrastructure.Data.Migrations
                 .HasAnnotation("Relational:MaxIdentifierLength", 128);
 
             SqlServerModelBuilderExtensions.UseIdentityColumns(modelBuilder);
-
-            modelBuilder.Entity("StudentAssessmentTracker.Domain.Entities.AssessmentSubmission", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("ContentType")
-                        .IsRequired()
-                        .HasMaxLength(100)
-                        .HasColumnType("nvarchar(100)");
-
-                    b.Property<string>("FileName")
-                        .IsRequired()
-                        .HasMaxLength(260)
-                        .HasColumnType("nvarchar(260)");
-
-                    b.Property<long>("FileSize")
-                        .HasColumnType("bigint");
-
-                    b.Property<string>("StoredFileName")
-                        .IsRequired()
-                        .HasMaxLength(260)
-                        .HasColumnType("nvarchar(260)");
-
-                    b.Property<int>("StudentAssessmentId")
-                        .HasColumnType("int");
-
-                    b.Property<int>("StudentId")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("SubmittedAt")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("datetime2")
-                        .HasDefaultValueSql("GETUTCDATE()");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("StudentAssessmentId");
-
-                    b.HasIndex("StudentId");
-
-                    b.ToTable("AssessmentSubmissions");
-                });
 
             modelBuilder.Entity("StudentAssessmentTracker.Domain.Entities.Grade", b =>
                 {
@@ -219,15 +176,6 @@ namespace StudentAssessmentTracker.Infrastructure.Data.Migrations
 
                     b.Property<DateTime?>("DueDate")
                         .HasColumnType("datetime2");
-
-                    b.Property<string>("Instructions")
-                        .HasMaxLength(2000)
-                        .HasColumnType("nvarchar(2000)");
-
-                    b.Property<bool>("IsAssigned")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("bit")
-                        .HasDefaultValue(false);
 
                     b.Property<decimal>("MaxScore")
                         .HasColumnType("decimal(8,2)");
@@ -429,25 +377,6 @@ namespace StudentAssessmentTracker.Infrastructure.Data.Migrations
                     b.ToTable("TeacherStudents");
                 });
 
-            modelBuilder.Entity("StudentAssessmentTracker.Domain.Entities.AssessmentSubmission", b =>
-                {
-                    b.HasOne("StudentAssessmentTracker.Domain.Entities.StudentAssessment", "StudentAssessment")
-                        .WithMany("Submissions")
-                        .HasForeignKey("StudentAssessmentId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("StudentAssessmentTracker.Domain.Entities.Student", "Student")
-                        .WithMany()
-                        .HasForeignKey("StudentId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("Student");
-
-                    b.Navigation("StudentAssessment");
-                });
-
             modelBuilder.Entity("StudentAssessmentTracker.Domain.Entities.Student", b =>
                 {
                     b.HasOne("StudentAssessmentTracker.Domain.Entities.Grade", "GradeNavigation")
@@ -505,11 +434,6 @@ namespace StudentAssessmentTracker.Infrastructure.Data.Migrations
                     b.Navigation("Assessments");
 
                     b.Navigation("TeacherAssignments");
-                });
-
-            modelBuilder.Entity("StudentAssessmentTracker.Domain.Entities.StudentAssessment", b =>
-                {
-                    b.Navigation("Submissions");
                 });
 
             modelBuilder.Entity("StudentAssessmentTracker.Domain.Entities.Subject", b =>

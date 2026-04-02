@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, tap, catchError, throwError } from 'rxjs';
+import { Observable, tap, catchError, throwError, switchMap, map } from 'rxjs';
 import { TeacherApiService } from '../../../core/services/http';
 import { TeacherStateService, StudentAuthStateService } from '../../../core/services/state';
 import { Teacher, CreateTeacherDto, LoginDto, TeacherLoginResponse } from '../../../core/models';
@@ -73,12 +73,30 @@ export class TeacherBusinessService {
     }
 
     this.teacherState.setLoading(true);
-    
+
+    // After creating the account, immediately log in so a JWT is issued and stored.
+    // Without this step the user would have no token — causing 401 on all protected API calls.
     return this.teacherApi.create(teacherData).pipe(
-      tap(teacher => {
+      switchMap(() =>
+        this.teacherApi.login({ email: teacherData.email, password: teacherData.password })
+      ),
+      map(response => {
+        const teacher: Teacher = {
+          id: response.teacher.teacherId,
+          idPassportNo: response.teacher.idPassportNo || '',
+          firstName: response.teacher.firstName,
+          lastName: response.teacher.lastName,
+          email: response.teacher.email,
+          phone: response.teacher.phone,
+          subjectId: response.teacher.subjectId,
+          subjectName: response.teacher.subjectName,
+          createdAt: response.teacher.createdDate
+        };
         this.studentAuthState.logout(); // Clear any active student session
         this.teacherState.setCurrentTeacher(teacher);
+        this.teacherState.setToken(response.token); // Store JWT for subsequent API calls
         this.teacherState.setLoading(false);
+        return teacher;
       }),
       catchError(error => {
         const errorMessage = this.extractErrorMessage(error);

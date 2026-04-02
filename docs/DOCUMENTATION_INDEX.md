@@ -4,12 +4,26 @@
 
 ### 1. **QUICK_FIX_REFERENCE.md** START HERE
 - **Best for**: Quick lookups when something breaks
-- **Contains**: 41 major issues + quick fixes + diagnostic checklist
+- **Contains**: 48 major issues + quick fixes + diagnostic checklist
 - **Read time**: 5 minutes
 - **Use when**: You need a fast answer
-- **Updated**: April 1, 2026
+- **Updated**: April 2, 2026
 
-### 2. **DAILY_REPORT_2026-04-01.md** LATEST SESSION
+### 2. **DAILY_REPORT_2026-04-02.md** LATEST SESSION
+- **Best for**: Understanding the April 2, 2026 session (issues #42–#48)
+- **Contains**:
+  - 401 Unauthorized after teacher registration (auto-login via `switchMap`)
+  - Auth interceptor redirect loop fix (`&& token` guard)
+  - Stale session on startup fix (require token + profile both present)
+  - Student JWT never persisted fix (`StudentAuthStateService` `setToken`/`getToken`)
+  - Auth interceptor student token fallback (teacher token → student token chain)
+  - `AssessmentSubmission` full-stack feature (entity, repository, service, controller, migration)
+  - Student dashboard misleading status badge fix (`submissionCount` + `isAssigned`)
+  - Student detail teacher view: submissions panel, `isAssigned`/`instructions` form fields
+- **Read time**: 10 minutes
+- **Use when**: Debugging student auth, file uploads, or assessment submission status
+
+### 3. **DAILY_REPORT_2026-04-01.md**
 - **Best for**: Understanding the April 1, 2026 session (issues #34–#41)
 - **Contains**:
   - Many-to-many Teacher↔Student architecture change (join table `TeacherStudents`)
@@ -24,7 +38,7 @@
 - **Read time**: 10 minutes
 - **Use when**: Debugging teacher update/delete auth, assessment service, or data integrity
 
-### 3. **ERROR_FIXES_SESSION_2026-03-05.md**
+### 4. **ERROR_FIXES_SESSION_2026-03-05.md**
 - **Best for**: Understanding issues #26–#33 (March 5, 2026 session)
 - **Contains**:
   - StudentUniqueId + IdPassportNo full-stack addition
@@ -38,7 +52,7 @@
 - **Read time**: 15 minutes
 - **Use when**: Debugging auth, DataTables buttons, or login response mapping
 
-### 4. **ERROR_FIXES_DOCUMENTATION.md** COMPREHENSIVE GUIDE
+### 5. **ERROR_FIXES_DOCUMENTATION.md** COMPREHENSIVE GUIDE
 - **Best for**: Understanding root causes and prevention for issues #1–#19
 - **Contains**: 
   - Detailed problem descriptions for all 19 original issues
@@ -51,21 +65,21 @@
 - **Use when**: You want to understand WHY something broke
 - **Updated**: March 2, 2026 (added 6 new architecture issues)
 
-### 5. **DAILY_REPORT_2026-03-31.md**
+### 6. **DAILY_REPORT_2026-03-31.md**
 - **Best for**: Understanding what was accomplished on March 31, 2026
 - **Contains**:
   - Agile Hierarchy User Stories update
   - StudentValidator improvements
 
-### 6. **DAILY_REPORT_2026-03-26.md**
+### 7. **DAILY_REPORT_2026-03-26.md**
 - **Best for**: Understanding the IdPassportNo field addition (March 26, 2026)
 - **Contains**:
   - Full-stack TeacherIdPassportNo implementation (entity → DB → DTOs → validation → Angular)
 
-### 7. **DAILY_REPORT_2026-03-25.md**
+### 8. **DAILY_REPORT_2026-03-25.md**
 - **Best for**: Understanding what was accomplished on March 25, 2026
 
-### 8. **DAILY_REPORT_2026-03-05.md**
+### 9. **DAILY_REPORT_2026-03-05.md**
 - **Best for**: Understanding what was accomplished on March 5, 2026
 - **Contains**:
   - 1 feature addition + 7 bug fixes
@@ -75,17 +89,17 @@
 - **Read time**: 5 minutes
 - **Use when**: You want a high-level summary of the March 5 session
 
-### 9. **README.md** (project root)
+### 10. **README.md** (project root)
 - **Project overview and getting started guide**
 
-### 8. **ARCHITECTURE.md** (project root)
+### 11. **ARCHITECTURE.md** (project root)
 - **Clean Architecture explanation with SoC pattern**
 - **Project structure and layer responsibilities**
 
-### 9. **TESTING_GUIDE.md**
+### 12. **TESTING_GUIDE.md**
 - **How to test the application**
 
-### 10. **PROJECT_REQUIREMENTS.md**
+### 13. **PROJECT_REQUIREMENTS.md**
 - **Project requirements document (scope, functional/non-functional requirements, acceptance criteria)**
 
 ---

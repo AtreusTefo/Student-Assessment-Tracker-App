@@ -12,22 +12,22 @@ namespace StudentAssessmentTracker.Domain.Entities
         public int Id { get; set; }
 
         /// <summary>System-generated unique student ID (e.g., STU-A1B2C3D4), never changes</summary>
-        public string? StudentUniqueId { get; set; }
+        public string StudentUniqueId { get; set; } = string.Empty;
 
         /// <summary>Student's national ID or passport number — unique across all students</summary>
-        public string? IdPassportNo { get; set; }
+        public string IdPassportNo { get; set; } = string.Empty;
 
         /// <summary>Student's first name</summary>
-        public string? FirstName { get; set; }
+        public string FirstName { get; set; } = string.Empty;
 
         /// <summary>Student's last name</summary>
-        public string? LastName { get; set; }
+        public string LastName { get; set; } = string.Empty;
 
         /// <summary>Student's email address</summary>
-        public string? Email { get; set; }
+        public string Email { get; set; } = string.Empty;
 
         /// <summary>Student's phone number</summary>
-        public string? Phone { get; set; }
+        public string Phone { get; set; } = string.Empty;
 
         /// <summary>Password set during account activation — null until the student activates their account</summary>
         public string? Password { get; set; }

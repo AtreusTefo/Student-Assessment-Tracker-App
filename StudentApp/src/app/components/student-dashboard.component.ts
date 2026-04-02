@@ -1,9 +1,11 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { StudentAuthStateService } from '../core/services/state';
-import { StudentAuthUser } from '../core/models';
+import { StudentAuthUser, AssessmentSubmissionDto } from '../core/models';
 import { StudentAuthBusinessService } from '../features/students/services/student-auth-business.service';
+import { AssessmentSubmissionApiService } from '../core/services/http';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -15,7 +17,7 @@ import { takeUntil } from 'rxjs/operators';
 @Component({
   selector: 'app-student-dashboard',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, FormsModule],
   template: `
     <div class="dashboard" *ngIf="student; else loading">
 
@@ -125,7 +127,12 @@ import { takeUntil } from 'rxjs/operators';
                 <td>{{ a.dueDate ? (a.dueDate | date:'mediumDate') : '—' }}</td>
                 <td>
                   <span *ngIf="isOverdue(a.dueDate)" class="status-badge overdue">Overdue</span>
-                  <span *ngIf="!isOverdue(a.dueDate)" class="status-badge submitted">Submitted</span>
+                  <ng-container *ngIf="!isOverdue(a.dueDate)">
+                    <span *ngIf="a.submissionCount > 0" class="status-badge submitted">✓ Submitted ({{ a.submissionCount }})</span>
+                    <button *ngIf="a.isAssigned && a.submissionCount === 0"
+                      class="btn-upload" (click)="openUploadModal(a.id)">Submit File</button>
+                    <span *ngIf="!a.isAssigned && a.submissionCount === 0" class="status-badge pending">Pending</span>
+                  </ng-container>
                 </td>
               </tr>
             </tbody>
@@ -225,7 +232,33 @@ import { takeUntil } from 'rxjs/operators';
         <p>Loading your dashboard…</p>
       </div>
     </ng-template>
-  `,
+    <!-- \u2500\u2500 Upload Modal \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 -->
+    <div class="modal-overlay" *ngIf="uploadModalOpen" (click)="closeUploadModal()">
+      <div class="modal-box" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Submit Assignment</h3>
+          <button class="modal-close" (click)="closeUploadModal()">\u00d7</button>
+        </div>
+        <div class="modal-body">
+          <p *ngIf="uploadModalInstructions" class="upload-instructions">{{ uploadModalInstructions }}</p>
+          <p *ngIf="!uploadModalInstructions" class="upload-instructions muted">No specific instructions provided.</p>
+          <div class="file-drop-zone" (click)="fileInput.click()">
+            <span *ngIf="!selectedFile">\ud83d\udcc2 Click to choose a file</span>
+            <span *ngIf="selectedFile" class="selected-file-name">{{ selectedFile.name }} ({{ formatFileSize(selectedFile.size) }})</span>
+          </div>
+          <input #fileInput type="file" hidden
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+            (change)="onFileSelected($event)" />
+          <div *ngIf="uploadError" class="upload-error">{{ uploadError }}</div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" (click)="closeUploadModal()" [disabled]="uploadLoading">Cancel</button>
+          <button class="btn-submit" (click)="submitFile()" [disabled]="!selectedFile || uploadLoading">
+            {{ uploadLoading ? 'Uploading\u2026' : 'Upload' }}
+          </button>
+        </div>
+      </div>
+    </div>  `,
   styles: [`
     .dashboard { max-width: 900px; margin: 0 auto; padding: 24px 16px; }
 
@@ -312,6 +345,64 @@ import { takeUntil } from 'rxjs/operators';
     .status-badge { padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600; }
     .overdue   { background: #fdecea; color: #c62828; }
     .submitted { background: #e8f5e9; color: #1b5e20; }
+    .pending   { background: #f5f5f5; color: #757575; }
+
+    .btn-upload {
+      padding: 2px 10px; border-radius: 12px; font-size: 11px; font-weight: 600;
+      background: #e3f2fd; color: #1565c0; border: 1px solid #90caf9;
+      cursor: pointer; transition: background 0.15s;
+    }
+    .btn-upload:hover { background: #bbdefb; }
+
+    /* Upload Modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(0,0,0,0.45);
+      display: flex; align-items: center; justify-content: center; z-index: 1000;
+    }
+    .modal-box {
+      background: #fff; border-radius: 12px; width: 440px; max-width: 95vw;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.18);
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 20px 12px; border-bottom: 1px solid #f0f0f0;
+    }
+    .modal-header h3 { margin: 0; font-size: 17px; }
+    .modal-close {
+      background: none; border: none; font-size: 22px; cursor: pointer;
+      color: #888; line-height: 1;
+    }
+    .modal-body { padding: 16px 20px; }
+    .upload-instructions {
+      font-size: 13px; color: #444; background: #f8faff;
+      border: 1px solid #dde4f8; border-radius: 6px; padding: 10px 14px;
+      margin: 0 0 12px;
+    }
+    .upload-instructions.muted { color: #999; font-style: italic; }
+    .file-drop-zone {
+      border: 2px dashed #90caf9; border-radius: 8px; padding: 28px 16px;
+      text-align: center; cursor: pointer; color: #1565c0;
+      font-size: 14px; transition: background 0.15s;
+    }
+    .file-drop-zone:hover { background: #e3f2fd; }
+    .selected-file-name { font-weight: 600; color: #1b5e20; }
+    .upload-error { color: #c62828; font-size: 13px; margin-top: 8px; }
+    .modal-footer {
+      display: flex; justify-content: flex-end; gap: 10px;
+      padding: 12px 20px 16px; border-top: 1px solid #f0f0f0;
+    }
+    .btn-secondary {
+      padding: 8px 18px; border-radius: 6px; border: 1px solid #ddd;
+      background: #f5f5f5; color: #333; cursor: pointer; font-size: 14px;
+    }
+    .btn-secondary:hover { background: #eeeeee; }
+    .btn-submit {
+      padding: 8px 20px; border-radius: 6px; border: none;
+      background: #2196f3; color: #fff; font-weight: 600;
+      cursor: pointer; font-size: 14px; transition: background 0.15s;
+    }
+    .btn-submit:hover:not(:disabled) { background: #1976d2; }
+    .btn-submit:disabled { background: #b0bec5; cursor: not-allowed; }
 
     /* Profile Card */
     .profile-card {
@@ -430,6 +521,14 @@ export class StudentDashboardComponent implements OnInit, OnDestroy {
   student: StudentAuthUser | null = null;
   private destroy$ = new Subject<void>();
 
+  // Upload modal state
+  uploadModalOpen = false;
+  uploadModalAssessmentId: number | null = null;
+  uploadModalInstructions: string | null = null;
+  selectedFile: File | null = null;
+  uploadError: string | null = null;
+  uploadLoading = false;
+
   get initials(): string {
     if (!this.student) return '?';
     return `${(this.student.firstName[0] || '').toUpperCase()}${(this.student.lastName[0] || '').toUpperCase()}`;
@@ -458,7 +557,8 @@ export class StudentDashboardComponent implements OnInit, OnDestroy {
   constructor(
     private router: Router,
     private studentAuthState: StudentAuthStateService,
-    private studentAuthBusiness: StudentAuthBusinessService
+    private studentAuthBusiness: StudentAuthBusinessService,
+    private submissionApi: AssessmentSubmissionApiService
   ) { }
 
   ngOnInit(): void {
@@ -495,5 +595,68 @@ export class StudentDashboardComponent implements OnInit, OnDestroy {
   isOverdue(dueDate: string | null): boolean {
     if (!dueDate) return false;
     return new Date(dueDate) < new Date();
+  }
+
+  openUploadModal(assessmentId: number): void {
+    const a = this.student?.assessments?.find(x => x.id === assessmentId);
+    this.uploadModalAssessmentId = assessmentId;
+    this.uploadModalInstructions = a?.instructions ?? null;
+    this.selectedFile = null;
+    this.uploadError = null;
+    this.uploadLoading = false;
+    this.uploadModalOpen = true;
+  }
+
+  closeUploadModal(): void {
+    this.uploadModalOpen = false;
+    this.uploadModalAssessmentId = null;
+    this.selectedFile = null;
+    this.uploadError = null;
+    this.uploadLoading = false;
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) return;
+    const file = input.files[0];
+    const allowed = ['application/pdf', 'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'image/jpeg', 'image/png'];
+    if (!allowed.includes(file.type)) {
+      this.uploadError = 'Only PDF, Word (.doc/.docx) and image (.jpg/.png) files are allowed.';
+      this.selectedFile = null;
+      return;
+    }
+    if (file.size > 10 * 1024 * 1024) {
+      this.uploadError = 'File size must not exceed 10 MB.';
+      this.selectedFile = null;
+      return;
+    }
+    this.uploadError = null;
+    this.selectedFile = file;
+  }
+
+  submitFile(): void {
+    if (!this.selectedFile || !this.uploadModalAssessmentId || !this.student) return;
+    this.uploadLoading = true;
+    this.uploadError = null;
+    this.submissionApi.upload(this.student.id, this.uploadModalAssessmentId, this.selectedFile).subscribe({
+      next: () => {
+        // Increment the in-memory submission count so the UI reflects the upload
+        const a = this.student?.assessments?.find(x => x.id === this.uploadModalAssessmentId);
+        if (a) a.submissionCount++;
+        this.closeUploadModal();
+      },
+      error: (err) => {
+        this.uploadLoading = false;
+        this.uploadError = err.error?.title || err.error?.message || 'Upload failed. Please try again.';
+      }
+    });
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes < 1024) return `${bytes} B`;
+    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
   }
 }

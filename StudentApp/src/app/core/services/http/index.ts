@@ -8,3 +8,4 @@ export * from './teacher-api.service';
 export * from './grade-api.service';
 export * from './student-assessment-api.service';
 export * from './subject-api.service';
+export * from './assessment-submission-api.service';

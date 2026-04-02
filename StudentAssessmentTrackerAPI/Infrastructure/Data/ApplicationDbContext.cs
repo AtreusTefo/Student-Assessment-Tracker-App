@@ -25,6 +25,8 @@ namespace StudentAssessmentTracker.Infrastructure.Data
         public DbSet<Student> Students { get; set; }
         /// <summary>DbSet for student assessment records.</summary>
         public DbSet<StudentAssessment> StudentAssessments { get; set; }
+        /// <summary>DbSet for student-uploaded submission files.</summary>
+        public DbSet<AssessmentSubmission> AssessmentSubmissions { get; set; }
         /// <summary>DbSet for teacher records.</summary>
         public DbSet<Teacher> Teachers { get; set; }
         /// <summary>DbSet for the Teacher↔Student many-to-many join table.</summary>
@@ -138,7 +140,22 @@ namespace StudentAssessmentTracker.Infrastructure.Data
                 entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.MaxScore).HasColumnType("decimal(8,2)");
                 entity.Property(e => e.Score).HasColumnType("decimal(8,2)");
+
+                // DB-level guards that enforce the same rules as FluentValidation —
+                // protects against direct SQL writes, seeding scripts, and admin tools.
+                entity.ToTable(t =>
+                {
+                    t.HasCheckConstraint("CK_StudentAssessments_MaxScore_Positive",
+                        "[MaxScore] > 0");
+                    t.HasCheckConstraint("CK_StudentAssessments_Score_NonNegative",
+                        "[Score] >= 0");
+                    t.HasCheckConstraint("CK_StudentAssessments_Score_LteMaxScore",
+                        "[Score] <= [MaxScore]");
+                });
+
                 entity.Property(e => e.DueDate).IsRequired(false);
+                entity.Property(e => e.IsAssigned).HasDefaultValue(false);
+                entity.Property(e => e.Instructions).IsRequired(false).HasMaxLength(2000);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
 
@@ -147,6 +164,29 @@ namespace StudentAssessmentTracker.Infrastructure.Data
                     .WithMany(s => s.Assessments)
                     .HasForeignKey(e => e.StudentId)
                     .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ── AssessmentSubmissions ─────────────────────────────────────────
+            modelBuilder.Entity<AssessmentSubmission>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.FileName).IsRequired().HasMaxLength(260);
+                entity.Property(e => e.StoredFileName).IsRequired().HasMaxLength(260);
+                entity.Property(e => e.ContentType).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.FileSize).IsRequired();
+                entity.Property(e => e.SubmittedAt).HasDefaultValueSql("GETUTCDATE()");
+
+                // FK → StudentAssessments (CASCADE: deleting an assessment removes all its submissions)
+                entity.HasOne(e => e.StudentAssessment)
+                    .WithMany(a => a.Submissions)
+                    .HasForeignKey(e => e.StudentAssessmentId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // FK → Students (NO ACTION: student row manages its own lifecycle)
+                entity.HasOne(e => e.Student)
+                    .WithMany()
+                    .HasForeignKey(e => e.StudentId)
+                    .OnDelete(DeleteBehavior.NoAction);
             });
 
             // ── Teachers ──────────────────────────────────────────────────────

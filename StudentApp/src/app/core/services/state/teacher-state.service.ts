@@ -15,12 +15,22 @@ const TOKEN_STORAGE_KEY = 'sat_teacher_token';
   providedIn: 'root'
 })
 export class TeacherStateService {
-  // Restore session from localStorage on service init
+  // Restore session from localStorage on service init.
+  // Only restore if BOTH the teacher object and the JWT token are present — an incomplete
+  // session (teacher but no token) would cause every API call to return 401, so we clear it.
   private restoredTeacher: Teacher | null = (() => {
     try {
       const raw = localStorage.getItem(AUTH_STORAGE_KEY);
-      return raw ? (JSON.parse(raw) as Teacher) : null;
+      const token = localStorage.getItem(TOKEN_STORAGE_KEY);
+      if (!raw || !token) {
+        localStorage.removeItem(AUTH_STORAGE_KEY);
+        localStorage.removeItem(TOKEN_STORAGE_KEY);
+        return null;
+      }
+      return JSON.parse(raw) as Teacher;
     } catch {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+      localStorage.removeItem(TOKEN_STORAGE_KEY);
       return null;
     }
   })();

@@ -1248,6 +1248,171 @@ The `MappingProfile` `TeacherUpdateDto → Teacher` mapping retains `.ForMember(
 
 ---
 
-**Last Updated**: April 1, 2026  
-**Total Issues Documented**: 41 (13 frontend + 6 architecture + 6 infrastructure/tooling + 8 auth/UX/DataTables + 8 security/integrity/architecture Apr-2026)  
+## 🚨 CRITICAL ISSUES (April 2, 2026)
+
+### 42. 401 Unauthorized After Teacher Registration 🔑
+**Problem**: `GET /api/students` returned `401 Unauthorized` immediately after a teacher registered a new account.  
+**Root Cause**: `teacher-business.service.ts` stored the teacher profile but never obtained a JWT. The token BehaviorSubject remained `null` so the interceptor attached no `Authorization` header.  
+**Fix**: Chain a `switchMap` after registration to auto-call `login()` with the same credentials:
+```typescript
+return this.teacherApi.register(dto).pipe(
+  switchMap(newTeacher =>
+    this.teacherApi.login({ email: dto.email, password: dto.password })
+  ),
+  tap(response => {
+    this.teacherState.setToken(response.token);
+    this.teacherState.setCurrentTeacher(response.teacher);
+  })
+);
+```
+**File**: `StudentApp/src/app/features/students/services/teacher-business.service.ts`  
+**Prevention**: Registration flows that don't return a JWT must immediately call login. Never leave the token as `null` after creating an authenticated account.
+
+---
+
+### 43. Auth Interceptor Redirect Loop on Login Page 🔄
+**Problem**: Wrong credentials on `/login` caused an infinite redirect loop back to `/login`.  
+**Root Cause**: The 401 handler had no check for whether a token was actually sent. The login endpoint returns 401 for bad credentials; the handler redirected on every 401 regardless.  
+**Fix**: Add `&& token` guard:
+```typescript
+if (error.status === 401 && token) {  // only fire when a token WAS sent
+  teacherState.logout();
+  router.navigate(['/login']);
+}
+```
+**File**: `StudentApp/src/app/core/interceptors/auth.interceptor.ts`  
+**Prevention**: The 401 redirect is for expired/revoked tokens only. An unauthenticated 401 (no token sent) is a normal credential failure — let the component handle it.
+
+---
+
+### 44. Stale Teacher Session After Token Expiry 👻
+**Problem**: After JWT expiry, page refresh restored the teacher profile from `localStorage` but every API call still failed with 401.  
+**Root Cause**: Startup restore in `teacher-state.service.ts` only checked for the profile object, not the token.  
+**Fix**: Require both profile AND token during startup:
+```typescript
+private restoredTeacher = (() => {
+  try {
+    const raw   = localStorage.getItem(TEACHER_AUTH_KEY);
+    const token = localStorage.getItem(TOKEN_KEY);
+    return raw && token ? JSON.parse(raw) : null; // both required
+  } catch { return null; }
+})();
+```
+**File**: `StudentApp/src/app/core/services/state/teacher-state.service.ts`  
+**Prevention**: Any state service that restores a session from localStorage must also verify the token exists.
+
+---
+
+### 45. Student JWT Never Persisted After Login/Activate 🎓
+**Problem**: After student login, all subsequent API calls returned 401 even though the server returned a token in the response.  
+**Root Cause**: `StudentAuthStateService` had no `setToken()` / `getToken()` methods. The business service called `setCurrentStudent(response.student)` but discarded `response.token`.  
+**Fix**:
+```typescript
+// student-auth-state.service.ts:
+const STUDENT_TOKEN_KEY = 'sat_student_token';
+
+setToken(token: string): void { localStorage.setItem(STUDENT_TOKEN_KEY, token); }
+getToken(): string | null    { return localStorage.getItem(STUDENT_TOKEN_KEY); }
+// Also: logout() must removeItem(STUDENT_TOKEN_KEY)
+
+// student-auth-business.service.ts — inside tap():
+this.studentAuthState.setToken(response.token);     // add before setCurrentStudent
+this.studentAuthState.setCurrentStudent(response.student);
+```
+**Files**: `StudentApp/src/app/core/services/state/student-auth-state.service.ts`, `StudentApp/src/app/features/students/services/student-auth-business.service.ts`  
+**Prevention**: After adding any auth state service, verify `setToken()` is called in the business service `tap()` for every login/activate path.
+
+---
+
+### 46. Auth Interceptor Ignored Student Token 🔍
+**Problem**: Student JWT was stored but all student API calls still returned 401 — the interceptor only attached the teacher token.  
+**Root Cause**: `auth.interceptor.ts` only read `teacherState.getToken()`. During a student-only session this is `null`, so no `Authorization` header was attached.  
+**Fix**: Fall back to student token and make the 401 handler branch-aware:
+```typescript
+const teacherToken = teacherState.getToken();
+const studentToken = studentAuthState.getToken();
+const token = teacherToken ?? studentToken;
+const isStudentToken = !teacherToken && !!studentToken;
+
+// 401 handler:
+if (error.status === 401 && token) {
+  if (isStudentToken) {
+    studentAuthState.logout();
+    router.navigate(['/student/login']);
+  } else {
+    teacherState.logout();
+    studentAuthState.logout();
+    router.navigate(['/login']);
+  }
+}
+```
+**File**: `StudentApp/src/app/core/interceptors/auth.interceptor.ts`  
+**Prevention**: A single shared interceptor must handle all user types. Use a precedence chain and make error redirects aware of which token triggered the 401.
+
+---
+
+### 47. Student Dashboard Showed Misleading "Submitted" Status 📋
+**Problem**: Every non-overdue assessment showed a green "Submitted" badge even if no file had been uploaded.  
+**Root Cause**: Status column used `*ngIf="!isOverdue"` → "Submitted" with no check of actual submission data. The `isAssigned` and `submissionCount` fields did not exist on the DTO.  
+**Fix**: After adding both fields to the backend DTO, replace the binary status with a three-way switch:
+```html
+<span *ngIf="a.submissionCount > 0" class="status-badge submitted">
+  ✓ Submitted ({{ a.submissionCount }})
+</span>
+<button *ngIf="a.isAssigned && a.submissionCount === 0"
+  class="btn-upload" (click)="openUploadModal(a.id)">Submit File</button>
+<span *ngIf="!a.isAssigned && a.submissionCount === 0"
+  class="status-badge pending">Pending</span>
+```
+**File**: `StudentApp/src/app/components/student-dashboard.component.ts`  
+**Prevention**: Never derive submission state from the due date. Always use `submissionCount` returned by the API.
+
+---
+
+### 48. replace_string_in_file Mismatch Due to XML Doc Comments 📝
+**Problem**: File edit tool returned "old string not found" — blocking the automated editing pipeline.  
+**Root Cause**: Subagent codebase summaries omit `/// <summary>` XML doc blocks. The edit tool needs an exact literal match including all surrounding lines.  
+**Fix**: Read the actual file with `read_file` immediately before each edit:
+```
+1. read_file(filePath, target line range)
+2. Copy the exact literal text including XML doc comments
+3. Use that literal text as oldString
+4. Batch multiple edits in multi_replace_string_in_file
+```
+**Prevention**: Never rely on a summary view for file editing context. Always read the live file. Use `multi_replace_string_in_file` to batch independent edits and reduce roundtrips.
+
+---
+
+## Diagnostic Checklist — Updated April 2, 2026
+
+**🔑 Student API calls returning 401 after login?**
+1. ✅ Check `localStorage` in DevTools → Application tab for `sat_student_token`
+2. ✅ Verify `StudentAuthStateService.setToken()` exists
+3. ✅ Verify `student-auth-business.service.ts` calls `setToken(response.token)` in `tap()`
+4. ✅ Verify interceptor falls back to `studentAuthState.getToken()` when teacher token is null
+
+**🔄 Auth interceptor redirect loop on login page?**
+1. ✅ Check the interceptor 401 handler — does it have `&& token` guard?
+2. ✅ Fix: `if (error.status === 401 && token) { redirect... }`
+
+**👻 Session restored from localStorage but all requests fail with 401?**
+1. ✅ Startup restore must read BOTH the profile key AND the token key
+2. ✅ If either is missing, return `null` — do not restore the session
+3. ✅ `logout()` must remove both keys
+
+**📊 Status badge showing wrong state ("Submitted" when nothing uploaded)?**
+1. ✅ Verify DTO includes `submissionCount` and `isAssigned` from the backend
+2. ✅ Use three-way logic: `submissionCount > 0` → Submitted; `isAssigned` → Submit button; else → Pending
+3. ✅ Never derive submission state from the due date alone
+
+**✏️ replace_string_in_file failing with "old string not found"?**
+1. ✅ Read the actual file with `read_file` before editing
+2. ✅ Look for XML `/// <summary>` doc comments that summaries may have omitted
+3. ✅ Include at least 3 lines of unchanged context above and below the target
+4. ✅ Use `multi_replace_string_in_file` to batch multiple edits
+
+---
+
+**Last Updated**: April 2, 2026  
+**Total Issues Documented**: 48 (13 frontend + 6 architecture + 6 infrastructure/tooling + 8 auth/UX/DataTables + 8 security/integrity/architecture Apr-1 + 7 auth/interceptor/feature Apr-2)  
 **Keep this guide nearby when developing!** 🚀

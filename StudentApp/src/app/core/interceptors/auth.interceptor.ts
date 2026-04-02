@@ -1,14 +1,41 @@
-import { HttpInterceptorFn } from '@angular/common/http';
+import { HttpInterceptorFn, HttpErrorResponse } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
+import { catchError, throwError } from 'rxjs';
 import { TeacherStateService } from '../services/state/teacher-state.service';
+import { StudentAuthStateService } from '../services/state/student-auth-state.service';
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const teacherState = inject(TeacherStateService);
-  const token = teacherState.getToken();
+  const studentAuthState = inject(StudentAuthStateService);
+  const router = inject(Router);
 
-  if (token) {
-    return next(req.clone({ setHeaders: { Authorization: `Bearer ${token}` } }));
-  }
+  // Prefer teacher token; fall back to student token for student-facing routes
+  const teacherToken = teacherState.getToken();
+  const studentToken = studentAuthState.getToken();
+  const token = teacherToken ?? studentToken;
+  const isStudentToken = !teacherToken && !!studentToken;
 
-  return next(req);
+  const authReq = token
+    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
+    : req;
+
+  return next(authReq).pipe(
+    catchError((error: HttpErrorResponse) => {
+      // Only auto-redirect when a token was actually sent but the server rejected it
+      // (expired or invalidated). If no token was sent, let the component handle the error
+      // (e.g. wrong credentials on the login page must not trigger a redirect loop).
+      if (error.status === 401 && token) {
+        if (isStudentToken) {
+          studentAuthState.logout();
+          router.navigate(['/student/login']);
+        } else {
+          teacherState.logout();
+          studentAuthState.logout();
+          router.navigate(['/login']);
+        }
+      }
+      return throwError(() => error);
+    })
+  );
 };

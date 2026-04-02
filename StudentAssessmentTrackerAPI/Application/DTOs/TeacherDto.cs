@@ -61,9 +61,6 @@ namespace StudentAssessmentTracker.Application.DTOs
 
         /// <summary>Gets or sets the password</summary>
         public string Password { get; set; } = string.Empty;
-
-        /// <summary>Gets or sets the enrollment date</summary>
-        public DateTime EnrollmentDate { get; set; } = DateTime.UtcNow;
     }
 
     /// <summary>
@@ -90,9 +87,6 @@ namespace StudentAssessmentTracker.Application.DTOs
 
         /// <summary>Gets or sets the subject identifier</summary>
         public int SubjectId { get; set; }
-
-        /// <summary>Gets or sets the enrollment date</summary>
-        public DateTime EnrollmentDate { get; set; }
     }
 
     /// <summary>

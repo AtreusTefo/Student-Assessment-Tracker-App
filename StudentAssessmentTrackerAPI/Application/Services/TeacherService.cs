@@ -196,8 +196,9 @@ namespace StudentAssessmentTracker.Application.Services
                 new Claim(JwtRegisteredClaimNames.Sub,   teacher.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email, teacher.Email),
                 new Claim(JwtRegisteredClaimNames.Jti,   Guid.NewGuid().ToString()),
-                // Custom claim â€” controllers read this to scope data queries
+                // Custom claim — controllers read this to scope data queries
                 new Claim("teacherId", teacher.Id.ToString()),
+                new Claim(System.Security.Claims.ClaimTypes.Role, "Teacher"),
             };
 
             var token = new JwtSecurityToken(
