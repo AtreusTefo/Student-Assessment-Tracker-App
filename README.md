@@ -1,6 +1,6 @@
 # Student Assessment Tracker
 
-Student Assessment Tracker is a **full-stack web application** built with **ASP.NET Core 8** backend and **Angular 18** frontend following **Clean Architecture** principles. It provides an intuitive interface to manage and track student assessments, allowing teachers to add, edit, delete, and view student scores with automatic calculations for totals, averages, percentages, and performance levels.
+Student Assessment Tracker is a **full-stack web application** built with **ASP.NET Core 8** backend and **Angular 18** frontend following **Clean Architecture** principles. It features a **dual-role system** — teachers can register, log in, and manage students with full CRUD operations and named assessment tracking; students can activate their accounts, log in, and view their own performance through a self-service dashboard. The system supports flexible scoring, file submission uploads, JWT-based authentication for both roles, automated performance calculations, and a DataTables-powered student list.
 
 ## Architecture Overview
 
@@ -56,7 +56,8 @@ StudentAssessmentTracker/                  ← Solution Root
 - **Runtime**: .NET 8.0
 - **Framework**: ASP.NET Core Web API
 - **ORM**: Entity Framework Core 8.0
-- **Database**: In-Memory (Development)
+- **Database**: SQL Server LocalDB (EF Core Migrations)
+- **Authentication**: JWT Bearer (`Microsoft.AspNetCore.Authentication.JwtBearer`)
 - **Validation**: FluentValidation 12.1
 - **Mapping**: AutoMapper 12.0
 - **Logging**: Serilog 8.0
@@ -72,49 +73,64 @@ StudentAssessmentTracker/                  ← Solution Root
 
 ## Database
 
-The application uses **Entity Framework Core In-Memory Database**:
+The application uses **SQL Server LocalDB** with **EF Core migrations** that are applied automatically on startup:
 
 ```csharp
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
-    options.UseInMemoryDatabase("StudentDb"));
+    options.UseSqlServer(connectionString));
 ```
 
-**Benefits:**
-- Zero setup required; no SQL Server or SQLite installation
-- Perfect for development, testing, and learning
-- Data resets when the application restarts
-- Full support for LINQ queries
+The connection string is configured in `appsettings.Development.json`:
+
+```json
+"ConnectionStrings": {
+  "DefaultConnection": "Server=(localdb)\\mssqllocaldb;Database=StudentAssessmentTrackerDev;Trusted_Connection=True;"
+}
+```
+
+**Seeded Lookup Data (auto-seeded on first migration):**
+- **Grades**: 7, 8, 9, 10, 11, 12
+- **Subjects**: Accounting, Art, Business Studies, English, Geography, History, ICT, Mathematics, Multimedia, Music, Physical Education, Science
 
 ## Features
 
-**Student Management**
-- Add new students with assessments (scores 0-20)
-- Edit student information
-- Delete students with confirmation
-- View all students in a table
+**Authentication & Security**
+- Teacher registration with ID/Passport No., name, email, phone, subject (dropdown from API), and password
+- Teacher and student JWT Bearer authentication (separate `Teacher` / `Student` roles with custom claims)
+- HTTP interceptor auto-attaches JWT to every request and auto-redirects to login on 401
+- Route guards for both roles: `authGuard`, `guestGuard`, `studentAuthGuard`, `studentGuestGuard`
+- FluentValidation enforces all rules server-side; invalid payloads return HTTP 400
 
-**Data Validation**
-- Frontend validation (name format, email, phone)
-- Backend validation with FluentValidation
-- Real-time error messages
-- User-friendly form feedback
+**Student Management (Teacher Role)**
+- Add students with ID/Passport No., name, email, phone, and grade (seeded dropdown, Grades 7–12)
+- Auto-generated `StudentUniqueId` (format: `STU-XXXXXXXX`) assigned on creation
+- Edit student details; delete with confirmation modal and DataTable row removal
+- Cascade delete removes all assessments and submissions when a student is deleted
+- DataTables-powered student list with pagination, column sorting, and global search
+- Colour-coded performance level badge per student on both list and detail views
 
-**Automatic Calculations**
-- Total Score: Sum of 3 assessments
-- Average Score: Total ÷ 3
-- Percentage: (Total ÷ 60) × 100
-- Performance Level:
+**Assessment Tracking (Teacher Role)**
+- Add named assessments with custom `MaxScore`, optional `DueDate`, `Instructions`, and `IsAssigned` flag
+- Edit and delete individual assessments inline on the student detail page
+- Performance summary: Total Score, Average Score, Percentage, and Performance Level auto-calculated server-side
   - **Needs Support**: < 50%
-  - **Satisfactory**: 50-55%
-  - **Good**: 56-75%
+  - **Satisfactory**: 50–55%
+  - **Good**: 56–75%
   - **Excellent**: > 75%
 
-**User Interface**
-- Responsive design
-- Student list with sorting
-- Interactive forms
-- Real-time validation feedback
-- Loading states and error handling
+**File Submissions**
+- Students can upload completed work (PDF, DOC, DOCX, JPG, JPEG, PNG; max 10 MB) via dashboard upload modal
+- Teachers can view, download, and delete student submissions from the student detail page
+- Role-based access: only the owning student may upload; only teachers may list all submissions; download and delete available to both
+
+**Student Self-Service Portal (Student Role)**
+- Students activate their account using their `StudentUniqueId` and registered email to set a password
+- After login, a personal dashboard shows:
+  - Performance summary cards (Total, Average, Percentage, Performance Level)
+  - Colour-coded progress bar with performance band legend
+  - Assessment table with Overdue/Submitted status badges
+  - My Profile section (read-only personal details)
+  - File upload modal per assessment
 
 ## Project Structure
 
@@ -124,17 +140,33 @@ StudentAssessmentTracker/                       ← Solution Root
 ├── StudentAssessmentTrackerAPI/                ← Backend API Project
 │   ├── Domain/                                 (Core business logic)
 │   │   ├── Entities/
-│   │   │   └── Student.cs
+│   │   │   ├── Student.cs
+│   │   │   ├── Teacher.cs
+│   │   │   ├── Grade.cs
+│   │   │   ├── Subject.cs
+│   │   │   ├── StudentAssessment.cs
+│   │   │   ├── AssessmentSubmission.cs
+│   │   │   └── TeacherStudent.cs
 │   │   └── Interfaces/
 │   │       └── IRepository.cs
 │   │
 │   ├── Application/                            (Use cases & orchestration)
 │   │   ├── DTOs/
-│   │   │   └── StudentDto.cs
+│   │   │   ├── StudentDto.cs
+│   │   │   ├── TeacherDto.cs
+│   │   │   ├── StudentAssessmentDto.cs
+│   │   │   ├── AssessmentSubmissionDto.cs
+│   │   │   ├── GradeDto.cs
+│   │   │   └── SubjectDto.cs
 │   │   ├── Services/
-│   │   │   └── StudentService.cs
+│   │   │   ├── StudentService.cs
+│   │   │   ├── TeacherService.cs
+│   │   │   ├── StudentAssessmentService.cs
+│   │   │   └── AssessmentSubmissionService.cs
 │   │   ├── Validators/
-│   │   │   └── StudentValidator.cs
+│   │   │   ├── StudentValidator.cs
+│   │   │   ├── TeacherValidator.cs
+│   │   │   └── StudentAssessmentValidator.cs
 │   │   └── Mappings/
 │   │       └── MappingProfile.cs
 │   │
@@ -142,41 +174,49 @@ StudentAssessmentTracker/                       ← Solution Root
 │   │   ├── Data/
 │   │   │   └── ApplicationDbContext.cs
 │   │   └── Repositories/
-│   │       └── StudentRepository.cs
+│   │       ├── StudentRepository.cs
+│   │       ├── TeacherRepository.cs
+│   │       ├── StudentAssessmentRepository.cs
+│   │       └── AssessmentSubmissionRepository.cs
 │   │
 │   ├── Presentation/                           (REST API)
 │   │   └── Controllers/
-│   │       └── StudentsController.cs
+│   │       ├── StudentsController.cs
+│   │       ├── TeachersController.cs
+│   │       ├── StudentAssessmentsController.cs
+│   │       ├── AssessmentSubmissionsController.cs
+│   │       ├── GradesController.cs
+│   │       └── SubjectsController.cs
 │   │
 │   ├── Program.cs                              (Entry point)
 │   └── appsettings.json                        (Configuration)
 │
 ├── StudentApp/                                 ← Angular Frontend
-│   ├── src/
-│   │   ├── app/
-│   │   │   ├── components/
-│   │   │   │   ├── student-form.component.ts
-│   │   │   │   ├── student-list.component.ts
-│   │   │   │   └── student-detail.component.ts
-│   │   │   ├── services/
-│   │   │   │   └── student.service.ts
-│   │   │   ├── models/
-│   │   │   │   └── student.model.ts
-│   │   │   └── app.routes.ts
-│   │   └── main.ts
-│   ├── angular.json
-│   ├── package.json
-│   ├── proxy.conf.json                         (Dev proxy to API)
-│   └── dist/                                   (Build output)
+│   └── src/app/
+│       ├── components/               (8 standalone components)
+│       │   ├── login-form.component.ts
+│       │   ├── signup-form.component.ts
+│       │   ├── student-list.component.ts
+│       │   ├── student-detail.component.ts
+│       │   ├── student-form.component.ts
+│       │   ├── student-login.component.ts
+│       │   ├── student-activate.component.ts
+│       │   └── student-dashboard.component.ts
+│       ├── core/
+│       │   ├── guards/               (auth, guest, student-auth, student-guest)
+│       │   ├── interceptors/         (auth.interceptor.ts — attaches JWT, handles 401)
+│       │   ├── models/               (student.model.ts, teacher.model.ts)
+│       │   └── services/
+│       │       ├── http/             (6 API services: teacher, student, assessments, submissions, grades, subjects)
+│       │       └── state/            (teacher-state, student-state, student-auth-state)
+│       └── features/
+│           ├── students/services/    (student-business.service.ts, student-auth-business.service.ts)
+│           └── teachers/services/    (teacher-business.service.ts)
 │
 ├── docs/                                       ← Documentation
-│   ├── API_SETUP_TESTING_GUIDE.md
-│   ├── DEVELOPER_GUIDE.md
-│   └── POSTMAN_TESTING_GUIDE.md
-│
-├── ARCHITECTURE.md                             ← Architecture details
-├── README.md                                   ← This file
-└── StudentAssessmentTracker.sln                ← Visual Studio Solution
+├── ARCHITECTURE.md
+├── README.md
+└── StudentAssessmentTracker.sln
 ```
 
 ## Setup Instructions
@@ -242,7 +282,7 @@ StudentAssessmentTracker/                       ← Solution Root
    
    The application will start on `http://localhost:4200`
    
-   > **Note:** The Angular app uses a proxy configuration to forward API requests to the backend at `https://localhost:5001`
+   > **Note:** The Angular app uses a proxy configuration (`proxy.conf.json`) to forward `/api` requests to the backend at `http://localhost:5000`
 
 4. **Build for production** (optional)
    ```bash
@@ -277,60 +317,124 @@ This runs Angular in development mode with live reloading. The frontend proxies 
 
 ## API Endpoints
 
-The backend provides the following REST API endpoints:
+All endpoints requiring authentication use **JWT Bearer** (`Authorization: Bearer <token>`).
 
-- `GET /api/students` – Get all students
-- `GET /api/students/{id}` – Get a specific student
-- `POST /api/students` – Create a new student
-- `PUT /api/students/{id}` – Update a student
-- `DELETE /api/students/{id}` – Delete a student
+### Teachers
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/api/teachers` | Public | Register a new teacher |
+| `POST` | `/api/teachers/login` | Public | Login and receive JWT |
+| `GET` | `/api/teachers` | Public | List all teachers |
+| `GET` | `/api/teachers/{id}` | Public | Get teacher by ID |
+| `PUT` | `/api/teachers/{id}` | Teacher JWT | Update own profile |
+| `DELETE` | `/api/teachers/{id}` | Teacher JWT | Delete own account |
 
-All endpoints return JSON responses and validate input using FluentValidation.
+### Students
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/students` | Teacher JWT | List teacher's students |
+| `GET` | `/api/students/{id}` | Teacher JWT | Get student detail |
+| `POST` | `/api/students` | Teacher JWT | Create new student |
+| `PUT` | `/api/students/{id}` | Teacher JWT | Update student |
+| `DELETE` | `/api/students/{id}` | Teacher JWT | Delete student (cascade) |
+| `POST` | `/api/students/activate` | Public | Activate student account |
+| `POST` | `/api/students/login` | Public | Student login and receive JWT |
+
+### Assessments
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/students/{id}/assessments` | Teacher JWT | List assessments for a student |
+| `GET` | `/api/students/{id}/assessments/{aid}` | Teacher JWT | Get assessment |
+| `POST` | `/api/students/{id}/assessments` | Teacher JWT | Add assessment |
+| `PUT` | `/api/students/{id}/assessments/{aid}` | Teacher JWT | Update assessment |
+| `DELETE` | `/api/students/{id}/assessments/{aid}` | Teacher JWT | Delete assessment |
+
+### File Submissions
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/api/students/{id}/assessments/{aid}/submissions` | Student JWT | Upload submission file |
+| `GET` | `/api/students/{id}/assessments/{aid}/submissions` | Teacher JWT | List submissions |
+| `GET` | `/api/students/{id}/assessments/{aid}/submissions/{sid}/download` | Teacher or Student JWT | Download file |
+| `DELETE` | `/api/students/{id}/assessments/{aid}/submissions/{sid}` | Teacher or Student JWT | Delete submission |
+
+### Lookups
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/grades` | Public | List all grades (7–12) |
+| `GET` | `/api/subjects` | Public | List all subjects |
 
 ## Usage
 
-1. **View Students** – Home page displays a table of all students
-2. **Add Student** – Click "Create Student" button to add a new student
-3. **Edit Student** – Click "Edit" on a student row to modify their information
-4. **View Details** – Click on a student name to see full details including performance level
-5. **Delete Student** – Click "Delete" to remove a student (confirmation required)
+**Teacher Workflow**
+1. Navigate to `/register` — fill in your details (ID/Passport No., name, email, phone, subject, password) and register
+2. Navigate to `/login` — log in with your email and password to receive a JWT session
+3. The student list (`/`) shows all your students with DataTables sorting, search, and pagination
+4. Click **Create Student** to add a new student; a unique `StudentUniqueId` is generated automatically
+5. Click a student’s name to open the detail page with full assessment history and file submissions
+6. Add, edit, or delete assessments inline; performance summary updates immediately
+7. Download or delete student file submissions from the detail page
+
+**Student Workflow**
+1. Navigate to `/student/login` and click the activation tab
+2. Enter your `StudentUniqueId` (provided by your teacher), registered email, and choose a password
+3. After activation, log in with your `StudentUniqueId` and password
+4. Your dashboard shows performance summary cards, assessments table, and your profile
+5. Upload completed work using the file upload modal next to any assessment
 
 ## Form Validation Rules
 
-**Student Form:**
-- **First Name**: Required, 2-50 characters, letters/spaces/hyphens only
-- **Last Name**: Required, 2-50 characters, letters/spaces/hyphens only
-- **Email**: Required, valid email format
+**Teacher Registration:**
+- **ID/Passport No.**: Required, exactly 9 alphanumeric characters (letters and digits only)
+- **First / Last Name**: Required, 2–50 characters, letters/spaces/hyphens only
+- **Email**: Required, valid email format, unique
 - **Phone**: Required, exactly 8 digits
-- **Grade**: Required, text format (e.g., 10A, 11B)
-- **Assessments**: Required, values between 0-20
+- **Subject**: Required, selected from API-seeded dropdown
+- **Password**: Required, 6–20 characters
 
-Validation occurs both on the frontend (real-time) and backend (API submission).
+**Student Form (Create/Edit):**
+- **ID/Passport No.**: Required, 9 characters
+- **First / Last Name**: Required, 2–50 characters
+- **Email**: Required, valid email format, unique
+- **Phone**: Required, exactly 8 digits
+- **Grade**: Required, must select a valid grade from the dropdown (`GradeId > 0`)
+
+**Assessment Form:**
+- **Name**: Required, max 100 characters
+- **Max Score**: Required, must be > 0
+- **Score**: Required, must be ≥ 0 and ≤ MaxScore
+
+**Student Activation:**
+- **Student ID**: Required, must match `STU-XXXXXXXX` format
+- **Email**: Required, valid email format
+- **Password**: Required, minimum 6 characters
+- **Confirm Password**: Must exactly match password
+
+Validation occurs both on the frontend (real-time, template-driven forms) and backend (FluentValidation, HTTP 400 on failure).
 
 ## Known Limitations
 
-- In-memory database clears all data when the application stops
-- Single-user application (no user authentication)
-- Phone number validation requires 8 digits (no international format support)
-- No audit logging of changes
+- Phone number validation accepts exactly 8 digits (no international format support)
+- Student profile details are read-only from the student dashboard; only teachers can update student records
+- File submissions are stored as raw byte arrays in the database (no external blob storage)
+- No email notifications for assessment assignments or new submissions
+- No audit log of data changes (create/update/delete history)
 
 ## Future Enhancements
 
-- Replace In-Memory database with SQL Server/PostgreSQL
-- Add user authentication and authorization
-- Implement audit logging for student changes
-- Add data export (CSV, PDF)
-- Student performance analytics and reporting
-- Class and subject categorization
+- Email notifications for assignment creation and submission deadlines
+- Data export (CSV, PDF) for student reports
+- Class and subject grouping for assessment management
+- Admin role for managing all teachers and students
+- Audit logging of all create/update/delete operations
 
 ## Development Notes
 
 ### Adding New Features
 
-1. **Backend API**: Add controller methods and DTOs
-2. **Validation**: Add rules in FluentValidation validators
-3. **Frontend**: Create Angular components and services
-4. **Build**: Rebuild Angular with `npm run build` and copy to wwwroot
+1. **Backend API**: Add entity, DTO, validator, service, repository, and controller
+2. **Migrations**: Run `dotnet ef migrations add <MigrationName>` and `dotnet ef database update`
+3. **Frontend**: Create Angular component, wire HTTP service, update routes and guards
+4. **Build**: Rebuild Angular with `npm run build` if serving from wwwroot
 
 ### Debugging
 
@@ -338,14 +442,4 @@ Validation occurs both on the frontend (real-time) and backend (API submission).
 - Frontend: Use browser DevTools (F12) and Angular DevTools extension
 - Logs: Check terminal output for error messages
 
-## Recent Fixes
-
-This project has been updated to resolve the following issues:
-
-- **Phone Validation Duplicate Error** – Fixed template to show only one error message
-- **Application Blank Screen** – Fixed Angular build deployment to wwwroot root directory
-- **Form Change Detection** – Added ChangeDetectorRef for proper async handling in Angular
-- **API Response Type Mismatch** – Implemented proper DTO mapping with AutoMapper
-- **Validation Error Handling** – Separated frontend and backend validation concerns
-
-For detailed information about fixes and known issues, see the documentation files in the project root.
+For detailed documentation, see the `docs/` folder in the project root.

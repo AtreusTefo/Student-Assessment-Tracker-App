@@ -190,19 +190,29 @@ APPLICATION: Student Assessment Tracker
     │   └── US-26: As a student, I want to see clear error messages when my login credentials are invalid, so that I understand why access is denied.
     │       ├── TASK-82: Return 401 Unauthorized for wrong credentials / 400 for unactivated account
     │       └── TASK-83: Display friendly error message in Angular on failed student login
-    └── FEAT-14: Student Dashboard
-        ├── US-27: As a student, I want to view my personal performance summary, so that I can track my academic progress.
-        │   ├── TASK-84: Create StudentProfileDto with calculated score fields
-        │   ├── TASK-85: Return StudentProfileDto with computed scores on login/activation response
-        │   ├── TASK-86: Build Angular student dashboard with performance summary cards
-        │   └── TASK-87: Display progress bar with colour-coded performance band legend
-        ├── US-28: As a student, I want to view my personal assessment list, so that I can see all my results in one place.
-        │   ├── TASK-88: Include assessments array in StudentProfileDto from API response
-        │   ├── TASK-89: Render assessments table in Angular student dashboard
-        │   └── TASK-90: Apply Overdue/Submitted status badge based on due date
-        └── US-29: As a student, I want to view my personal profile information, so that I can verify my details are correct.
-            ├── TASK-91: Map all student personal fields in StudentProfileDto
-            └── TASK-92: Render My Profile section in Angular student dashboard component
+    ├── FEAT-14: Student Dashboard
+    │   ├── US-27: As a student, I want to view my personal performance summary, so that I can track my academic progress.
+    │   │   ├── TASK-84: Create StudentProfileDto with calculated score fields
+    │   │   ├── TASK-85: Return StudentProfileDto with computed scores on login/activation response
+    │   │   ├── TASK-86: Build Angular student dashboard with performance summary cards
+    │   │   └── TASK-87: Display progress bar with colour-coded performance band legend
+    │   ├── US-28: As a student, I want to view my personal assessment list, so that I can see all my results in one place.
+    │   │   ├── TASK-88: Include assessments array in StudentProfileDto from API response
+    │   │   ├── TASK-89: Render assessments table in Angular student dashboard
+    │   │   └── TASK-90: Apply Overdue/Submitted status badge based on due date
+    │   └── US-29: As a student, I want to view my personal profile information, so that I can verify my details are correct.
+    │       ├── TASK-91: Map all student personal fields in StudentProfileDto
+    │       └── TASK-92: Render My Profile section in Angular student dashboard component
+    └── FEAT-15: Assessment File Submissions
+        ├── US-30: As a student, I want to upload a file submission for an assessment, so that I can submit my completed work digitally.
+        │   ├── TASK-93: Create AssessmentSubmission entity and EF Core migration
+        │   ├── TASK-94: Implement POST /api/students/{id}/assessments/{id}/submissions endpoint (Student JWT only)
+        │   ├── TASK-95: Build file upload modal in Angular student dashboard
+        │   └── TASK-96: Display filename, upload date, and download link in submissions panel
+        └── US-31: As a teacher, I want to download and delete student file submissions, so that I can review and manage submitted work.
+            ├── TASK-97: Implement GET /api/students/{id}/assessments/{id}/submissions (Teacher JWT)
+            ├── TASK-98: Implement GET .../submissions/{id}/download endpoint (Teacher or owning Student JWT)
+            └── TASK-99: Implement DELETE /api/students/{id}/assessments/{id}/submissions/{id} endpoint
 ```
 
 ---
@@ -230,7 +240,7 @@ Scrum is an Agile framework that organizes work into short, time-boxed iteration
 ### Scrum Artifacts
 
 #### 1. Product Backlog
-A living, prioritized list of all work needed for the product. All 22 User Stories reside here, estimated in story points and ordered by business priority. The Product Owner is responsible for its content and ordering.
+A living, prioritized list of all work needed for the product. All 31 User Stories reside here, estimated in story points and ordered by business priority. The Product Owner is responsible for its content and ordering.
 
 #### 2. Sprint Backlog
 The set of Product Backlog items selected for a given Sprint, along with the Sprint Goal and the plan for delivering the Increment. Each Sprint section below contains its own Sprint Backlog.
@@ -281,7 +291,7 @@ A User Story is **Done** only when ALL of the following criteria are satisfied:
 
 ### Product Backlog
 
-All 29 User Stories, prioritized by business value, with story point estimates and Sprint assignments. **Total estimated effort: 94 story points**.
+All 31 User Stories, prioritized by business value, with story point estimates and Sprint assignments. **Total estimated effort: 102 story points**.
 
 | ID | User Story | Priority | Points | Sprint |
 |----|-----------|----------|:------:|:------:|
@@ -314,7 +324,9 @@ All 29 User Stories, prioritized by business value, with story point estimates a
 | US-27 | View personal performance summary | Medium | 3 | Sprint 4 |
 | US-28 | View personal assessment list | Medium | 3 | Sprint 4 |
 | US-29 | View personal profile information | Medium | 2 | Sprint 4 |
-| **Total** | | | **94** | |
+| US-30 | Upload file submission for an assessment | Medium | 5 | Sprint 5 |
+| US-31 | Download and delete file submissions | Medium | 3 | Sprint 5 |
+| **Total** | | | **102** | |
 
 ---
 
@@ -409,19 +421,19 @@ All 29 User Stories, prioritized by business value, with story point estimates a
 
 | Story | Title | Points | Status |
 |-------|-------|:------:|:------:|
-| US-11 | Add named assessments with flexible scoring | 5 | — |
-| US-21 | Add a named assessment to a student | 3 | — |
-| US-22 | Edit and delete an individual assessment | 3 | — |
-| US-12 | View total, average, and percentage | 3 | — |
-| US-13 | View performance level badge | 2 | — |
-| US-14 | Sort students by column | 2 | — |
-| US-15 | Search and filter students | 2 | — |
-| US-27 | View personal performance summary | 3 | — |
-| US-28 | View personal assessment list | 3 | — |
-| US-29 | View personal profile information | 2 | — |
+| US-11 | Add named assessments with flexible scoring | 5 | Done |
+| US-21 | Add a named assessment to a student | 3 | Done |
+| US-22 | Edit and delete an individual assessment | 3 | Done |
+| US-12 | View total, average, and percentage | 3 | Done |
+| US-13 | View performance level badge | 2 | Done |
+| US-14 | Sort students by column | 2 | Done |
+| US-15 | Search and filter students | 2 | Done |
+| US-27 | View personal performance summary | 3 | Done |
+| US-28 | View personal assessment list | 3 | Done |
+| US-29 | View personal profile information | 2 | Done |
 | **Total** | | **28** | |
 
-**Sprint Review**: *(Pending Sprint 4 completion — March 23–29, 2026.)*
+**Sprint Review**: All ten Sprint 4 User Stories delivered. Teachers can now add named assessments to any student with a custom `MaxScore` and optional `DueDate`; existing assessments are editable and deletable inline on the student detail page. Score calculations (total, average, percentage) are computed server-side in `StudentAssessmentService` and surfaced through `StudentDetailDto` and `StudentListDto`. Performance level badges (Needs Support / Satisfactory / Good / Excellent) are colour-coded and visible on both the student list and detail views. DataTables pagination, column sorting, and global search are fully configured; the Performance column sorts by a hidden numeric percentage value. The student self-service portal is complete: the dashboard displays summary cards (Total Score, Average, Percentage, Performance Level), a colour-coded progress bar, a personal assessments table with Overdue/Submitted badges, and a My Profile section — all populated from `StudentProfileDto` returned on login.
 
 **Sprint Retrospective**:
 
@@ -430,6 +442,29 @@ All 29 User Stories, prioritized by business value, with story point estimates a
 | Start | Running the full Postman collection as a regression suite before each release |
 | Stop | Manual testing only; introduce smoke tests for critical API paths |
 | Continue | Keeping Swagger UI and Postman collection synchronized with the latest API |
+
+---
+
+#### Sprint 5 — Assessment File Submissions
+**Dates**: March 30 – April 5, 2026
+**Sprint Goal**: *Deliver the assessment file submission feature, allowing students to upload completed work and teachers to download and manage submitted files.*
+**Velocity**: 8 story points
+
+| Story | Title | Points | Status |
+|-------|-------|:------:|:------:|
+| US-30 | Upload file submission for an assessment | 5 | Done |
+| US-31 | Download and delete file submissions | 3 | Done |
+| **Total** | | **8** | |
+
+**Sprint Review**: Students can upload PDF, DOC, DOCX, JPG, JPEG, or PNG files (max 10 MB) for any assigned assessment via the file upload modal on their dashboard. Each submission is stored server-side and associated with the relevant student and assessment. Teachers can view a list of all submissions for a given assessment on the student detail page, download any file, and delete submissions as needed. The `AssessmentSubmissionsController` enforces role-based access: only the owning student may upload; only teachers may list submissions; download and delete are available to both the owning student and any teacher. File size and type validation is enforced at the API boundary.
+
+**Sprint Retrospective**:
+
+| | Notes |
+|-|-------|
+| Start | Adding integration tests to cover file upload edge cases (size limit, unsupported type) |
+| Stop | Storing raw file bytes without validating MIME type server-side |
+| Continue | Clearing and reviewing the full Postman collection after each Sprint to catch any broken requests |
 
 ---
 
@@ -1276,6 +1311,63 @@ All 29 User Stories, prioritized by business value, with story point estimates a
 
 ---
 
+### FEAT-15: Assessment File Submissions
+
+> **Description**: Allow students to upload file submissions for their assigned assessments, and give teachers the ability to view, download, and delete those submissions.
+
+---
+
+#### US-30: Upload File Submission for an Assessment
+
+> **Story Points**: 5 &nbsp;|&nbsp; **Sprint**: Sprint 5
+
+**As a** student,
+**I want** to upload a file for one of my assessments,
+**so that** I can submit my completed work digitally to my teacher.
+
+**Acceptance Criteria:**
+- [ ] Student can upload a file (PDF, DOC, DOCX, JPG, JPEG, PNG) up to 10 MB via the dashboard upload modal.
+- [ ] Only the authenticated student whose ID matches the route `studentId` may upload (Student JWT required).
+- [ ] Submission is stored server-side and linked to the correct student and assessment.
+- [ ] File upload modal in Angular dashboard is dismissed on success; the submissions panel refreshes automatically.
+- [ ] Unsupported file types or files exceeding 10 MB return HTTP 400 Bad Request.
+
+**Tasks:**
+- TASK-93: Create `AssessmentSubmission` entity with `StudentId`, `AssessmentId`, `FileName`, `ContentType`, `FileData` (byte[]), `UploadedAt` and add EF Core migration
+- TASK-94: Implement `POST /api/students/{studentId}/assessments/{assessmentId}/submissions` endpoint (Student JWT only; validates file type and size)
+- TASK-95: Build file upload modal component in Angular student dashboard with file-picker input and progress feedback
+- TASK-96: Refresh submissions panel in Angular dashboard and display filename, upload date, and a download link after successful upload
+
+**App Example:**
+> A student opens their dashboard, clicks *Upload* next to an assessment named "History Essay", selects `history_essay_final.pdf`, and submits. The modal closes and the submissions panel below the assessment row shows the new entry with the filename and today's date.
+
+---
+
+#### US-31: Download and Delete File Submissions
+
+> **Story Points**: 3 &nbsp;|&nbsp; **Sprint**: Sprint 5
+
+**As a** teacher,
+**I want** to download and delete student file submissions,
+**so that** I can retrieve completed work for marking and remove any incorrect or duplicate files.
+
+**Acceptance Criteria:**
+- [ ] Teacher can view a list of all submissions for a given assessment on the student detail page.
+- [ ] Teacher can download any submission file; the browser initiates a file download with the original filename.
+- [ ] Teacher can delete any submission; the row is removed from the submissions table immediately.
+- [ ] A student may also download their own submission (owning student JWT).
+- [ ] Unauthorized access (wrong role or wrong student) returns HTTP 403 Forbidden.
+
+**Tasks:**
+- TASK-97: Implement `GET /api/students/{studentId}/assessments/{assessmentId}/submissions` endpoint (Teacher JWT only; returns list of `AssessmentSubmissionDto`)
+- TASK-98: Implement `GET .../submissions/{id}/download` endpoint (Teacher or owning Student JWT; streams file bytes with correct `Content-Disposition` header)
+- TASK-99: Implement `DELETE /api/students/{studentId}/assessments/{assessmentId}/submissions/{id}` endpoint (Teacher or owning Student JWT)
+
+**App Example:**
+> Mrs. Smith opens a student's detail page, scrolls to the Submissions section for "History Essay", sees a PDF listed, clicks *Download* and the file saves to her computer. She then clicks *Delete* on an incorrectly uploaded image and it disappears from the table.
+
+---
+
 ## Summary Table
 
 | ID | Level | Title | Parent | Points | Sprint |
@@ -1329,4 +1421,7 @@ All 29 User Stories, prioritized by business value, with story point estimates a
 | US-27 | User Story | View Personal Performance Summary | FEAT-14 | 3 | Sprint 4 |
 | US-28 | User Story | View Personal Assessment List | FEAT-14 | 3 | Sprint 4 |
 | US-29 | User Story | View Personal Profile Information | FEAT-14 | 2 | Sprint 4 |
-| **Totals** | | **29 User Stories · 92 Tasks** | | **94 pts** | **4 Sprints** |
+| FEAT-15 | Feature | Assessment File Submissions | EPIC-06 | — | — |
+| US-30 | User Story | Upload File Submission for an Assessment | FEAT-15 | 5 | Sprint 5 |
+| US-31 | User Story | Download and Delete File Submissions | FEAT-15 | 3 | Sprint 5 |
+| **Totals** | | **31 User Stories · 99 Tasks** | | **102 pts** | **5 Sprints** |
