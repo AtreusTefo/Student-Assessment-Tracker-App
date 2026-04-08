@@ -28,7 +28,7 @@ namespace StudentAssessmentTracker.Presentation.Controllers
         // ── Teacher-authenticated endpoints ───────────────────────────────────
 
         /// <summary>Returns all students belonging to the authenticated teacher.</summary>
-        [Authorize]
+        [Authorize(Roles = "Teacher")]
         [HttpGet]
         public async Task<ActionResult<IEnumerable<StudentDto>>> GetAllStudents()
         {
@@ -49,7 +49,7 @@ namespace StudentAssessmentTracker.Presentation.Controllers
 
         /// <summary>Returns a single student by ID, scoped to the authenticated teacher.</summary>
         /// <param name="id">The student's primary key.</param>
-        [Authorize]
+        [Authorize(Roles = "Teacher")]
         [HttpGet("{id:int}")]
         public async Task<ActionResult<StudentDto>> GetStudent(int id)
         {
@@ -71,7 +71,7 @@ namespace StudentAssessmentTracker.Presentation.Controllers
 
         /// <summary>Creates a new student under the authenticated teacher.</summary>
         /// <param name="dto">Student creation data. TeacherId is taken from the JWT — not from the request body.</param>
-        [Authorize]
+        [Authorize(Roles = "Teacher")]
         [HttpPost]
         public async Task<ActionResult<StudentDto>> CreateStudent([FromBody] CreateStudentDto dto)
         {
@@ -97,7 +97,7 @@ namespace StudentAssessmentTracker.Presentation.Controllers
         /// <summary>Updates an existing student owned by the authenticated teacher.</summary>
         /// <param name="id">The student's primary key.</param>
         /// <param name="dto">Updated student data.</param>
-        [Authorize]
+        [Authorize(Roles = "Teacher")]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateStudent(int id, [FromBody] UpdateStudentDto dto)
         {
@@ -122,7 +122,7 @@ namespace StudentAssessmentTracker.Presentation.Controllers
 
         /// <summary>Deletes a student owned by the authenticated teacher.</summary>
         /// <param name="id">The student's primary key.</param>
-        [Authorize]
+        [Authorize(Roles = "Teacher")]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteStudent(int id)
         {
@@ -135,6 +135,7 @@ namespace StudentAssessmentTracker.Presentation.Controllers
                 return Ok(new { message = $"Student with ID {id} successfully deleted" });
             }
             catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+            catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error deleting student {StudentId}", id);
@@ -146,7 +147,7 @@ namespace StudentAssessmentTracker.Presentation.Controllers
 
         /// <summary>Assigns the authenticated teacher to an existing student (many-to-many).</summary>
         /// <param name="studentId">The student's primary key.</param>
-        [Authorize]
+        [Authorize(Roles = "Teacher")]
         [HttpPost("{studentId:int}/teachers")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -162,6 +163,7 @@ namespace StudentAssessmentTracker.Presentation.Controllers
                 return Ok(new { message = $"You have been assigned to student {studentId}." });
             }
             catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+            catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error assigning teacher {TeacherId} to student {StudentId}", teacherId, studentId);
@@ -171,7 +173,7 @@ namespace StudentAssessmentTracker.Presentation.Controllers
 
         /// <summary>Removes the authenticated teacher's assignment from a student.</summary>
         /// <param name="studentId">The student's primary key.</param>
-        [Authorize]
+        [Authorize(Roles = "Teacher")]
         [HttpDelete("{studentId:int}/teachers")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
@@ -187,6 +189,7 @@ namespace StudentAssessmentTracker.Presentation.Controllers
                 return Ok(new { message = $"You have been unassigned from student {studentId}." });
             }
             catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+            catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error unassigning teacher {TeacherId} from student {StudentId}", teacherId, studentId);

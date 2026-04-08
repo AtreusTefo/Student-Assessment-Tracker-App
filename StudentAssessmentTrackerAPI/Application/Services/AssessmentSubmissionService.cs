@@ -31,8 +31,9 @@ namespace StudentAssessmentTracker.Application.Services
 
         /// <summary>
         /// Permanently deletes a submission record and its on-disk file.
+        /// Teachers must own the student; students may only delete their own submissions.
         /// </summary>
-        Task DeleteSubmissionAsync(int submissionId, int studentId);
+        Task DeleteSubmissionAsync(int submissionId, int callerId, bool isStudent);
     }
 
     /// <summary>
@@ -108,7 +109,8 @@ namespace StudentAssessmentTracker.Application.Services
             var submission = new AssessmentSubmission
             {
                 StudentAssessmentId = assessmentId,
-                StudentId = studentId,
+                // StudentId is no longer stored as a separate FK column (BUG #5 fix).
+                // It is derived from StudentAssessment.StudentId via the navigation property.
                 FileName = Path.GetFileName(file.FileName),
                 StoredFileName = storedFileName,
                 ContentType = file.ContentType,
@@ -133,7 +135,11 @@ namespace StudentAssessmentTracker.Application.Services
                 "Submission {SubmissionId} saved for student {StudentId}, assessment {AssessmentId}",
                 submission.Id, studentId, assessmentId);
 
-            return _mapper.Map<AssessmentSubmissionDto>(submission);
+            // Explicitly populate StudentId in the DTO from the route parameter because
+            // the navigation property is not loaded after creation.
+            var dto = _mapper.Map<AssessmentSubmissionDto>(submission);
+            dto.StudentId = studentId;
+            return dto;
         }
 
         /// <inheritdoc />
@@ -143,6 +149,11 @@ namespace StudentAssessmentTracker.Application.Services
             if (isStudent && callerId != studentId)
                 throw new UnauthorizedAccessException("Students may only view their own submissions.");
 
+            // BUG #1 fix: teacher must own the student to list their submissions.
+            if (!isStudent && !await _studentRepo.ExistsForTeacherAsync(studentId, callerId))
+                throw new UnauthorizedAccessException(
+                    "You may only view submissions for your own students.");
+
             var submissions = await _submissionRepo.GetByAssessmentAndStudentAsync(assessmentId, studentId);
             return _mapper.Map<IEnumerable<AssessmentSubmissionDto>>(submissions);
         }
@@ -151,16 +162,24 @@ namespace StudentAssessmentTracker.Application.Services
         public async Task<(byte[] Data, string ContentType, string FileName)> DownloadAsync(
             int submissionId, int callerId, bool isStudent)
         {
+            // GetByIdAsync now eagerly loads StudentAssessment so we can derive StudentId.
             var submission = await _submissionRepo.GetByIdAsync(submissionId);
             if (submission is null)
                 throw new KeyNotFoundException($"Submission {submissionId} not found.");
 
-            if (isStudent && callerId != submission.StudentId)
+            var ownerStudentId = submission.StudentAssessment.StudentId;
+
+            if (isStudent && callerId != ownerStudentId)
                 throw new UnauthorizedAccessException("Students may only download their own submissions.");
+
+            // BUG #1 fix: teacher must own the student to download their submission.
+            if (!isStudent && !await _studentRepo.ExistsForTeacherAsync(ownerStudentId, callerId))
+                throw new UnauthorizedAccessException(
+                    "You may only download submissions for your own students.");
 
             var filePath = Path.Combine(
                 _env.WebRootPath, "uploads", "submissions",
-                submission.StudentId.ToString(), submission.StoredFileName);
+                ownerStudentId.ToString(), submission.StoredFileName);
 
             if (!File.Exists(filePath))
                 throw new FileNotFoundException($"Submission file not found on disk.", filePath);
@@ -170,19 +189,27 @@ namespace StudentAssessmentTracker.Application.Services
         }
 
         /// <inheritdoc />
-        public async Task DeleteSubmissionAsync(int submissionId, int studentId)
+        public async Task DeleteSubmissionAsync(int submissionId, int callerId, bool isStudent)
         {
+            // GetByIdAsync now eagerly loads StudentAssessment so we can derive StudentId.
             var submission = await _submissionRepo.GetByIdAsync(submissionId);
             if (submission is null)
                 throw new KeyNotFoundException($"Submission {submissionId} not found.");
 
-            if (submission.StudentId != studentId)
-                throw new UnauthorizedAccessException("You may only delete your own submissions.");
+            var ownerStudentId = submission.StudentAssessment.StudentId;
+
+            if (isStudent && callerId != ownerStudentId)
+                throw new UnauthorizedAccessException("Students may only delete their own submissions.");
+
+            // BUG #1 fix: teacher must own the student to delete their submission.
+            if (!isStudent && !await _studentRepo.ExistsForTeacherAsync(ownerStudentId, callerId))
+                throw new UnauthorizedAccessException(
+                    "You may only delete submissions for your own students.");
 
             // Delete physical file first, then DB row
             var filePath = Path.Combine(
                 _env.WebRootPath, "uploads", "submissions",
-                submission.StudentId.ToString(), submission.StoredFileName);
+                ownerStudentId.ToString(), submission.StoredFileName);
 
             if (File.Exists(filePath))
                 File.Delete(filePath);
@@ -190,7 +217,8 @@ namespace StudentAssessmentTracker.Application.Services
             await _submissionRepo.DeleteAsync(submission);
 
             _logger.LogInformation(
-                "Submission {SubmissionId} deleted by student {StudentId}", submissionId, studentId);
+                "Submission {SubmissionId} deleted by caller {CallerId} (isStudent={IsStudent})",
+                submissionId, callerId, isStudent);
         }
     }
 }

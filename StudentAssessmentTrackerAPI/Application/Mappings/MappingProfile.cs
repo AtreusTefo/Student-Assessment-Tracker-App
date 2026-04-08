@@ -36,7 +36,13 @@ namespace StudentAssessmentTracker.Application.Mappings
                 .ForMember(dest => dest.IsAssigned, opt => opt.MapFrom(src => src.IsAssigned ?? false));
 
             // ── AssessmentSubmission Mappings ────────────────────────────────
-            CreateMap<AssessmentSubmission, AssessmentSubmissionDto>();
+            // StudentId is no longer a FK column on AssessmentSubmission — derive it from
+            // the navigation property when loaded; caller must set it explicitly otherwise
+            // (e.g. SubmitAsync sets it from the route parameter after entity creation).
+            CreateMap<AssessmentSubmission, AssessmentSubmissionDto>()
+                .ForMember(dest => dest.StudentId,
+                    opt => opt.MapFrom(src =>
+                        src.StudentAssessment != null ? src.StudentAssessment.StudentId : 0));
 
             // ── Student Mappings ──────────────────────────────────────────────
 
@@ -46,10 +52,12 @@ namespace StudentAssessmentTracker.Application.Mappings
                     opt => opt.MapFrom(src => src.TeacherId))
                 .ForMember(dest => dest.FullName,
                     opt => opt.MapFrom(src => src.Teacher != null ? src.Teacher.GetFullName() : string.Empty))
+                // Issue 5 fix: read from the join row's own Subject navigation (loaded via
+                // .ThenInclude(ta => ta.Subject) in the repository) — not from the teacher's
+                // live SubjectNavigation, which would silently give the wrong value if the
+                // teacher's subject ever changed.
                 .ForMember(dest => dest.SubjectName,
-                    opt => opt.MapFrom(src => src.Teacher != null && src.Teacher.SubjectNavigation != null
-                        ? src.Teacher.SubjectNavigation.Name
-                        : string.Empty));
+                    opt => opt.MapFrom(src => src.Subject != null ? src.Subject.Name : string.Empty));
 
             // Student → StudentDto with calculated fields, resolved grade name, and teacher list
             CreateMap<Student, StudentDto>()

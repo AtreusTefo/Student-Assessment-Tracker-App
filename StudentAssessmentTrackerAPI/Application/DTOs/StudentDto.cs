@@ -126,6 +126,8 @@
         public string Email { get; set; } = string.Empty;
         /// <summary>New password the student wants to set.</summary>
         public string Password { get; set; } = string.Empty;
+        /// <summary>Must match <see cref="Password"/>. Server-side check prevents direct API calls from bypassing frontend confirmation.</summary>
+        public string ConfirmPassword { get; set; } = string.Empty;
     }
 
     /// <summary>DTO for student login credentials</summary>

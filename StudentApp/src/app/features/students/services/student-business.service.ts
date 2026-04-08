@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Observable, tap, catchError, throwError } from 'rxjs';
+import { Observable, tap, catchError, throwError, switchMap } from 'rxjs';
 import { StudentApiService } from '../../../core/services/http';
 import { StudentStateService } from '../../../core/services/state';
 import { 
@@ -101,15 +101,11 @@ export class StudentBusinessService {
    * Update an existing student
    * Business Logic: update, refresh state
    */
-  updateStudent(id: number, studentData: UpdateStudentDto): Observable<void> {
+  updateStudent(id: number, studentData: UpdateStudentDto): Observable<StudentListDto[]> {
     this.studentState.setLoading(true);
 
     return this.studentApi.update(id, studentData).pipe(
-      tap(() => {
-        // Reload the full list to keep all StudentListDto fields in sync after an update
-        this.loadStudents().subscribe();
-        this.studentState.setLoading(false);
-      }),
+      switchMap(() => this.loadStudents()),
       catchError(error => {
         const errorMessage = this.extractErrorMessage(error);
         this.studentState.setError(errorMessage);

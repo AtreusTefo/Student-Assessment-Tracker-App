@@ -124,6 +124,16 @@ namespace StudentAssessmentTracker.Application.Services
             if (await _subjectRepository.GetByIdAsync(dto.SubjectId) is null)
                 throw new ArgumentException($"Subject with ID {dto.SubjectId} does not exist.");
 
+            // Issue 2 fix: if the teacher is changing their subject and they have students
+            // assigned, the existing TeacherStudent.SubjectId rows would become stale, silently
+            // corrupting the one-teacher-per-subject-per-student invariant enforced by the
+            // UX_TeacherStudents_StudentId_SubjectId unique index.  Block until all students
+            // are unassigned first.
+            if (dto.SubjectId != teacher.SubjectId && await _repository.HasStudentsAsync(id))
+                throw new InvalidOperationException(
+                    $"Cannot change subject: teacher {id} still has students assigned. " +
+                    "Unassign all students first, then update the subject.");
+
             // Detect duplicate email, excluding the record being updated.
             if (await _repository.ExistsByEmailAsync(dto.Email, excludeTeacherId: id))
                 throw new InvalidOperationException($"A teacher with email '{dto.Email}' is already registered.");
@@ -133,7 +143,6 @@ namespace StudentAssessmentTracker.Application.Services
                 throw new InvalidOperationException($"A teacher with ID/Passport No. '{dto.IdPassportNo}' is already registered.");
 
             _mapper.Map(dto, teacher);
-            // Issue 5: UpdateAsync already calls SaveChangesAsync internally — do not call it again.
             await _repository.UpdateAsync(teacher);
             return true;
         }
