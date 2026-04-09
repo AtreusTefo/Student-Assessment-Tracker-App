@@ -324,8 +324,8 @@ All endpoints requiring authentication use **JWT Bearer** (`Authorization: Beare
 |--------|----------|------|-------------|
 | `POST` | `/api/teachers` | Public | Register a new teacher |
 | `POST` | `/api/teachers/login` | Public | Login and receive JWT |
-| `GET` | `/api/teachers` | Public | List all teachers |
-| `GET` | `/api/teachers/{id}` | Public | Get teacher by ID |
+| `GET` | `/api/teachers` | Teacher JWT | List all teachers |
+| `GET` | `/api/teachers/{id}` | Teacher JWT | Get teacher by ID |
 | `PUT` | `/api/teachers/{id}` | Teacher JWT | Update own profile |
 | `DELETE` | `/api/teachers/{id}` | Teacher JWT | Delete own account |
 

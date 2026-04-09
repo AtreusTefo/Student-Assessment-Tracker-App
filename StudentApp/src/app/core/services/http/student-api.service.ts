@@ -85,4 +85,22 @@ export class StudentApiService {
   loginStudent(dto: StudentLoginDto): Observable<StudentLoginResponseDto> {
     return this.http.post<StudentLoginResponseDto>(`${this.apiUrl}/login`, dto);
   }
+
+  /**
+   * Assign the authenticated teacher to a student (many-to-many)
+   * POST /api/students/{studentId}/teachers
+   * @param studentId - The student's primary key
+   */
+  assignTeacher(studentId: number): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/${studentId}/teachers`, {});
+  }
+
+  /**
+   * Remove the authenticated teacher's assignment from a student
+   * DELETE /api/students/{studentId}/teachers
+   * @param studentId - The student's primary key
+   */
+  unassignTeacher(studentId: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.apiUrl}/${studentId}/teachers`);
+  }
 }

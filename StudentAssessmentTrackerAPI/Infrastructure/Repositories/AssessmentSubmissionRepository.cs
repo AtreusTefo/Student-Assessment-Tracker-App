@@ -23,7 +23,9 @@ namespace StudentAssessmentTracker.Infrastructure.Repositories
         {
             return await _context.AssessmentSubmissions
                 .AsNoTracking()
-                .Where(s => s.StudentAssessmentId == assessmentId && s.StudentId == studentId)
+                .Include(s => s.StudentAssessment)
+                .Where(s => s.StudentAssessmentId == assessmentId
+                         && s.StudentAssessment.StudentId == studentId)
                 .OrderByDescending(s => s.SubmittedAt)
                 .ToListAsync();
         }
@@ -31,7 +33,9 @@ namespace StudentAssessmentTracker.Infrastructure.Repositories
         /// <inheritdoc />
         public async Task<AssessmentSubmission?> GetByIdAsync(int submissionId)
         {
-            return await _context.AssessmentSubmissions.FindAsync(submissionId);
+            return await _context.AssessmentSubmissions
+                .Include(s => s.StudentAssessment)
+                .FirstOrDefaultAsync(s => s.Id == submissionId);
         }
 
         /// <inheritdoc />

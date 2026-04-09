@@ -25,6 +25,13 @@ export interface StudentAssessmentDto {
   updatedAt: string;
 }
 
+/** Summary of a teacher assignment on a student record */
+export interface TeacherSummaryDto {
+  teacherId: number;
+  fullName: string;
+  subjectName: string;
+}
+
 /** Core Student entity */
 export interface Student {
   id: number;
@@ -36,7 +43,8 @@ export interface Student {
   phone: string;
   gradeId: number;
   gradeName: string;
-  teacherId: number;
+  /** Issue 5 fix: replaced stale single teacherId with the many-to-many array */
+  teachers: TeacherSummaryDto[];
   assessments: StudentAssessmentDto[];
   createdAt: string;
   updatedAt?: string;
@@ -55,6 +63,8 @@ export interface StudentListDto {
   percentage: number;
   performanceLevel: string;
   assessmentCount?: number;
+  /** Assigned teachers — used when displaying teacher column in the list */
+  teachers?: TeacherSummaryDto[];
 }
 
 /** Student Detail DTO - Complete data with calculated performance fields */
@@ -68,7 +78,8 @@ export interface StudentDetailDto {
   phone: string;
   gradeId: number;
   gradeName: string;
-  teacherId: number;
+  /** Issue 5 fix: replaced stale single teacherId with the many-to-many array */
+  teachers: TeacherSummaryDto[];
   assessments: StudentAssessmentDto[];
   totalScore: number;
   maxPossible: number;
@@ -86,10 +97,10 @@ export interface CreateStudentDto {
   email: string;
   phone: string;
   gradeId: number;
-  teacherId: number;
+  /** Issue 5 fix: teacherId removed — backend derives it from the JWT claim */
 }
 
-/** Update Student DTO - profile fields only, TeacherId cannot be changed */
+/** Update Student DTO - profile fields only, teacher assignments managed via separate endpoints */
 export interface UpdateStudentDto {
   idPassportNo: string;
   firstName: string;

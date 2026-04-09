@@ -423,8 +423,7 @@ export class StudentFormComponent implements OnInit, OnDestroy {
         lastName: this.student.lastName,
         email: this.student.email,
         phone: this.student.phone,
-        gradeId: this.student.gradeId,
-        teacherId: this.teacherId
+        gradeId: this.student.gradeId
       };
       
       this.studentBusiness.createStudent(createDto).subscribe({

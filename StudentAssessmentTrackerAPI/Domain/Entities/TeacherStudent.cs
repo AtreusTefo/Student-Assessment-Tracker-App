@@ -20,6 +20,17 @@ namespace StudentAssessmentTracker.Domain.Entities
         /// <summary>Navigation to the student side of the assignment.</summary>
         public Student Student { get; set; } = null!;
 
+        /// <summary>
+        /// Denormalized copy of the teacher's SubjectId at assignment time.
+        /// Together with StudentId this forms a unique index that enforces
+        /// one-teacher-per-subject-per-student at the database level (Issue 1 fix).
+        /// FK → Subjects.Id (RESTRICT).
+        /// </summary>
+        public int SubjectId { get; set; }
+
+        /// <summary>Navigation to the subject of this assignment.</summary>
+        public Subject Subject { get; set; } = null!;
+
         /// <summary>UTC timestamp recording when the assignment was created.</summary>
         public DateTime AssignedAt { get; set; } = DateTime.UtcNow;
     }

@@ -2,6 +2,7 @@
 using StudentAssessmentTracker.Domain.Entities;
 using StudentAssessmentTracker.Domain.Interfaces;
 using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
@@ -149,19 +150,39 @@ namespace StudentAssessmentTracker.Application.Services
                 throw new InvalidOperationException($"A student with ID/Passport No. '{dto.IdPassportNo}' is already registered.");
 
             var student = _mapper.Map<Student>(dto);
-            // Retry until we get a UniqueId that is not already taken in the DB.
-            string uniqueId;
-            do
-            {
-                uniqueId = GenerateStudentUniqueId();
-            } while (await _repository.FindByUniqueIdAsync(uniqueId) is not null);
-            student.StudentUniqueId = uniqueId;
             student.CreatedAt = DateTime.UtcNow;
             student.UpdatedAt = DateTime.UtcNow;
 
-            // Atomic: INSERT student row + TeacherStudents join row in one SaveChangesAsync
-            // call so that a failure on either side never leaves an orphaned student.
-            await _repository.AddWithTeacherAssignmentAsync(student, teacherId);
+            // BUG #6 fix: retry the whole generate-and-insert sequence to handle the race
+            // window where two concurrent requests pass the uniqueness check with the same ID
+            // and one of them hits the DB unique index.  SQL Server error 2601 / 2627 indicates
+            // a unique constraint violation; any other DbUpdateException is re-thrown.
+            const int maxAttempts = 5;
+            for (var attempt = 1; attempt <= maxAttempts; attempt++)
+            {
+                string uniqueId;
+                do
+                {
+                    uniqueId = GenerateStudentUniqueId();
+                } while (await _repository.FindByUniqueIdAsync(uniqueId) is not null);
+                student.StudentUniqueId = uniqueId;
+
+                try
+                {
+                    // Atomic: INSERT student row + TeacherStudents join row in one SaveChangesAsync call.
+                    await _repository.AddWithTeacherAssignmentAsync(student, teacherId);
+                    break; // success — exit retry loop
+                }
+                catch (DbUpdateException dbEx)
+                    when (attempt < maxAttempts && IsUniqueConstraintViolation(dbEx))
+                {
+                    _logger.LogWarning(
+                        "UniqueId collision on attempt {Attempt} for student {FirstName} {LastName}; retrying.",
+                        attempt, dto.FirstName, dto.LastName);
+                    // Reset entity state so EF doesn't try to re-insert with the same tracking entry.
+                    student.Id = 0;
+                }
+            }
 
             _logger.LogInformation("Student created with ID {StudentId}, UniqueId {UniqueId}, assigned to teacher {TeacherId}",
                 student.Id, student.StudentUniqueId, teacherId);
@@ -202,6 +223,17 @@ namespace StudentAssessmentTracker.Application.Services
             var student = await _repository.GetByIdForTeacherAsync(id, teacherId);
             if (student == null)
                 throw new KeyNotFoundException($"Student with ID {id} not found.");
+
+            // BUG #2 fix: prevent unilateral deletion of a shared student.
+            // If the student is assigned to more than one teacher, deleting the row would
+            // silently destroy the other teacher's assessments and submissions.
+            var assignmentCount = await _repository.CountTeacherAssignmentsAsync(id);
+            if (assignmentCount > 1)
+                throw new InvalidOperationException(
+                    $"Student {id} is shared across {assignmentCount} teachers. " +
+                    "Unassign all other teachers first before deleting this student, " +
+                    "or use the unassign endpoint to remove only your assignment.");
+
             await _repository.DeleteAsync(id);
         }
 
@@ -291,6 +323,41 @@ namespace StudentAssessmentTracker.Application.Services
             return $"STU-{suffix}";
         }
 
+        /// <summary>
+        /// Returns true when <paramref name="ex"/> was caused by a unique-constraint violation
+        /// (SQL Server error numbers 2601 and 2627).
+        /// </summary>
+        private static bool IsUniqueConstraintViolation(DbUpdateException ex)
+        {
+            var inner = ex.InnerException;
+            while (inner is not null)
+            {
+                // Microsoft.Data.SqlClient.SqlException
+                if (inner is Microsoft.Data.SqlClient.SqlException sqlEx &&
+                    (sqlEx.Number == 2601 || sqlEx.Number == 2627))
+                    return true;
+                inner = inner.InnerException;
+            }
+            return false;
+        }
+
+        /// <summary>
+        /// Returns true when <paramref name="ex"/> was caused by a foreign-key constraint
+        /// violation (SQL Server error number 547) — e.g. the referenced teacher or student
+        /// was deleted between the existence check and the INSERT.
+        /// </summary>
+        private static bool IsForeignKeyViolation(DbUpdateException ex)
+        {
+            var inner = ex.InnerException;
+            while (inner is not null)
+            {
+                if (inner is Microsoft.Data.SqlClient.SqlException sqlEx && sqlEx.Number == 547)
+                    return true;
+                inner = inner.InnerException;
+            }
+            return false;
+        }
+
         /// <inheritdoc />
         public async Task AssignStudentToTeacherAsync(int studentId, int teacherId)
         {
@@ -305,7 +372,17 @@ namespace StudentAssessmentTracker.Application.Services
             if (student is null)
                 throw new KeyNotFoundException($"Student with ID {studentId} does not exist.");
 
-            await _repository.AssignToTeacherAsync(studentId, teacherId);
+            try
+            {
+                await _repository.AssignToTeacherAsync(studentId, teacherId);
+            }
+            catch (DbUpdateException ex) when (IsForeignKeyViolation(ex))
+            {
+                // The teacher or student was deleted in the narrow window between the
+                // existence check above and the INSERT — surface as a clean 404.
+                throw new KeyNotFoundException("Teacher or student no longer exists.");
+            }
+
             _logger.LogInformation("Teacher {TeacherId} successfully assigned to student {StudentId}", teacherId, studentId);
         }
 
@@ -317,13 +394,9 @@ namespace StudentAssessmentTracker.Application.Services
             if (!await _repository.IsAssignedToTeacherAsync(studentId, teacherId))
                 throw new KeyNotFoundException($"Student with ID {studentId} is not assigned to you.");
 
-            // Prevent leaving the student with zero teachers (orphaned — invisible to all teachers).
-            var assignmentCount = await _repository.CountTeacherAssignmentsAsync(studentId);
-            if (assignmentCount <= 1)
-                throw new InvalidOperationException(
-                    $"Cannot unassign: student {studentId} would have no teachers remaining. " +
-                    "Assign another teacher first, or delete the student.");
-
+            // Issue 3 fix: the orphan-student count check has been moved into
+            // UnassignFromTeacherAsync in the repository, so it is enforced regardless of
+            // which layer calls it.  The service delegates directly.
             await _repository.UnassignFromTeacherAsync(studentId, teacherId);
             _logger.LogInformation("Teacher {TeacherId} successfully unassigned from student {StudentId}", teacherId, studentId);
         }

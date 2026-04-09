@@ -2,5 +2,13 @@
   "terminal.integrated.shellIntegration.enabled": true,
   "terminal.integrated.shellIntegration.decorationsEnabled": true,
   "editor.formatOnSave": true,
-  "editor.defaultFormatter": "ms-dotnettools.csharp"
+  "editor.defaultFormatter": "ms-dotnettools.csharp",
+  // Exclude node_modules from TypeScript language-service error reporting so that
+  // deprecation warnings in third-party tsconfig.json files (e.g. rxjs) are not
+  // surfaced in the Problems panel.  The Angular build is unaffected — it uses
+  // tsconfig.app.json which never includes node_modules.
+  "typescript.tsserver.experimental.enableProjectDiagnostics": false,
+  "search.exclude": {
+    "**/node_modules": true
+  }
 }

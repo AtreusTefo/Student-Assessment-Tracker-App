@@ -168,16 +168,14 @@ namespace StudentAssessmentTracker.Presentation.Controllers
         [ProducesResponseType(StatusCodes.Status404NotFound)]
         public async Task<IActionResult> Delete(int studentId, int assessmentId, int id)
         {
-            // Teachers can delete on behalf of the student (pass studentId as the owner check)
             bool isStudent = TryGetStudentId(out var callerId);
-            int ownerStudentId = studentId; // enforce deletion scoped to the route's studentId
-
-            if (!isStudent && !TryGetTeacherId(out _))
+            // BUG #1 fix: capture the teacher ID so the service can check teacher-student ownership.
+            if (!isStudent && !TryGetTeacherId(out callerId))
                 return Unauthorized(new { message = "Invalid or missing token." });
 
             try
             {
-                await _service.DeleteSubmissionAsync(id, ownerStudentId);
+                await _service.DeleteSubmissionAsync(id, callerId, isStudent);
                 return Ok(new { message = $"Submission {id} deleted successfully." });
             }
             catch (UnauthorizedAccessException ex) { return StatusCode(StatusCodes.Status403Forbidden, new { message = ex.Message }); }

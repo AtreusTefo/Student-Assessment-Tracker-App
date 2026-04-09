@@ -3,6 +3,7 @@ using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using StudentAssessmentTracker.Infrastructure.Data;
 
@@ -11,9 +12,11 @@ using StudentAssessmentTracker.Infrastructure.Data;
 namespace StudentAssessmentTracker.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260408131148_FixTeacherFKDeleteBehavior")]
+    partial class FixTeacherFKDeleteBehavior
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -417,16 +420,9 @@ namespace StudentAssessmentTracker.Infrastructure.Data.Migrations
                         .HasColumnType("datetime2")
                         .HasDefaultValueSql("GETUTCDATE()");
 
-                    b.Property<int>("SubjectId")
-                        .HasColumnType("int");
-
                     b.HasKey("TeacherId", "StudentId");
 
-                    b.HasIndex("SubjectId");
-
-                    b.HasIndex("StudentId", "SubjectId")
-                        .IsUnique()
-                        .HasDatabaseName("UX_TeacherStudents_StudentId_SubjectId");
+                    b.HasIndex("StudentId");
 
                     b.ToTable("TeacherStudents");
                 });
@@ -483,12 +479,6 @@ namespace StudentAssessmentTracker.Infrastructure.Data.Migrations
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("StudentAssessmentTracker.Domain.Entities.Subject", "Subject")
-                        .WithMany()
-                        .HasForeignKey("SubjectId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
                     b.HasOne("StudentAssessmentTracker.Domain.Entities.Teacher", "Teacher")
                         .WithMany("StudentAssignments")
                         .HasForeignKey("TeacherId")
@@ -496,8 +486,6 @@ namespace StudentAssessmentTracker.Infrastructure.Data.Migrations
                         .IsRequired();
 
                     b.Navigation("Student");
-
-                    b.Navigation("Subject");
 
                     b.Navigation("Teacher");
                 });

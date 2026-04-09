@@ -13,14 +13,8 @@ namespace StudentAssessmentTracker.Domain.Entities
         /// <summary>FK → StudentAssessments.Id (cascade delete)</summary>
         public int StudentAssessmentId { get; set; }
 
-        /// <summary>Navigation to the owning assessment</summary>
+        /// <summary>Navigation to the owning assessment. Always loaded when fetching a submission.</summary>
         public StudentAssessment StudentAssessment { get; set; } = null!;
-
-        /// <summary>FK → Students.Id (no action — student row managed independently)</summary>
-        public int StudentId { get; set; }
-
-        /// <summary>Navigation to the submitting student</summary>
-        public Student Student { get; set; } = null!;
 
         /// <summary>Original filename as uploaded by the student (display only)</summary>
         public string FileName { get; set; } = string.Empty;

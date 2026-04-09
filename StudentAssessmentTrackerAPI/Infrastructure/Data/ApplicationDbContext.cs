@@ -120,17 +120,31 @@ namespace StudentAssessmentTracker.Infrastructure.Data
 
                 entity.Property(e => e.AssignedAt).HasDefaultValueSql("GETUTCDATE()");
 
-                // FK → Teachers (CASCADE: deleting a teacher removes their student assignments)
+                // Issue 1 fix: unique index on (StudentId, SubjectId) enforces at the DB level
+                // that a student cannot have two teachers for the same subject simultaneously.
+                entity.HasIndex(e => new { e.StudentId, e.SubjectId })
+                    .IsUnique()
+                    .HasDatabaseName("UX_TeacherStudents_StudentId_SubjectId");
+
+                // FK → Teachers (RESTRICT: prevents deleting a teacher who still has student assignments)
+                // The service-layer guard in DeleteTeacherAsync already blocks this via HasStudentsAsync,
+                // but aligning the DB behavior closes the bypass path from raw SQL / EF direct removes.
                 entity.HasOne(e => e.Teacher)
                     .WithMany(t => t.StudentAssignments)
                     .HasForeignKey(e => e.TeacherId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.Restrict);
 
                 // FK → Students (CASCADE: deleting a student removes their teacher assignments)
                 entity.HasOne(e => e.Student)
                     .WithMany(s => s.TeacherAssignments)
                     .HasForeignKey(e => e.StudentId)
                     .OnDelete(DeleteBehavior.Cascade);
+
+                // FK → Subjects (RESTRICT: subject rows are lookup data — must not cascade)
+                entity.HasOne(e => e.Subject)
+                    .WithMany()
+                    .HasForeignKey(e => e.SubjectId)
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // ── StudentAssessments ────────────────────────────────────────────
@@ -177,16 +191,14 @@ namespace StudentAssessmentTracker.Infrastructure.Data
                 entity.Property(e => e.SubmittedAt).HasDefaultValueSql("GETUTCDATE()");
 
                 // FK → StudentAssessments (CASCADE: deleting an assessment removes all its submissions)
+                // StudentId is intentionally NOT stored as a separate FK column — it is derived from
+                // StudentAssessment.StudentId via the navigation property.  This eliminates the
+                // silent inconsistency risk where AssessmentSubmission.StudentId could diverge from
+                // StudentAssessment.StudentId (BUG #5 fix).
                 entity.HasOne(e => e.StudentAssessment)
                     .WithMany(a => a.Submissions)
                     .HasForeignKey(e => e.StudentAssessmentId)
                     .OnDelete(DeleteBehavior.Cascade);
-
-                // FK → Students (NO ACTION: student row manages its own lifecycle)
-                entity.HasOne(e => e.Student)
-                    .WithMany()
-                    .HasForeignKey(e => e.StudentId)
-                    .OnDelete(DeleteBehavior.NoAction);
             });
 
             // ── Teachers ──────────────────────────────────────────────────────
