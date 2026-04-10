@@ -6,10 +6,13 @@ import { SignUpFormComponent } from './components/signup-form.component';
 import { LoginFormComponent } from './components/login-form.component';
 import { StudentLoginComponent } from './components/student-login.component';
 import { StudentDashboardComponent } from './components/student-dashboard.component';
+import { AdminLoginComponent } from './components/admin-login.component';
+import { AdminDashboardComponent } from './components/admin-dashboard.component';
 import { authGuard } from './core/guards/auth.guard';
 import { guestGuard } from './core/guards/guest.guard';
 import { studentAuthGuard } from './core/guards/student-auth.guard';
 import { studentGuestGuard } from './core/guards/student-guest.guard';
+import { adminAuthGuard, adminGuestGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
   // Teacher protected routes — require teacher authentication
@@ -29,6 +32,9 @@ export const routes: Routes = [
   // Student protected routes — require student authentication
   { path: 'student/dashboard', component: StudentDashboardComponent, canActivate: [studentAuthGuard] },
 
+  // Admin routes
+  { path: 'admin/login', component: AdminLoginComponent, canActivate: [adminGuestGuard] },
+  { path: 'admin/dashboard', component: AdminDashboardComponent, canActivate: [adminAuthGuard] },
+
   { path: '**', redirectTo: '' }
 ];
-

@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using System.Text.Json;
 using StudentAssessmentTracker.Application.DTOs;
 using StudentAssessmentTracker.Application.Services;
 
@@ -16,12 +17,17 @@ namespace StudentAssessmentTracker.Presentation.Controllers
     public class StudentsController : ControllerBase
     {
         private readonly IStudentService _studentService;
+        private readonly IAuditLogService _auditLog;
         private readonly ILogger<StudentsController> _logger;
 
         /// <summary>Initialises the controller with the student service and logger.</summary>
-        public StudentsController(IStudentService studentService, ILogger<StudentsController> logger)
+        public StudentsController(
+            IStudentService studentService,
+            IAuditLogService auditLog,
+            ILogger<StudentsController> logger)
         {
             _studentService = studentService;
+            _auditLog = auditLog;
             _logger = logger;
         }
 
@@ -82,6 +88,9 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             {
                 _logger.LogInformation("CreateStudent for teacher {TeacherId}", teacherId);
                 var student = await _studentService.CreateStudentAsync(dto, teacherId);
+                _ = _auditLog.LogAsync("Student", student.Id, "Create", null,
+                    JsonSerializer.Serialize(new { student.StudentUniqueId, student.Email, student.GradeId }),
+                    teacherId.ToString(), "Teacher");
                 return CreatedAtAction(nameof(GetStudent), new { id = student.Id }, student);
             }
             catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
@@ -107,7 +116,12 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             try
             {
                 _logger.LogInformation("UpdateStudent {StudentId} for teacher {TeacherId}", id, teacherId);
+                var before = await _studentService.GetStudentByIdAsync(id, teacherId);
                 var student = await _studentService.UpdateStudentAsync(id, dto, teacherId);
+                _ = _auditLog.LogAsync("Student", id, "Update",
+                    JsonSerializer.Serialize(new { before.Email, before.GradeId, before.Phone }),
+                    JsonSerializer.Serialize(new { student.Email, student.GradeId, student.Phone }),
+                    teacherId.ToString(), "Teacher");
                 return Ok(student);
             }
             catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
@@ -131,7 +145,11 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             try
             {
                 _logger.LogInformation("DeleteStudent {StudentId} for teacher {TeacherId}", id, teacherId);
+                var before = await _studentService.GetStudentByIdAsync(id, teacherId);
                 await _studentService.DeleteStudentAsync(id, teacherId);
+                _ = _auditLog.LogAsync("Student", id, "Delete",
+                    JsonSerializer.Serialize(new { before.StudentUniqueId, before.Email }),
+                    null, teacherId.ToString(), "Teacher");
                 return Ok(new { message = $"Student with ID {id} successfully deleted" });
             }
             catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }

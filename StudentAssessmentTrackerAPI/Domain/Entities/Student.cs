@@ -48,6 +48,9 @@ namespace StudentAssessmentTracker.Domain.Entities
         /// <summary>Collection of this student's individual assessments</summary>
         public ICollection<StudentAssessment> Assessments { get; set; } = new List<StudentAssessment>();
 
+        /// <summary>Class groups this student is enrolled in (many-to-many via ClassGroupStudent).</summary>
+        public ICollection<ClassGroupStudent> ClassGroupEnrollments { get; set; } = new List<ClassGroupStudent>();
+
         /// <summary>Record creation timestamp</summary>
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
