@@ -5,12 +5,6 @@ namespace StudentAssessmentTracker.Infrastructure.Data
 {
     /// <summary>
     /// Entity Framework Core DbContext — manages all tables and relationships.
-    /// Improvements applied:
-    ///   - Grades lookup table (seeded Grade 7–12) replaces free-text Grade column
-    ///   - StudentAssessments table replaces hardcoded Assessment1/2/3 columns
-    ///   - TeacherStudents join table replaces the old single TeacherId FK, enabling
-    ///     many-to-many Teacher↔Student assignments (one student, multiple subject teachers)
-    ///   - IdPassportNo unique index prevents duplicate student/teacher registrations
     /// </summary>
     public class ApplicationDbContext : DbContext
     {
@@ -31,6 +25,14 @@ namespace StudentAssessmentTracker.Infrastructure.Data
         public DbSet<Teacher> Teachers { get; set; }
         /// <summary>DbSet for the Teacher↔Student many-to-many join table.</summary>
         public DbSet<TeacherStudent> TeacherStudents { get; set; }
+        /// <summary>DbSet for admin accounts.</summary>
+        public DbSet<Admin> Admins { get; set; }
+        /// <summary>DbSet for immutable audit trail records.</summary>
+        public DbSet<AuditLog> AuditLogs { get; set; }
+        /// <summary>DbSet for class groups (subject + grade grouping).</summary>
+        public DbSet<ClassGroup> ClassGroups { get; set; }
+        /// <summary>DbSet for the ClassGroup↔Student many-to-many join table.</summary>
+        public DbSet<ClassGroupStudent> ClassGroupStudents { get; set; }
 
         /// <summary>Configures entity relationships, indexes, constraints, and seed data.</summary>
         protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -221,6 +223,87 @@ namespace StudentAssessmentTracker.Infrastructure.Data
                     .WithMany(s => s.Teachers)
                     .HasForeignKey(e => e.SubjectId)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+            // ── Admins ────────────────────────────────────────────────────────
+            modelBuilder.Entity<Admin>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.FirstName).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.LastName).IsRequired().HasMaxLength(50);
+                entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
+                entity.HasIndex(e => e.Email).IsUnique();
+                entity.Property(e => e.Password).IsRequired().HasMaxLength(255);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
+            });
+
+            // ── AuditLogs ─────────────────────────────────────────────────────
+            // Rows are insert-only; no update or delete cascade is configured.
+            modelBuilder.Entity<AuditLog>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.EntityName).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.Action).IsRequired().HasMaxLength(20);
+                entity.Property(e => e.OldValues).IsRequired(false);
+                entity.Property(e => e.NewValues).IsRequired(false);
+                entity.Property(e => e.ChangedBy).IsRequired(false).HasMaxLength(100);
+                entity.Property(e => e.ChangedByRole).IsRequired(false).HasMaxLength(20);
+                entity.Property(e => e.ChangedAt).HasDefaultValueSql("GETUTCDATE()");
+
+                // Index to allow efficient queries by entity type and action
+                entity.HasIndex(e => new { e.EntityName, e.EntityId });
+                entity.HasIndex(e => e.ChangedAt);
+            });
+
+            // ── ClassGroups ───────────────────────────────────────────────────
+            modelBuilder.Entity<ClassGroup>(entity =>
+            {
+                entity.HasKey(e => e.Id);
+                entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
+                entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+                // Each class group name must be unique per teacher
+                entity.HasIndex(e => new { e.TeacherId, e.Name })
+                    .IsUnique()
+                    .HasDatabaseName("UX_ClassGroups_TeacherId_Name");
+
+                // FK → Subjects (RESTRICT: cannot delete a subject used by a class group)
+                entity.HasOne(e => e.Subject)
+                    .WithMany()
+                    .HasForeignKey(e => e.SubjectId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // FK → Grades (RESTRICT: cannot delete a grade used by a class group)
+                entity.HasOne(e => e.Grade)
+                    .WithMany()
+                    .HasForeignKey(e => e.GradeId)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                // FK → Teachers (CASCADE: deleting a teacher removes their class groups)
+                entity.HasOne(e => e.Teacher)
+                    .WithMany()
+                    .HasForeignKey(e => e.TeacherId)
+                    .OnDelete(DeleteBehavior.Cascade);
+            });
+
+            // ── ClassGroupStudents (many-to-many join) ────────────────────────
+            modelBuilder.Entity<ClassGroupStudent>(entity =>
+            {
+                entity.HasKey(e => new { e.ClassGroupId, e.StudentId });
+                entity.Property(e => e.EnrolledAt).HasDefaultValueSql("GETUTCDATE()");
+
+                // FK → ClassGroups (CASCADE: deleting a class group removes enrollments)
+                entity.HasOne(e => e.ClassGroup)
+                    .WithMany(cg => cg.Enrollments)
+                    .HasForeignKey(e => e.ClassGroupId)
+                    .OnDelete(DeleteBehavior.Cascade);
+
+                // FK → Students (CASCADE: deleting a student removes their enrollments)
+                entity.HasOne(e => e.Student)
+                    .WithMany(s => s.ClassGroupEnrollments)
+                    .HasForeignKey(e => e.StudentId)
+                    .OnDelete(DeleteBehavior.Cascade);
             });
         }
     }

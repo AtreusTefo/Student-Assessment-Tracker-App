@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { StudentDetailDto, StudentAssessmentDto, CreateStudentAssessmentDto, UpdateStudentAssessmentDto, AssessmentSubmissionDto } from '../core/models';
 import { StudentStateService } from '../core/services/state';
 import { StudentBusinessService } from '../features/students/services/student-business.service';
-import { StudentAssessmentApiService, AssessmentSubmissionApiService } from '../core/services/http';
+import { StudentAssessmentApiService, AssessmentSubmissionApiService, ReportApiService } from '../core/services/http';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -209,6 +209,8 @@ import { takeUntil } from 'rxjs/operators';
         
         <div class="actions">
           <a [routerLink]="['/edit', student.id]" class="btn btn-warning">Edit</a>
+          <button class="btn btn-export-csv" (click)="exportCsv()">&#x2193; Export CSV</button>
+          <button class="btn btn-export-pdf" (click)="exportPdf()">&#x2193; Export PDF</button>
           <a routerLink="/" class="btn btn-secondary">Back to List</a>
         </div>
       </div>
@@ -318,6 +320,24 @@ import { takeUntil } from 'rxjs/operators';
     .btn-secondary {
       background-color: #757575;
       color: white;
+    }
+
+    .btn-export-csv {
+      background-color: #00897b;
+      color: white;
+    }
+
+    .btn-export-csv:hover {
+      background-color: #00695c;
+    }
+
+    .btn-export-pdf {
+      background-color: #c62828;
+      color: white;
+    }
+
+    .btn-export-pdf:hover {
+      background-color: #a01010;
     }
     
     .loading, .error {
@@ -608,6 +628,7 @@ export class StudentDetailComponent implements OnInit, OnDestroy {
     private studentState: StudentStateService,
     private assessmentApi: StudentAssessmentApiService,
     private submissionApi: AssessmentSubmissionApiService,
+    private reportApi: ReportApiService,
     private cdr: ChangeDetectorRef
   ) { }
 
@@ -802,6 +823,28 @@ export class StudentDetailComponent implements OnInit, OnDestroy {
   isPastDue(dueDate: string | null | undefined): boolean {
     if (!dueDate) return false;
     return new Date(dueDate) < new Date();
+  }
+
+  exportCsv(): void {
+    this.reportApi.exportStudentCsv(this.currentStudentId).subscribe(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `student-${this.currentStudentId}-report.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
+  }
+
+  exportPdf(): void {
+    this.reportApi.exportStudentPdf(this.currentStudentId).subscribe(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `student-${this.currentStudentId}-report.pdf`;
+      a.click();
+      URL.revokeObjectURL(url);
+    });
   }
 
   private showSuccess(message: string): void {

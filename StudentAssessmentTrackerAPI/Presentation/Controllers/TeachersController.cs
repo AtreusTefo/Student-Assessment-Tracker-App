@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using System.Text.Json;
 using StudentAssessmentTracker.Application.DTOs;
 using StudentAssessmentTracker.Application.Services;
 
@@ -16,16 +17,19 @@ namespace StudentAssessmentTracker.Presentation.Controllers
     public class TeachersController : ControllerBase
     {
         private readonly ITeacherService _teacherService;
+        private readonly IAuditLogService _auditLog;
         private readonly ILogger<TeachersController> _logger;
 
         /// <summary>
         /// Initializes a new instance of <see cref="TeachersController"/>
         /// </summary>
-        /// <param name="teacherService">Teacher application service</param>
-        /// <param name="logger">Logger instance</param>
-        public TeachersController(ITeacherService teacherService, ILogger<TeachersController> logger)
+        public TeachersController(
+            ITeacherService teacherService,
+            IAuditLogService auditLog,
+            ILogger<TeachersController> logger)
         {
             _teacherService = teacherService;
+            _auditLog = auditLog;
             _logger = logger;
         }
 
@@ -104,6 +108,9 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             try
             {
                 var created = await _teacherService.CreateTeacherAsync(dto);
+                _ = _auditLog.LogAsync("Teacher", created.TeacherId, "Create", null,
+                    JsonSerializer.Serialize(new { created.Email, created.SubjectName }),
+                    created.TeacherId.ToString(), "Teacher");
                 return CreatedAtAction(nameof(GetById), new { id = created.TeacherId }, created);
             }
             catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
@@ -150,6 +157,10 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             try
             {
                 var updated = await _teacherService.UpdateTeacherAsync(id, dto);
+                if (updated)
+                    _ = _auditLog.LogAsync("Teacher", id, "Update", null,
+                        JsonSerializer.Serialize(new { dto.Email, dto.Phone }),
+                        teacherId.ToString(), "Teacher");
                 return updated ? Ok(new { message = $"Teacher with ID {id} successfully updated." }) : NotFound(new { message = $"Teacher with ID {id} not found." });
             }
             catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
@@ -194,6 +205,9 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             try
             {
                 var deleted = await _teacherService.DeleteTeacherAsync(id);
+                if (deleted)
+                    _ = _auditLog.LogAsync("Teacher", id, "Delete",
+                        $"{{\"id\":{id}}}", null, teacherId.ToString(), "Teacher");
                 return deleted
                     ? Ok(new { message = $"Teacher with ID {id} successfully deleted." })
                     : NotFound(new { message = $"Teacher with ID {id} not found." });

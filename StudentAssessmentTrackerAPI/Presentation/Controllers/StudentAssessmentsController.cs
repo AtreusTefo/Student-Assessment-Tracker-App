@@ -1,8 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
+using System.Text.Json;
 using StudentAssessmentTracker.Application.DTOs;
 using StudentAssessmentTracker.Application.Services;
+using StudentAssessmentTracker.Domain.Interfaces;
+using StudentAssessmentTracker.Domain.Entities;
 
 namespace StudentAssessmentTracker.Presentation.Controllers
 {
@@ -16,14 +19,23 @@ namespace StudentAssessmentTracker.Presentation.Controllers
     public class StudentAssessmentsController : ControllerBase
     {
         private readonly IStudentAssessmentService _service;
+        private readonly IAuditLogService _auditLog;
+        private readonly IEmailService _emailService;
+        private readonly IStudentRepository _studentRepository;
         private readonly ILogger<StudentAssessmentsController> _logger;
 
         /// <summary>Initialises the controller with the assessment service and logger.</summary>
         public StudentAssessmentsController(
             IStudentAssessmentService service,
+            IAuditLogService auditLog,
+            IEmailService emailService,
+            IStudentRepository studentRepository,
             ILogger<StudentAssessmentsController> logger)
         {
             _service = service;
+            _auditLog = auditLog;
+            _emailService = emailService;
+            _studentRepository = studentRepository;
             _logger = logger;
         }
 
@@ -90,6 +102,28 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             {
                 if (!ModelState.IsValid) return BadRequest(ModelState);
                 var result = await _service.AddAsync(studentId, dto, teacherId);
+
+                // ── Audit log ─────────────────────────────────────────────────
+                _ = _auditLog.LogAsync("StudentAssessment", result.Id, "Create", null,
+                    JsonSerializer.Serialize(new { result.Name, result.MaxScore, result.DueDate }),
+                    teacherId.ToString(), "Teacher");
+
+                // ── Email notification ────────────────────────────────────────
+                // Fire-and-forget; email failure must never block the response
+                _ = Task.Run(async () =>
+                {
+                    var student = await _studentRepository.GetByIdAsync(studentId);
+                    if (student?.Password != null && !string.IsNullOrEmpty(student.Email))
+                    {
+                        await _emailService.SendAssessmentCreatedAsync(
+                            student.Email,
+                            $"{student.FirstName} {student.LastName}",
+                            result.Name ?? string.Empty,
+                            result.DueDate,
+                            result.Instructions);
+                    }
+                });
+
                 return CreatedAtAction(nameof(GetById), new { studentId, id = result.Id }, result);
             }
             catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
@@ -116,7 +150,16 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             try
             {
                 if (!ModelState.IsValid) return BadRequest(ModelState);
+
+                // Capture old state for audit
+                var before = await _service.GetByIdAsync(studentId, id, teacherId);
                 var result = await _service.UpdateAsync(studentId, id, dto, teacherId);
+
+                _ = _auditLog.LogAsync("StudentAssessment", id, "Update",
+                    JsonSerializer.Serialize(new { before.Name, before.Score, before.MaxScore }),
+                    JsonSerializer.Serialize(new { result.Name, result.Score, result.MaxScore }),
+                    teacherId.ToString(), "Teacher");
+
                 return Ok(result);
             }
             catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
@@ -138,7 +181,14 @@ namespace StudentAssessmentTracker.Presentation.Controllers
                 return Unauthorized(new { message = "Invalid or missing token." });
             try
             {
+                // Capture before delete for audit
+                var before = await _service.GetByIdAsync(studentId, id, teacherId);
                 await _service.DeleteAsync(studentId, id, teacherId);
+
+                _ = _auditLog.LogAsync("StudentAssessment", id, "Delete",
+                    JsonSerializer.Serialize(new { before.Name, before.Score, before.MaxScore }),
+                    null, teacherId.ToString(), "Teacher");
+
                 return Ok(new { message = $"Assessment {id} deleted successfully" });
             }
             catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }

@@ -186,6 +186,13 @@ builder.Services.AddScoped<ITeacherService, TeacherService>();
 builder.Services.AddScoped<IStudentAssessmentService, StudentAssessmentService>();
 builder.Services.AddScoped<IAssessmentSubmissionService, AssessmentSubmissionService>();
 
+// ── New feature services ──────────────────────────────────────────────────────
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<IAuditLogService, AuditLogService>();
+builder.Services.AddScoped<IExportService, ExportService>();
+builder.Services.AddScoped<IAdminService, AdminService>();
+builder.Services.AddScoped<IClassGroupService, ClassGroupService>();
+
 // Register Validation
 builder.Services
     .AddFluentValidationAutoValidation()

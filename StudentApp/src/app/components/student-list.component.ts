@@ -4,11 +4,14 @@ import { CommonModule } from '@angular/common';
 import { StudentListDto } from '../core/models';
 import { StudentStateService } from '../core/services/state';
 import { StudentBusinessService } from '../features/students/services/student-business.service';
+import { ReportApiService } from '../core/services/http';
 import { Subject } from 'rxjs';
 import { takeUntil, filter } from 'rxjs/operators';
 
 // Import DataTables
 import DataTable from 'datatables.net-dt';
+import 'datatables.net-buttons-dt';
+import 'datatables.net-buttons/js/buttons.html5.mjs';
 
 /**
  * PRESENTATION LAYER - Student List Component
@@ -24,7 +27,9 @@ import DataTable from 'datatables.net-dt';
   template: `
     <div class="container">
       <h2>Student List</h2>
-      <a routerLink="/create" class="btn btn-primary">Add New Student</a>
+      <div class="list-header-actions">
+        <a routerLink="/create" class="btn btn-primary">Add New Student</a>
+      </div>
       
       <div *ngIf="loading" class="loading">Loading students...</div>
       
@@ -107,12 +112,19 @@ import DataTable from 'datatables.net-dt';
       font-weight: 600;
     }
     
+    /* Header action row */
+    .list-header-actions {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+
     /* Add New Student Button */
     .btn-primary {
       background-color: #27ae60;
       color: white;
       padding: 12px 24px;
-      margin-bottom: 20px;
       border-radius: 6px;
       text-decoration: none;
       cursor: pointer;
@@ -128,7 +140,7 @@ import DataTable from 'datatables.net-dt';
       transform: translateY(-2px);
       box-shadow: 0 4px 12px rgba(39, 174, 96, 0.3);
     }
-    
+
     /* Status Messages */
     .loading, .error, .no-data {
       padding: 20px;
@@ -156,6 +168,99 @@ import DataTable from 'datatables.net-dt';
       border-left: 4px solid #ddd;
     }
     
+    /* DataTables Buttons toolbar */
+    :host ::ng-deep .dt-buttons {
+      display: inline-block;
+      margin-bottom: 14px;
+    }
+
+    /* Collection trigger button */
+    :host ::ng-deep button.dt-btn-collection.dt-button {
+      background: linear-gradient(135deg, #16a085 0%, #1abc9c 100%) !important;
+      color: white !important;
+      border: none !important;
+      border-radius: 6px !important;
+      padding: 10px 20px !important;
+      font-size: 13px !important;
+      font-weight: 600 !important;
+      cursor: pointer !important;
+      box-shadow: 0 2px 6px rgba(22, 160, 133, 0.4) !important;
+      transition: all 0.2s ease !important;
+      letter-spacing: 0.3px;
+    }
+
+    :host ::ng-deep button.dt-btn-collection.dt-button:hover {
+      background: linear-gradient(135deg, #117a65 0%, #16a085 100%) !important;
+      transform: translateY(-1px) !important;
+      box-shadow: 0 4px 12px rgba(22, 160, 133, 0.5) !important;
+    }
+
+    /* Dropdown container — rendered in <body> by DataTables, so use a global override */
+    :host ::ng-deep .dt-button-collection,
+    .dt-button-collection {
+      position: absolute !important;
+      z-index: 9999 !important;
+      background: white !important;
+      border: 1px solid #d0e8e3 !important;
+      border-radius: 8px !important;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.14), 0 2px 6px rgba(0, 0, 0, 0.08) !important;
+      padding: 6px 0 !important;
+      min-width: 230px !important;
+      overflow: hidden !important;
+    }
+
+    /* Dropdown items — override ALL DataTables default button styles inside collection */
+    :host ::ng-deep .dt-button-collection .dt-button,
+    .dt-button-collection .dt-button {
+      display: block !important;
+      width: 100% !important;
+      text-align: left !important;
+      background: white !important;
+      background-image: none !important;
+      border: none !important;
+      border-bottom: 1px solid #f0f0f0 !important;
+      border-radius: 0 !important;
+      padding: 11px 18px !important;
+      font-size: 13.5px !important;
+      font-weight: 500 !important;
+      color: #2c3e50 !important;
+      cursor: pointer !important;
+      transition: background 0.15s ease, color 0.15s ease !important;
+      box-shadow: none !important;
+      text-shadow: none !important;
+    }
+
+    :host ::ng-deep .dt-button-collection .dt-button:last-child,
+    .dt-button-collection .dt-button:last-child {
+      border-bottom: none !important;
+    }
+
+    :host ::ng-deep .dt-button-collection .dt-button:hover,
+    .dt-button-collection .dt-button:hover {
+      background: #f0faf7 !important;
+      color: #16a085 !important;
+    }
+
+    /* Leading icon per item */
+    :host ::ng-deep .dt-button-collection .dt-button:first-child::before,
+    .dt-button-collection .dt-button:first-child::before {
+      content: '⬇ ';
+      opacity: 0.7;
+    }
+
+    :host ::ng-deep .dt-button-collection .dt-button:last-child::before,
+    .dt-button-collection .dt-button:last-child::before {
+      content: '⬇ ';
+      opacity: 0.7;
+    }
+
+    /* DataTables collection backdrop — make it subtly dim the page */
+    :host ::ng-deep .dt-button-background,
+    .dt-button-background {
+      background: rgba(0, 0, 0, 0.08) !important;
+      z-index: 9998 !important;
+    }
+
     /* DataTables Wrapper and Controls */
     :host ::ng-deep .dataTables_wrapper {
       margin-top: 0;
@@ -578,6 +683,7 @@ export class StudentListComponent implements OnInit, AfterViewInit, OnDestroy {
     private studentBusiness: StudentBusinessService,
     private studentState: StudentStateService,
     private router: Router,
+    private reportApi: ReportApiService,
     private cdr: ChangeDetectorRef,
     private ngZone: NgZone
   ) { }
@@ -651,7 +757,30 @@ export class StudentListComponent implements OnInit, AfterViewInit, OnDestroy {
         pagingType: 'full_numbers',
         pageLength: 10,
         processing: true,
-        dom: 'lfrtip',
+        dom: 'Blfrtip',
+        buttons: [
+          {
+            extend: 'collection',
+            text: '&#x2193; Export',
+            className: 'dt-btn-collection',
+            buttons: [
+              {
+                extend: 'csv',
+                text: 'Export current view (CSV)',
+                filename: 'students-current-view',
+                className: 'dt-btn-csv-item',
+                exportOptions: {
+                  columns: [0, 1, 2, 3, 4, 5] // exclude hidden % col (6) and Actions col (7)
+                }
+              },
+              {
+                text: 'Export all students (CSV)',
+                className: 'dt-btn-csv-item',
+                action: () => { this.exportAllCsv(); }
+              }
+            ]
+          }
+        ],
         language: {
           search: 'Search records:',
           lengthMenu: 'Display _MENU_ records per page',
@@ -761,6 +890,17 @@ export class StudentListComponent implements OnInit, AfterViewInit, OnDestroy {
     this.showConfirmDialog = false;
     this.studentToDelete = null;
     this.cdr.detectChanges(); // Ensure modal is dismissed
+  }
+
+  exportAllCsv(): void {
+    this.reportApi.exportAllStudentsCsv().subscribe(blob => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'all-students-report.csv';
+      a.click();
+      URL.revokeObjectURL(url);
+    });
   }
 
   getPerformanceClass(level: string): { [key: string]: boolean } {

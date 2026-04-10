@@ -132,6 +132,31 @@ The connection string is configured in `appsettings.Development.json`:
   - My Profile section (read-only personal details)
   - File upload modal per assessment
 
+**Admin Panel**
+- Dedicated admin account (BCrypt-hashed password, separate `Admin` JWT role)
+- Admin login page at `/admin/login` with its own authentication guard
+- Admin dashboard with tabs: manage Teachers, manage Students, view Audit Log
+- Admins can delete any teacher or student system-wide with confirmation modal
+
+**Audit Logging**
+- Every Create, Update, and Delete across Students, Teachers, and Assessments emits an immutable audit entry
+- Audit records store entity name, entity ID, action, old values (JSON), new values (JSON), actor, role, and timestamp
+- Admins can browse paginated audit log and filter by entity type / entity ID from the dashboard
+
+**Email Notifications**
+- MailKit SMTP integration sends an email to the student whenever a new assessment is created for them
+- Email delivery is fire-and-forget and gracefully no-ops when `Email:SmtpHost` is not configured
+
+**Data Export (CSV & PDF)**
+- Teachers can export the full student list to CSV from the Student List page
+- On any student detail page, teachers can download that student's individual report as CSV or PDF
+- PDF reports include styled header, personal info, and colour-coded assessment table (QuestPDF community license)
+
+**Class Groups**
+- Teachers can create named class groups linked to a subject, grade, and their own teacher account
+- Students can be enrolled and unenrolled from class groups
+- REST endpoints at `/api/class-groups` protected by `Teacher` role
+
 ## Project Structure
 
 ```
@@ -416,16 +441,13 @@ Validation occurs both on the frontend (real-time, template-driven forms) and ba
 - Phone number validation accepts exactly 8 digits (no international format support)
 - Student profile details are read-only from the student dashboard; only teachers can update student records
 - File submissions are stored as raw byte arrays in the database (no external blob storage)
-- No email notifications for assessment assignments or new submissions
-- No audit log of data changes (create/update/delete history)
 
 ## Future Enhancements
 
-- Email notifications for assignment creation and submission deadlines
-- Data export (CSV, PDF) for student reports
-- Class and subject grouping for assessment management
-- Admin role for managing all teachers and students
-- Audit logging of all create/update/delete operations
+- Role-based access control with granular permissions per subject
+- Real-time notifications via SignalR
+- Mobile-responsive PWA support
+- Bulk import of students via CSV upload
 
 ## Development Notes
 
