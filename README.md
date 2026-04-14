@@ -1,6 +1,6 @@
 # Student Assessment Tracker
 
-Student Assessment Tracker is a **full-stack web application** built with **ASP.NET Core 8** backend and **Angular 18** frontend following **Clean Architecture** principles. It features a **dual-role system** — teachers can register, log in, and manage students with full CRUD operations and named assessment tracking; students can activate their accounts, log in, and view their own performance through a self-service dashboard. The system supports flexible scoring, file submission uploads, JWT-based authentication for both roles, automated performance calculations, and a DataTables-powered student list.
+Student Assessment Tracker is a **full-stack web application** built with **ASP.NET Core 8** backend and **Angular 21** frontend following **Clean Architecture** principles. It features a **dual-role system** — teachers can register, log in, and manage students with full CRUD operations and named assessment tracking; students can activate their accounts, log in, and view their own performance through a self-service dashboard. The system supports flexible scoring, file submission uploads, JWT-based authentication for both roles, automated performance calculations, and a DataTables-powered student list.
 
 ## Architecture Overview
 
@@ -33,12 +33,13 @@ StudentAssessmentTracker/                  ← Solution Root
 - Serilog for structured logging
 - Swagger for API documentation
 
-**Frontend** – Angular 18 (Standalone Components)
+**Frontend** – Angular 21 (Standalone Components, Zoneless)
 - Reactive forms with comprehensive validation
 - RxJS Observables for async operations
 - Angular routing with guards
 - HTTP communication with backend API
 - Responsive UI with modern CSS
+- DataTables.net v2 with Buttons plugin for CSV export
 
 **Why Clean Architecture:**
 - **Separation of Concerns**: Each layer has a single responsibility
@@ -64,12 +65,14 @@ StudentAssessmentTracker/                  ← Solution Root
 - **API Docs**: Swashbuckle (Swagger)
 
 ### Frontend (StudentApp/)
-- **Framework**: Angular 18
-- **Language**: TypeScript 5
-- **Reactive**: RxJS
-- **HTTP**: Angular HttpClient
+- **Framework**: Angular 21
+- **Language**: TypeScript 5.9
+- **Reactive**: RxJS 7.8
+- **HTTP**: Angular HttpClient (`withFetch()`, function interceptors)
 - **Routing**: Angular Router
-- **Build**: Angular CLI
+- **Build**: Angular CLI 21 (`@angular/build:application`)
+- **Tests**: Vitest 4
+- **Tables**: DataTables.net v2 + Buttons plugin
 
 ## Database
 
@@ -216,23 +219,26 @@ StudentAssessmentTracker/                       ← Solution Root
 │   ├── Program.cs                              (Entry point)
 │   └── appsettings.json                        (Configuration)
 │
-├── StudentApp/                                 ← Angular Frontend
+├── StudentApp/                                 ← Angular 21 Frontend
 │   └── src/app/
-│       ├── components/               (8 standalone components)
+│       ├── components/               (10 standalone components)
 │       │   ├── login-form.component.ts
 │       │   ├── signup-form.component.ts
 │       │   ├── student-list.component.ts
 │       │   ├── student-detail.component.ts
 │       │   ├── student-form.component.ts
-│       │   ├── student-login.component.ts
+│       │   ├── student-login.component.ts       (login + activation dual-mode)
 │       │   ├── student-activate.component.ts
-│       │   └── student-dashboard.component.ts
+│       │   ├── student-dashboard.component.ts
+│       │   ├── admin-login.component.ts
+│       │   └── admin-dashboard.component.ts
 │       ├── core/
-│       │   ├── guards/               (auth, guest, student-auth, student-guest)
+│       │   ├── guards/               (auth, guest, student-auth, student-guest, admin)
 │       │   ├── interceptors/         (auth.interceptor.ts — attaches JWT, handles 401)
 │       │   ├── models/               (student.model.ts, teacher.model.ts)
 │       │   └── services/
-│       │       ├── http/             (6 API services: teacher, student, assessments, submissions, grades, subjects)
+│       │       ├── http/             (9 API services: teacher, student, assessments, submissions,
+│       │       │                      grades, subjects, reports, admin, class-groups)
 │       │       └── state/            (teacher-state, student-state, student-auth-state)
 │       └── features/
 │           ├── students/services/    (student-business.service.ts, student-auth-business.service.ts)

@@ -1,30 +1,162 @@
-{
+﻿{
   "info": {
     "_postman_id": "a3f2c1d4-b5e6-4789-abcd-ef1234567890",
     "name": "Student Assessment Tracker API",
-    "description": "Complete API testing collection for Student Assessment Tracker application.",
+    "description": "Complete API testing collection.\n\n**Workflow:**\n1. Run **Auth / Teacher Login** â†’ `{{teacherToken}}` is saved automatically.\n2. Run **Auth / Admin Login** â†’ `{{adminToken}}` is saved automatically.\n3. Student must first call **Auth / Student Activate**, then **Auth / Student Login** â†’ `{{studentToken}}` saved.\n4. All other requests use the stored tokens â€” no manual copy-paste needed.",
     "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   "item": [
     {
+      "name": "Auth",
+      "description": "Login endpoints â€” run these first to populate token variables.",
+      "item": [
+        {
+          "name": "Teacher Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.token) {",
+                  "  pm.environment.set('teacherToken', json.token);",
+                  "  if (json.teacher && json.teacher.teacherId) {",
+                  "    pm.environment.set('teacherId', json.teacher.teacherId);",
+                  "  }",
+                  "  pm.test('Teacher token saved', () => pm.expect(json.token).to.be.a('string'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"alice.johnson@example.com\",\n  \"password\": \"Pass@123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/teachers/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "teachers", "login"]
+            },
+            "description": "Returns JWT + teacher profile. Token is auto-saved to {{teacherToken}}."
+          },
+          "response": []
+        },
+        {
+          "name": "Admin Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.token) {",
+                  "  pm.environment.set('adminToken', json.token);",
+                  "  if (json.admin && json.admin.id) {",
+                  "    pm.environment.set('adminId', json.admin.id);",
+                  "  }",
+                  "  pm.test('Admin token saved', () => pm.expect(json.token).to.be.a('string'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@school.com\",\n  \"password\": \"Admin@123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admins/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admins", "login"]
+            },
+            "description": "Returns JWT + admin profile. Token is auto-saved to {{adminToken}}."
+          },
+          "response": []
+        },
+        {
+          "name": "Student Activate (first-time)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentUniqueId\": \"STU-XXXXXXXX\",\n  \"email\": \"student@example.com\",\n  \"password\": \"Stud@123\",\n  \"confirmPassword\": \"Stud@123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/students/activate",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students", "activate"]
+            },
+            "description": "One-time activation. Replace studentUniqueId with the value from GET /api/students/{id}."
+          },
+          "response": []
+        },
+        {
+          "name": "Student Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (json.token) {",
+                  "  pm.environment.set('studentToken', json.token);",
+                  "  if (json.student && json.student.id) {",
+                  "    pm.environment.set('studentId', json.student.id);",
+                  "  }",
+                  "  pm.test('Student token saved', () => pm.expect(json.token).to.be.a('string'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentUniqueId\": \"STU-XXXXXXXX\",\n  \"password\": \"Stud@123\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/students/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students", "login"]
+            },
+            "description": "Returns JWT + student profile. Token is auto-saved to {{studentToken}}."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
       "name": "Students",
+      "description": "All endpoints require Teacher JWT ({{teacherToken}}). Results are scoped to the authenticated teacher.",
       "item": [
         {
           "name": "Get All Students",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
             "url": {
               "raw": "{{baseUrl}}/api/students",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "students"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students"]
             },
-            "description": "Returns all students with assessments, grade name and performance summary."
+            "description": "Returns all students owned by the authenticated teacher."
           },
           "response": []
         },
@@ -32,52 +164,50 @@
           "name": "Get Student by ID",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
             "url": {
               "raw": "{{baseUrl}}/api/students/{{studentId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "students",
-                "{{studentId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students", "{{studentId}}"]
             },
-            "description": "Returns a single student with full detail including assessments and calculated performance fields."
+            "description": "Returns a single student with full details including assessments and performance fields."
           },
           "response": []
         },
         {
-          "name": "Create New Student",
+          "name": "Create Student",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (pm.response.code === 201 && json.id) {",
+                  "  pm.environment.set('studentId', json.id);",
+                  "  pm.test('studentId saved', () => pm.expect(json.id).to.be.a('number'));",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{teacherToken}}" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"idPassportNo\": \"A12345678\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"12345678\",\n  \"gradeId\": 1,\n  \"teacherId\": 1\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{\n  \"idPassportNo\": \"A12345678\",\n  \"firstName\": \"John\",\n  \"lastName\": \"Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"phone\": \"12345678\",\n  \"gradeId\": 1\n}",
+              "options": { "raw": { "language": "json" } }
             },
             "url": {
               "raw": "{{baseUrl}}/api/students",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "students"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students"]
             },
-            "description": "Creates a new student. gradeId must be a valid ID from GET /api/grades. teacherId must be a valid teacher ID. Assessments are added separately via POST /api/students/{id}/assessments."
+            "description": "Creates a new student under the authenticated teacher. gradeId from GET /api/grades. Returns 201 with student data."
           },
           "response": []
         },
@@ -86,32 +216,20 @@
           "request": {
             "method": "PUT",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{teacherToken}}" }
             ],
             "body": {
               "mode": "raw",
               "raw": "{\n  \"idPassportNo\": \"B23456789\",\n  \"firstName\": \"Jane\",\n  \"lastName\": \"Smith\",\n  \"email\": \"jane.smith@example.com\",\n  \"phone\": \"87654321\",\n  \"gradeId\": 2\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "options": { "raw": { "language": "json" } }
             },
             "url": {
               "raw": "{{baseUrl}}/api/students/{{studentId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "students",
-                "{{studentId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students", "{{studentId}}"]
             },
-            "description": "Updates student profile fields. teacherId cannot be changed via update. Assessments are managed separately."
+            "description": "Updates student profile fields."
           },
           "response": []
         },
@@ -119,19 +237,41 @@
           "name": "Delete Student",
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
             "url": {
               "raw": "{{baseUrl}}/api/students/{{studentId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "students",
-                "{{studentId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students", "{{studentId}}"]
             },
-            "description": "Deletes a student and all their assessments (cascade delete)."
+            "description": "Deletes student and all their assessments (cascade)."
+          },
+          "response": []
+        },
+        {
+          "name": "Assign Teacher to Student",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/students/{{studentId}}/teachers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students", "{{studentId}}", "teachers"]
+            },
+            "description": "Assigns the authenticated teacher to the student (many-to-many)."
+          },
+          "response": []
+        },
+        {
+          "name": "Remove Teacher from Student",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/students/{{studentId}}/teachers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students", "{{studentId}}", "teachers"]
+            },
+            "description": "Removes the authenticated teacher's assignment from the student."
           },
           "response": []
         }
@@ -139,24 +279,17 @@
     },
     {
       "name": "Student Assessments",
-      "description": "Nested under /api/students/{studentId}/assessments. Each assessment has its own name, maxScore, score and optional dueDate.",
+      "description": "Nested under /api/students/{studentId}/assessments. Requires Teacher JWT.",
       "item": [
         {
           "name": "Get All Assessments for Student",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
             "url": {
               "raw": "{{baseUrl}}/api/students/{{studentId}}/assessments",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "students",
-                "{{studentId}}",
-                "assessments"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students", "{{studentId}}", "assessments"]
             },
             "description": "Returns all assessments for the specified student."
           },
@@ -166,55 +299,49 @@
           "name": "Get Assessment by ID",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
             "url": {
               "raw": "{{baseUrl}}/api/students/{{studentId}}/assessments/{{assessmentId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "students",
-                "{{studentId}}",
-                "assessments",
-                "{{assessmentId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students", "{{studentId}}", "assessments", "{{assessmentId}}"]
             }
           },
           "response": []
         },
         {
-          "name": "Add Assessment to Student",
+          "name": "Create Assessment",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if (pm.response.code === 201 && json.id) {",
+                  "  pm.environment.set('assessmentId', json.id);",
+                  "  pm.test('assessmentId saved', () => pm.expect(json.id).to.be.a('number'));",
+                  "}"
+                ]
+              }
+            }
+          ],
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{teacherToken}}" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Test 1\",\n  \"maxScore\": 50,\n  \"score\": 42,\n  \"dueDate\": \"2026-04-15\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{\n  \"name\": \"Test 1\",\n  \"maxScore\": 100,\n  \"score\": 75,\n  \"dueDate\": \"2026-05-01\",\n  \"isAssigned\": true,\n  \"instructions\": \"Complete all sections.\"\n}",
+              "options": { "raw": { "language": "json" } }
             },
             "url": {
               "raw": "{{baseUrl}}/api/students/{{studentId}}/assessments",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "students",
-                "{{studentId}}",
-                "assessments"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students", "{{studentId}}", "assessments"]
             },
-            "description": "Adds a new assessment to a student. score must be between 0 and maxScore. dueDate is optional (ISO date string)."
+            "description": "Adds a new assessment to the student. Triggers an email notification to the student. score must be 0â€“maxScore. dueDate is optional."
           },
           "response": []
         },
@@ -223,34 +350,19 @@
           "request": {
             "method": "PUT",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{teacherToken}}" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"name\": \"Test 1 revised\",\n  \"maxScore\": 50,\n  \"score\": 47,\n  \"dueDate\": \"2026-04-15\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{\n  \"name\": \"Test 1 revised\",\n  \"maxScore\": 100,\n  \"score\": 85,\n  \"dueDate\": \"2026-05-01\",\n  \"isAssigned\": true,\n  \"instructions\": \"Revised instructions.\"\n}",
+              "options": { "raw": { "language": "json" } }
             },
             "url": {
               "raw": "{{baseUrl}}/api/students/{{studentId}}/assessments/{{assessmentId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "students",
-                "{{studentId}}",
-                "assessments",
-                "{{assessmentId}}"
-              ]
-            },
-            "description": "Updates a single assessment. Only the fields of this assessment are changed."
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students", "{{studentId}}", "assessments", "{{assessmentId}}"]
+            }
           },
           "response": []
         },
@@ -258,19 +370,238 @@
           "name": "Delete Assessment",
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
             "url": {
               "raw": "{{baseUrl}}/api/students/{{studentId}}/assessments/{{assessmentId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "students",
-                "{{studentId}}",
-                "assessments",
-                "{{assessmentId}}"
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students", "{{studentId}}", "assessments", "{{assessmentId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Assessment Submissions",
+      "description": "Nested under /api/students/{studentId}/assessments/{assessmentId}/submissions.\nUpload requires Student JWT. Download/list requires Teacher JWT.",
+      "item": [
+        {
+          "name": "Upload Submission (Student)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if ((pm.response.code === 200 || pm.response.code === 201) && json.id) {",
+                  "  pm.environment.set('submissionId', json.id);",
+                  "  pm.test('submissionId saved', () => pm.expect(json.id).to.be.a('number'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Authorization", "value": "Bearer {{studentToken}}" }],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "",
+                  "description": "Select a file (PDF, DOC, DOCX, JPG, PNG â€” max 10 MB)"
+                }
               ]
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/students/{{studentId}}/assessments/{{assessmentId}}/submissions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students", "{{studentId}}", "assessments", "{{assessmentId}}", "submissions"]
+            },
+            "description": "Student uploads a submission file. studentId must match the authenticated student's ID. Accepts PDF, DOC, DOCX, JPG, PNG up to 10 MB."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Submissions (Teacher)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/students/{{studentId}}/assessments/{{assessmentId}}/submissions",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students", "{{studentId}}", "assessments", "{{assessmentId}}", "submissions"]
+            },
+            "description": "Lists all submission files for the given assessment."
+          },
+          "response": []
+        },
+        {
+          "name": "Download Submission",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/students/{{studentId}}/assessments/{{assessmentId}}/submissions/{{submissionId}}/download",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students", "{{studentId}}", "assessments", "{{assessmentId}}", "submissions", "{{submissionId}}", "download"]
+            },
+            "description": "Downloads the submission file. Teacher or the owning student may download."
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Submission",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/students/{{studentId}}/assessments/{{assessmentId}}/submissions/{{submissionId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "students", "{{studentId}}", "assessments", "{{assessmentId}}", "submissions", "{{submissionId}}"]
+            },
+            "description": "Deletes a submission. Teacher or the owning student may delete."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Class Groups",
+      "description": "All endpoints require Teacher JWT ({{teacherToken}}). Groups are scoped to the authenticated teacher.",
+      "item": [
+        {
+          "name": "Get All Class Groups",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/class-groups",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "class-groups"]
+            },
+            "description": "Returns all class groups owned by the authenticated teacher, including enrolled students."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Class Group by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/class-groups/{{classGroupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "class-groups", "{{classGroupId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create Class Group",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "var json = pm.response.json();",
+                  "if ((pm.response.code === 200 || pm.response.code === 201) && json.id) {",
+                  "  pm.environment.set('classGroupId', json.id);",
+                  "  pm.test('classGroupId saved', () => pm.expect(json.id).to.be.a('number'));",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{teacherToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Grade 10 Maths\",\n  \"subjectId\": 8,\n  \"gradeId\": 4\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/class-groups",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "class-groups"]
+            },
+            "description": "Creates a new class group. subjectId from GET /api/subjects. gradeId from GET /api/grades.\nSubjects: 1=Accounting,2=Art,3=Business Studies,4=English,5=Geography,6=History,7=ICT,8=Mathematics,9=Multimedia,10=Music,11=PE,12=Science"
+          },
+          "response": []
+        },
+        {
+          "name": "Update Class Group Name",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{teacherToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Grade 10 Advanced Maths\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/class-groups/{{classGroupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "class-groups", "{{classGroupId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Class Group",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/class-groups/{{classGroupId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "class-groups", "{{classGroupId}}"]
+            },
+            "description": "Deletes group and all enrolments."
+          },
+          "response": []
+        },
+        {
+          "name": "Enroll Student in Group",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{teacherToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"studentId\": {{studentId}}\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/class-groups/{{classGroupId}}/students",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "class-groups", "{{classGroupId}}", "students"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Unenroll Student from Group",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/class-groups/{{classGroupId}}/students/{{studentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "class-groups", "{{classGroupId}}", "students", "{{studentId}}"]
             }
           },
           "response": []
@@ -279,23 +610,19 @@
     },
     {
       "name": "Teachers",
+      "description": "Register and login are public. All other endpoints require Teacher JWT.",
       "item": [
         {
           "name": "Get All Teachers",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
             "url": {
               "raw": "{{baseUrl}}/api/teachers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "teachers"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "teachers"]
             },
-            "description": "Returns all teachers. Returns 404 with { message: 'No teachers found.' } if the table is empty."
+            "description": "Returns all teachers."
           },
           "response": []
         },
@@ -303,139 +630,265 @@
           "name": "Get Teacher by ID",
           "request": {
             "method": "GET",
-            "header": [],
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
             "url": {
               "raw": "{{baseUrl}}/api/teachers/{{teacherId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "teachers",
-                "{{teacherId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "teachers", "{{teacherId}}"]
             }
           },
           "response": []
         },
         {
-          "name": "Register Teacher",
+          "name": "Register Teacher (public)",
           "request": {
             "method": "POST",
-            "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
-            ],
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"idPassportNo\": \"AB1234567\",\n  \"firstName\": \"Alice\",\n  \"lastName\": \"Johnson\",\n  \"email\": \"alice.johnson@example.com\",\n  \"phone\": \"55512345\",\n  \"subjectId\": 8,\n  \"password\": \"Pass@123\",\n  \"enrollmentDate\": \"2024-01-15T00:00:00Z\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{\n  \"idPassportNo\": \"AB1234567\",\n  \"firstName\": \"Alice\",\n  \"lastName\": \"Johnson\",\n  \"email\": \"alice.johnson@example.com\",\n  \"phone\": \"55512345\",\n  \"subjectId\": 8,\n  \"password\": \"Pass@123\"\n}",
+              "options": { "raw": { "language": "json" } }
             },
             "url": {
               "raw": "{{baseUrl}}/api/teachers",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "teachers"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "teachers"]
             },
-            "description": "Registers a new teacher. idPassportNo must be exactly 9 alphanumeric characters (letters and digits only). subjectId must be a valid ID from GET /api/subjects. Phone must be exactly 8 digits. Password minimum 6 characters.\n\nSubject IDs:\n1=Accounting, 2=Art, 3=Business Studies, 4=English, 5=Geography, 6=History, 7=ICT, 8=Mathematics, 9=Multimedia, 10=Music, 11=Physical Education, 12=Science"
+            "description": "Self-registration. idPassportNo: exactly 9 alphanumeric chars. phone: exactly 8 digits. password: min 6 chars.\nSubjects: 1=Accounting,2=Art,3=Business Studies,4=English,5=Geography,6=History,7=ICT,8=Mathematics,9=Multimedia,10=Music,11=PE,12=Science"
           },
           "response": []
         },
         {
-          "name": "Update Teacher",
+          "name": "Update Teacher (own profile only)",
           "request": {
             "method": "PUT",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{teacherToken}}" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"idPassportNo\": \"AB1234567\",\n  \"firstName\": \"Alice\",\n  \"lastName\": \"Johnson\",\n  \"email\": \"alice.johnson@example.com\",\n  \"phone\": \"55512345\",\n  \"subjectId\": 12,\n  \"password\": \"Pass@123\",\n  \"enrollmentDate\": \"2024-02-01T00:00:00Z\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{\n  \"idPassportNo\": \"AB1234567\",\n  \"firstName\": \"Alice\",\n  \"lastName\": \"Johnson\",\n  \"email\": \"alice.johnson@example.com\",\n  \"phone\": \"55512345\",\n  \"subjectId\": 12\n}",
+              "options": { "raw": { "language": "json" } }
             },
             "url": {
               "raw": "{{baseUrl}}/api/teachers/{{teacherId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "teachers",
-                "{{teacherId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "teachers", "{{teacherId}}"]
             },
-            "description": "Updates teacher profile. subjectId must be a valid ID from GET /api/subjects. Returns 200 with { message: 'Teacher with ID {id} successfully updated.' } on success, or 404 if not found."
+            "description": "Teachers may only update their own profile (id in URL must match JWT claim). Returns 403 for other IDs."
           },
           "response": []
         },
         {
-          "name": "Delete Teacher",
+          "name": "Delete Teacher (own account only)",
           "request": {
             "method": "DELETE",
-            "header": [],
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
             "url": {
               "raw": "{{baseUrl}}/api/teachers/{{teacherId}}",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "teachers",
-                "{{teacherId}}"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "teachers", "{{teacherId}}"]
             },
-            "description": "Returns 200 with { message: 'Teacher with ID {id} successfully deleted.' } on success, or 404 if not found. Cannot delete a teacher who still has students assigned (RESTRICT FK)."
+            "description": "Deletes own account. Returns 409 if teacher still has students assigned."
           },
           "response": []
-        },
+        }
+      ]
+    },
+    {
+      "name": "Admins",
+      "description": "All management endpoints require Admin JWT ({{adminToken}}). Login is public.",
+      "item": [
         {
-          "name": "Teacher Login",
+          "name": "Create Admin",
           "request": {
             "method": "POST",
             "header": [
-              {
-                "key": "Content-Type",
-                "value": "application/json"
-              }
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n  \"email\": \"alice.johnson@example.com\",\n  \"password\": \"Pass@123\"\n}",
-              "options": {
-                "raw": {
-                  "language": "json"
-                }
-              }
+              "raw": "{\n  \"firstName\": \"Super\",\n  \"lastName\": \"Admin\",\n  \"email\": \"admin2@school.com\",\n  \"password\": \"Admin@456\"\n}",
+              "options": { "raw": { "language": "json" } }
             },
             "url": {
-              "raw": "{{baseUrl}}/api/teachers/login",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "teachers",
-                "login"
+              "raw": "{{baseUrl}}/api/admins",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admins"]
+            },
+            "description": "Creates a new admin account. Requires existing Admin JWT."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Admin by ID",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/admins/{{adminId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admins", "{{adminId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change Admin Password",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"currentPassword\": \"Admin@123\",\n  \"newPassword\": \"NewAdmin@456\",\n  \"confirmNewPassword\": \"NewAdmin@456\"\n}",
+              "options": { "raw": { "language": "json" } }
+            },
+            "url": {
+              "raw": "{{baseUrl}}/api/admins/{{adminId}}/password",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admins", "{{adminId}}", "password"]
+            },
+            "description": "Changes an admin's own password. Requires the current password for verification. Returns 403 if the id in the URL does not match the JWT. Returns 401 if currentPassword is wrong."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Teachers (Admin view)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/admins/teachers",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admins", "teachers"]
+            },
+            "description": "Global teacher list, not scoped to any teacher."
+          },
+          "response": []
+        },
+        {
+          "name": "Force Delete Teacher (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/admins/teachers/{{teacherId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admins", "teachers", "{{teacherId}}"]
+            },
+            "description": "Admin can force-delete any teacher regardless of student assignments."
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Students (Admin view)",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/admins/students",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admins", "students"]
+            },
+            "description": "Global student list across all teachers."
+          },
+          "response": []
+        },
+        {
+          "name": "Force Delete Student (Admin)",
+          "request": {
+            "method": "DELETE",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/admins/students/{{studentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admins", "students", "{{studentId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Audit Logs",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/admins/audit-logs?page=1&pageSize=50",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admins", "audit-logs"],
+              "query": [
+                { "key": "page", "value": "1" },
+                { "key": "pageSize", "value": "50" }
               ]
             },
-            "description": "Returns a demo token and teacher data (subjectId + subjectName included, password excluded)."
+            "description": "Returns paginated audit log entries, newest first. Max pageSize is 200."
+          },
+          "response": []
+        },
+        {
+          "name": "Get Audit Logs by Entity",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{adminToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/admins/audit-logs/Student/{{studentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "admins", "audit-logs", "Student", "{{studentId}}"]
+            },
+            "description": "Returns audit log entries for a specific entity. entityName can be: Student, Teacher, StudentAssessment, ClassGroup, Admin."
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Reports",
+      "description": "All export endpoints require Teacher JWT. Browser will prompt to save the downloaded file.",
+      "item": [
+        {
+          "name": "Export All Students CSV",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/students/csv",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "students", "csv"]
+            },
+            "description": "Downloads a CSV file of all the teacher's students and their assessment summaries."
+          },
+          "response": []
+        },
+        {
+          "name": "Export Student Report CSV",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/students/{{studentId}}/csv",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "students", "{{studentId}}", "csv"]
+            },
+            "description": "Downloads a CSV report for a single student's assessments."
+          },
+          "response": []
+        },
+        {
+          "name": "Export Student Report PDF",
+          "request": {
+            "method": "GET",
+            "header": [{ "key": "Authorization", "value": "Bearer {{teacherToken}}" }],
+            "url": {
+              "raw": "{{baseUrl}}/api/reports/students/{{studentId}}/pdf",
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "reports", "students", "{{studentId}}", "pdf"]
+            },
+            "description": "Downloads a PDF report for a single student's assessments."
           },
           "response": []
         }
@@ -443,7 +896,7 @@
     },
     {
       "name": "Grades",
-      "description": "Read-only lookup. Seeded: Grade 7-12. Use gradeId in student create/update.",
+      "description": "Read-only lookup. No auth required. Seeded: Grade 7â€“12.",
       "item": [
         {
           "name": "Get All Grades",
@@ -452,15 +905,10 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/grades",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "grades"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "grades"]
             },
-            "description": "Returns all grade levels ordered by level number. Response: [{ id, name, level }]. Use id as gradeId when creating/updating students."
+            "description": "Returns all grade levels ordered by level. Response: [{ id, name, level }]. Use id as gradeId when creating/updating students."
           },
           "response": []
         }
@@ -468,7 +916,7 @@
     },
     {
       "name": "Subjects",
-      "description": "Read-only lookup. Seeded: 12 subjects. Use subjectId in teacher register/update.",
+      "description": "Read-only lookup. No auth required. Seeded: 12 subjects.",
       "item": [
         {
           "name": "Get All Subjects",
@@ -477,15 +925,10 @@
             "header": [],
             "url": {
               "raw": "{{baseUrl}}/api/subjects",
-              "host": [
-                "{{baseUrl}}"
-              ],
-              "path": [
-                "api",
-                "subjects"
-              ]
+              "host": ["{{baseUrl}}"],
+              "path": ["api", "subjects"]
             },
-            "description": "Returns all subjects ordered alphabetically. Response: [{ id, name }].\n\nSeeded subjects: Accounting(1), Art(2), Business Studies(3), English(4), Geography(5), History(6), ICT(7), Mathematics(8), Multimedia(9), Music(10), Physical Education(11), Science(12).\n\nUse id as subjectId when registering or updating a teacher."
+            "description": "Returns all subjects alphabetically. Response: [{ id, name }].\nSeeded: Accounting(1), Art(2), Business Studies(3), English(4), Geography(5), History(6), ICT(7), Mathematics(8), Multimedia(9), Music(10), Physical Education(11), Science(12)."
           },
           "response": []
         }

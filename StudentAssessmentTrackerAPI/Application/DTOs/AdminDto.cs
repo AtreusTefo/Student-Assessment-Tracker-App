@@ -45,4 +45,15 @@ namespace StudentAssessmentTracker.Application.DTOs
         /// <summary>Admin profile payload.</summary>
         public AdminDto Admin { get; set; } = new();
     }
+
+    /// <summary>Payload for changing an admin's password.</summary>
+    public class ChangeAdminPasswordDto
+    {
+        /// <summary>The admin's current password (required for verification).</summary>
+        public string? CurrentPassword { get; set; }
+        /// <summary>The new password to set (min 6 characters).</summary>
+        public string? NewPassword { get; set; }
+        /// <summary>Must match NewPassword exactly.</summary>
+        public string? ConfirmNewPassword { get; set; }
+    }
 }

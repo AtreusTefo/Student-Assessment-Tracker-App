@@ -1,120 +1,90 @@
-# DataTables Integration Summary
+# DataTables Integration
 
 ## Overview
-DataTables.net library has been successfully integrated into the Student Assessment Tracker Angular frontend to provide enhanced table functionality including sorting, filtering, and pagination.
+DataTables.net v2 is integrated into the Angular frontend to provide paginated, sortable, and searchable tables. The **Buttons** plugin is also included to power the CSV export feature on the Student List page.
 
-## Installation
-The following packages were installed via npm:
+## Installed Packages
+
 ```bash
-npm install datatables.net datatables.net-dt --save
+npm install datatables.net datatables.net-dt datatables.net-buttons datatables.net-buttons-dt --save
 ```
 
-**Installed Versions:**
-- `datatables.net` - Core DataTables library
-- `datatables.net-dt` - Default DataTables styling theme
+| Package | Version | Purpose |
+|---|---|---|
+| `datatables.net` | ^2.3.7 | Core DataTables library |
+| `datatables.net-dt` | ^2.3.7 | Default DataTables CSS theme |
+| `datatables.net-buttons` | ^3.2.6 | Export buttons plugin |
+| `datatables.net-buttons-dt` | ^3.2.6 | Buttons plugin default theme |
 
-**Note:** `angular-datatables` was initially used but replaced with direct DataTables.js integration for better compatibility with Angular standalone components.
+> **Note:** `angular-datatables` (the Angular wrapper) was evaluated but replaced with direct DataTables.js integration for full compatibility with Angular standalone components (Angular 21).
 
-## Implementation Details
+## Architecture
 
-### Files Modified
+DataTables is used **imperatively** via `ViewChild` and `AfterViewInit` — no Angular wrapper library. This is compatible with standalone components and zoneless change detection (Angular 21).
 
-#### 1. StudentApp/src/app/components/student-list.component.ts
-**Changes:**
-- Added ViewChild reference to table element
-- Imported DataTable class from `datatables.net-dt`
-- Implemented `AfterViewInit` lifecycle hook
-- Created `initializeDataTable()` method for DataTable initialization
-- Added DataTable configuration with:
-  - Pagination: Full numbers style with 10 records per page
-  - Search functionality for filtering records
-  - Sorting enabled on all columns except Actions
-  - Information message showing record count and pagination info
-  - Column definitions to disable sorting/searching on Actions column
+## CSS
 
-**Key Features:**
+The DataTables theme CSS is loaded as a **global style** in `angular.json`:
+
+```json
+"styles": [
+  "node_modules/datatables.net-dt/css/dataTables.dataTables.css",
+  "src/styles.scss"
+]
+```
+
+No per-component CSS imports are needed.
+
+## Student List (`student-list.component.ts`)
+
+Primary DataTables consumer. Displays all students for the authenticated teacher.
+
+**Features enabled:**
+- Pagination (`full_numbers` style, 10 rows per page)
+- Global search/filter across all text columns
+- Column sorting (disabled on the Actions column)
+- CSV export button via the Buttons plugin
+
+**Key implementation pattern:**
+
 ```typescript
+import DataTable from 'datatables.net-dt';
+import 'datatables.net-buttons-dt';
+
+@ViewChild('studentTable') table!: ElementRef;
 private dataTable: any = null;
 
-private initializeDataTable(): void {
-  if (this.table && this.students.length > 0) {
-    if (this.dataTable) {
-      this.dataTable.destroy();
-    }
-    
-    this.dataTable = new DataTable(this.table.nativeElement, {
-      pagingType: 'full_numbers',
-      pageLength: 10,
-      processing: true,
-      dom: 'lfrtip', // layout includes length/filter/table/info/pagination
-      language: { /* custom messages */ },
-      columnDefs: [
-        {
-          targets: 3, // Actions column
-          orderable: false,
-          searchable: false
-        }
-      ]
-    });
-  }
+ngAfterViewInit(): void {
+  if (this.dataTable) { this.dataTable.destroy(); }
+  this.dataTable = new DataTable(this.table.nativeElement, {
+    pagingType: 'full_numbers',
+    pageLength: 10,
+    dom: 'Blfrtip',   // B = Buttons
+    buttons: ['csv'],
+    columnDefs: [
+      { targets: -1, orderable: false, searchable: false }  // Actions column
+    ]
+  });
 }
 ```
 
-**Table Structure:**
-- 4 columns: Student ID, First Name, Last Name, Actions
-- Actions: View, Edit, Delete buttons (maintained from original)
-- Delete confirmation modal (preserved from original)
+**DataTable lifecycle — destroy before re-init:**
+The DataTable instance is destroyed before re-initialising whenever the student list data changes. This prevents duplicate table instances and DOM conflicts.
 
-#### 2. StudentApp/src/app/app.config.ts
-**Changes:**
-- Removed DataTablesModule import (not compatible with standalone components)
-- Kept configuration clean with standard Angular providers
+## Student Detail (`student-detail.component.ts`)
 
-#### 3. StudentApp/src/styles.scss
-**Changes:**
-- Removed problematic CSS import (DataTables CSS handled by component styling)
-- Kept global styles and HTML structure styling
+The assessment table on the detail page also uses DataTables for sorting and pagination of assessment records per student.
 
-### Component Features Maintained
-✅ CRUD operations (View, Edit, Delete buttons with navigation)
-✅ Delete confirmation modal with user confirmation
-✅ Loading and error states
-✅ StudentService integration with observable subscriptions
-✅ Navigation on component mount (via router events)
-✅ Responsive button styling
-✅ Modal styling and functionality
+## Features Maintained
 
-### New DataTables Features
-✅ Pagination with configurable page length
-✅ Global search/filter across all columns
-✅ Column sorting (disabled for Actions column)
-✅ Record count display
-✅ User-friendly language messages
-✅ Processing indicator for data loading
-✅ Responsive table layout
+- CRUD action buttons (View, Edit, Delete) preserved in Actions column
+- Delete confirmation modal
+- Loading and error states
+- `StudentStateService` observable subscription
 
-## Build Status
-Both frontend and backend build successfully:
-- **Backend:** `dotnet build` - Build succeeded ✅
-- **Frontend:** `ng build` - Application bundle generation complete ✅
-  - Bundle size: 534.29 kB (exceeds 500 kB budget but functional)
-  - No compilation errors
-  - 2 non-critical warnings (CommonJS/AMD module compatibility)
+## Build Budget Note
 
-## Usage
-
-### Table Initialization
-The DataTable is automatically initialized when the component view is loaded:
-1. Students are loaded from API via `StudentService.getStudents()`
-2. Component template displays table with `*ngFor` binding
-3. After view initialization, DataTable constructor is called with the table element
-4. DataTable enhances the table with sorting, filtering, and pagination
-
-### Data Refresh
-When students are reloaded (after create/update/delete):
-1. DataTable instance is destroyed via `dataTable.destroy()`
-2. New data replaces the students array
-3. DataTable is reinitialized with fresh data
+The production bundle may exceed the 500 kB warning budget due to DataTables and its plugins. The error budget is set to 1 MB in `angular.json`. If the warning is undesirable, DataTables can be lazy-loaded or the budget can be adjusted.
 
 ### Search/Filter
 Users can:

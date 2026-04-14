@@ -236,6 +236,24 @@ namespace StudentAssessmentTracker.Infrastructure.Data
                 entity.Property(e => e.Password).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+                // ── Default admin seed ────────────────────────────────────────
+                // Solves the bootstrap problem: POST /api/admins requires an Admin JWT,
+                // so without a seed row the endpoint is permanently unreachable on a
+                // fresh database. Dates are hardcoded literals (not DateTime.UtcNow) so
+                // EF Core migration snapshots remain stable across builds.
+                // Credentials: admin@school.com / Admin@123
+                // Change the password via POST /api/admins after first login.
+                entity.HasData(new Admin
+                {
+                    Id = 1,
+                    FirstName = "System",
+                    LastName = "Admin",
+                    Email = "admin@school.com",
+                    Password = "$2a$11$F/NmweY.Jk.ddRIkhzD4Du.pTCIHHaBDr1YArTiX4PR65ddykJ0km",
+                    CreatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc),
+                    UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Utc)
+                });
             });
 
             // ── AuditLogs ─────────────────────────────────────────────────────

@@ -108,7 +108,7 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             try
             {
                 var created = await _teacherService.CreateTeacherAsync(dto);
-                _ = _auditLog.LogAsync("Teacher", created.TeacherId, "Create", null,
+                await _auditLog.LogAsync("Teacher", created.TeacherId, "Create", null,
                     JsonSerializer.Serialize(new { created.Email, created.SubjectName }),
                     created.TeacherId.ToString(), "Teacher");
                 return CreatedAtAction(nameof(GetById), new { id = created.TeacherId }, created);
@@ -158,7 +158,7 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             {
                 var updated = await _teacherService.UpdateTeacherAsync(id, dto);
                 if (updated)
-                    _ = _auditLog.LogAsync("Teacher", id, "Update", null,
+                    await _auditLog.LogAsync("Teacher", id, "Update", null,
                         JsonSerializer.Serialize(new { dto.Email, dto.Phone }),
                         teacherId.ToString(), "Teacher");
                 return updated ? Ok(new { message = $"Teacher with ID {id} successfully updated." }) : NotFound(new { message = $"Teacher with ID {id} not found." });
@@ -206,7 +206,7 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             {
                 var deleted = await _teacherService.DeleteTeacherAsync(id);
                 if (deleted)
-                    _ = _auditLog.LogAsync("Teacher", id, "Delete",
+                    await _auditLog.LogAsync("Teacher", id, "Delete",
                         $"{{\"id\":{id}}}", null, teacherId.ToString(), "Teacher");
                 return deleted
                     ? Ok(new { message = $"Teacher with ID {id} successfully deleted." })

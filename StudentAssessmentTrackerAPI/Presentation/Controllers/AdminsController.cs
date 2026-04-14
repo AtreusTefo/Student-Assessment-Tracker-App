@@ -76,6 +76,36 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             return admin is null ? NotFound(new { message = $"Admin {id} not found." }) : Ok(admin);
         }
 
+        /// <summary>
+        /// Changes the password for an admin account.
+        /// An admin may only change their own password (id must match the JWT claim).
+        /// </summary>
+        [Authorize(Roles = "Admin")]
+        [HttpPut("{id:int}/password")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status403Forbidden)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> ChangePassword(int id, [FromBody] ChangeAdminPasswordDto dto)
+        {
+            var callerId = GetCallerId();
+            if (callerId is null || callerId != id.ToString())
+                return StatusCode(StatusCodes.Status403Forbidden,
+                    new { message = "You may only change your own password." });
+
+            try
+            {
+                await _adminService.ChangePasswordAsync(id, dto);
+                await _auditLog.LogAsync("Admin", id, "Update",
+                    null, "{\"passwordChanged\":true}", callerId, "Admin");
+                return Ok(new { message = "Password changed successfully." });
+            }
+            catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+            catch (UnauthorizedAccessException ex) { return Unauthorized(new { message = ex.Message }); }
+            catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+        }
+
         // ── Teacher oversight ────────────────────────────────────────────────
 
         /// <summary>Returns all registered teachers (admin view — no scope restriction).</summary>

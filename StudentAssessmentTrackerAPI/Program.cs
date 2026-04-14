@@ -69,7 +69,23 @@ builder.Services.AddSwaggerGen(options =>
     {
         Title = "Student Assessment Tracker API",
         Version = "v1",
-        Description = "REST API for Student Assessment Tracking System",
+        Description = """
+            REST API for the Student Assessment Tracking System.
+
+            ## Authentication
+            Most endpoints require a JWT Bearer token. Obtain one from one of the login endpoints below,
+            then click the **Authorize** button (🔒) at the top of this page and paste the token — no `Bearer` prefix needed.
+
+            | Role | Login endpoint |
+            |------|---------------|
+            | **Teacher** | `POST /api/teachers/login` |
+            | **Admin** | `POST /api/admins/login` |
+            | **Student** | `POST /api/students/login` (activate first via `POST /api/students/activate`) |
+
+            Public endpoints (no token required): `GET /api/grades`, `GET /api/subjects`,
+            `POST /api/teachers` (register), `POST /api/teachers/login`, `POST /api/admins/login`,
+            `POST /api/students/activate`, `POST /api/students/login`.
+            """,
         Contact = new Microsoft.OpenApi.Models.OpenApiContact
         {
             Name = "Development Team"
@@ -91,7 +107,14 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "bearer",
         BearerFormat = "JWT",
         In = Microsoft.OpenApi.Models.ParameterLocation.Header,
-        Description = "Paste the JWT returned by POST /api/teachers/login (no 'Bearer' prefix needed)."
+        Description = """
+            Enter the JWT token obtained from one of the login endpoints.
+            Do NOT include the 'Bearer' prefix — Swagger adds it automatically.
+
+            • Teacher token  → POST /api/teachers/login
+            • Admin token    → POST /api/admins/login
+            • Student token  → POST /api/students/login
+            """
     });
     options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
     {
@@ -258,6 +281,12 @@ app.UseSwaggerUI(options =>
 {
     options.SwaggerEndpoint("/swagger/v1/swagger.json", "Student Assessment Tracker API v1");
     options.RoutePrefix = "swagger";
+    options.DocumentTitle = "Student Assessment Tracker API";
+    options.DisplayRequestDuration();
+    options.DocExpansion(Swashbuckle.AspNetCore.SwaggerUI.DocExpansion.List);
+    options.DefaultModelsExpandDepth(1);
+    options.EnableDeepLinking();
+    options.ShowExtensions();
 });
 
 app.MapControllers();

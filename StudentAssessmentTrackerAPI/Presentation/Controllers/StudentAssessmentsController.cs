@@ -104,7 +104,7 @@ namespace StudentAssessmentTracker.Presentation.Controllers
                 var result = await _service.AddAsync(studentId, dto, teacherId);
 
                 // ── Audit log ─────────────────────────────────────────────────
-                _ = _auditLog.LogAsync("StudentAssessment", result.Id, "Create", null,
+                await _auditLog.LogAsync("StudentAssessment", result.Id, "Create", null,
                     JsonSerializer.Serialize(new { result.Name, result.MaxScore, result.DueDate }),
                     teacherId.ToString(), "Teacher");
 
@@ -155,7 +155,7 @@ namespace StudentAssessmentTracker.Presentation.Controllers
                 var before = await _service.GetByIdAsync(studentId, id, teacherId);
                 var result = await _service.UpdateAsync(studentId, id, dto, teacherId);
 
-                _ = _auditLog.LogAsync("StudentAssessment", id, "Update",
+                await _auditLog.LogAsync("StudentAssessment", id, "Update",
                     JsonSerializer.Serialize(new { before.Name, before.Score, before.MaxScore }),
                     JsonSerializer.Serialize(new { result.Name, result.Score, result.MaxScore }),
                     teacherId.ToString(), "Teacher");
@@ -185,7 +185,7 @@ namespace StudentAssessmentTracker.Presentation.Controllers
                 var before = await _service.GetByIdAsync(studentId, id, teacherId);
                 await _service.DeleteAsync(studentId, id, teacherId);
 
-                _ = _auditLog.LogAsync("StudentAssessment", id, "Delete",
+                await _auditLog.LogAsync("StudentAssessment", id, "Delete",
                     JsonSerializer.Serialize(new { before.Name, before.Score, before.MaxScore }),
                     null, teacherId.ToString(), "Teacher");
 

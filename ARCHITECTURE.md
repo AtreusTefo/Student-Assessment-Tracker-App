@@ -48,13 +48,20 @@ StudentAssessmentTracker/                  ← Solution Root
 │   ├── appsettings.json                   ← Configuration
 │   └── StudentAssessmentTracker.csproj    ← Project file
 │
-├── StudentApp/                            ← Frontend Angular 18 Project
+├── StudentApp/                            ← Frontend Angular 21 Project
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── components/               (Angular standalone components)
-│   │   │   ├── services/                 (HTTP services)
-│   │   │   ├── models/                   (TypeScript interfaces)
-│   │   │   └── guards/                   (Route guards)
+│   │   │   ├── components/               (10 standalone components)
+│   │   │   ├── core/
+│   │   │   │   ├── guards/               (auth, guest, student-auth, student-guest, admin)
+│   │   │   │   ├── interceptors/         (auth.interceptor.ts)
+│   │   │   │   ├── models/               (student.model.ts, teacher.model.ts)
+│   │   │   │   └── services/
+│   │   │   │       ├── http/             (9 API services)
+│   │   │   │       └── state/            (3 reactive state services)
+│   │   │   └── features/
+│   │   │       ├── students/services/    (2 business services)
+│   │   │       └── teachers/services/    (1 business service)
 │   │   └── assets/
 │   ├── proxy.conf.json                   (Development proxy to API)
 │   ├── angular.json
@@ -140,13 +147,19 @@ StudentAssessmentTracker/                  ← Solution Root
 ### 5. Frontend Layer (Angular)
 **Location:** `StudentApp/`
 
-**Purpose:** User interface, independent SPA application.
+**Purpose:** User interface, independent SPA application running Angular 21 in zoneless mode.
 
-**Components:**
-- **Components**: UI components (standalone)
-- **Services**: HTTP communication with API
-- **Models**: TypeScript interfaces
-- **Guards**: Route protection
+**Three-tier internal structure:**
+- **`components/`**: 10 standalone UI components (presentational layer). All use inline templates and delegate business logic to services.
+- **`core/`**: Shared infrastructure — route guards (5), HTTP interceptor, TypeScript models/interfaces, HTTP API services (9), and reactive state services (3).
+- **`features/`**: Business logic services co-located with the feature domain — `students/` (auth + CRUD business services) and `teachers/` (auth + registration business service).
+
+**Key design decisions:**
+- No `NgModule` — all components are standalone
+- No `zone.js` — Angular 21 zoneless change detection
+- No lazy loading — all routes eagerly loaded
+- No environment files — API URLs are relative paths (`/api/...`) resolved via `proxy.conf.json` in dev
+- Test runner: Vitest (not Karma/Jest)
 
 **Communication:** HTTP/JSON to backend API on ports 5000 (HTTP) / 5001 (HTTPS)
 
