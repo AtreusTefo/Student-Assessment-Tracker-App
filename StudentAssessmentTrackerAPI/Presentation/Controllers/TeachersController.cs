@@ -89,12 +89,13 @@ namespace StudentAssessmentTracker.Presentation.Controllers
         // ====================================================================
 
         /// <summary>
-        /// Creates (registers) a new teacher
+        /// Creates (registers) a new teacher — admin only.
         /// </summary>
         /// <param name="dto">Teacher registration data</param>
         /// <returns>Created teacher</returns>
         /// <response code="201">Teacher created successfully</response>
         /// <response code="400">Validation failed</response>
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         [ProducesResponseType(typeof(TeacherResponseDto), StatusCodes.Status201Created)]
         [ProducesResponseType(StatusCodes.Status400BadRequest)]
@@ -108,9 +109,11 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             try
             {
                 var created = await _teacherService.CreateTeacherAsync(dto);
+                var adminId = User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+                              ?? User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
                 await _auditLog.LogAsync("Teacher", created.TeacherId, "Create", null,
                     JsonSerializer.Serialize(new { created.Email, created.SubjectName }),
-                    created.TeacherId.ToString(), "Teacher");
+                    adminId, "Admin");
                 return CreatedAtAction(nameof(GetById), new { id = created.TeacherId }, created);
             }
             catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
@@ -221,6 +224,43 @@ namespace StudentAssessmentTracker.Presentation.Controllers
         }
 
         // ====================================================================
+        // POST /api/teachers/activate
+        // ====================================================================
+
+        /// <summary>
+        /// Activates a teacher account by setting an initial password.
+        /// No authentication required — this is the teacher's first-time self-service setup.
+        /// Admin creates the account (without a password); teacher activates it using their email.
+        /// </summary>
+        /// <param name="dto">Activation credentials (email + password + confirmPassword).</param>
+        /// <response code="200">Account activated — returns token and teacher profile.</response>
+        /// <response code="400">Validation failed or passwords do not match.</response>
+        /// <response code="401">No teacher found with that email.</response>
+        [HttpPost("activate")]
+        [ProducesResponseType(typeof(TeacherLoginResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        public async Task<IActionResult> Activate([FromBody] TeacherActivateDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            try
+            {
+                _logger.LogInformation("POST /api/teachers/activate for {Email}", dto.Email);
+                var result = await _teacherService.ActivateTeacherAsync(dto);
+                return result is null
+                    ? Unauthorized(new { message = "No teacher account found with that email address." })
+                    : Ok(result);
+            }
+            catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+            catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error activating teacher {Email}", dto.Email);
+                return StatusCode(500, new { message = "Internal server error during account activation." });
+            }
+        }
+
+        // ====================================================================
         // POST /api/teachers/login
         // ====================================================================
 
@@ -230,9 +270,11 @@ namespace StudentAssessmentTracker.Presentation.Controllers
         /// <param name="dto">Login credentials</param>
         /// <returns>Token and teacher profile on success</returns>
         /// <response code="200">Login successful</response>
+        /// <response code="400">Account not yet activated</response>
         /// <response code="401">Invalid credentials</response>
         [HttpPost("login")]
         [ProducesResponseType(typeof(TeacherLoginResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         public async Task<IActionResult> Login([FromBody] TeacherLoginDto dto)
         {
@@ -240,10 +282,19 @@ namespace StudentAssessmentTracker.Presentation.Controllers
                 return BadRequest(ModelState);
 
             _logger.LogInformation("POST /api/teachers/login for {Email}", dto.Email);
-            var result = await _teacherService.LoginAsync(dto);
-            return result is null
-                ? Unauthorized(new { message = "Invalid email or password." })
-                : Ok(result);
+            try
+            {
+                var result = await _teacherService.LoginAsync(dto);
+                return result is null
+                    ? Unauthorized(new { message = "Invalid email or password." })
+                    : Ok(result);
+            }
+            catch (InvalidOperationException ex) { return BadRequest(new { message = ex.Message }); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error logging in teacher {Email}", dto.Email);
+                return StatusCode(500, new { message = "Internal server error during login." });
+            }
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────

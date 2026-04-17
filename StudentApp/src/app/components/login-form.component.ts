@@ -46,12 +46,12 @@ import { takeUntil } from 'rxjs/operators';
           <button type="submit" class="btn btn-primary" [disabled]="loading">
             {{ loading ? 'Logging in...' : 'Login' }}
           </button>
-          <a routerLink="/register" class="btn btn-secondary">Register</a>
+          <a routerLink="/activate" class="btn btn-secondary">Activate Account</a>
         </div>
       </form>
       
       <div class="signup-link">
-        <p>Don't have an account? <a routerLink="/register">Sign up here</a></p>
+        <p>New teacher? <a routerLink="/activate">Activate your account here</a></p>
       </div>
     </div>
   `,

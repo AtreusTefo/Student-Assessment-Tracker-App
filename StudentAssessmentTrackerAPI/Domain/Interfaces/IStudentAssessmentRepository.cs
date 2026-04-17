@@ -18,5 +18,12 @@ namespace StudentAssessmentTracker.Domain.Interfaces
         /// <paramref name="studentId"/>, or <c>null</c> when not found.
         /// </summary>
         Task<StudentAssessment?> GetByIdForStudentAsync(int studentId, int assessmentId);
+
+        /// <summary>
+        /// Returns <c>true</c> when an assessment with <paramref name="name"/> already exists
+        /// for <paramref name="studentId"/> (case-insensitive). Used as a service-layer guard
+        /// before the DB unique index fires.
+        /// </summary>
+        Task<bool> ExistsByNameForStudentAsync(int studentId, string name);
     }
 }

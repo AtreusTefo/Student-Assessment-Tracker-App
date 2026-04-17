@@ -1,6 +1,6 @@
 # Quick Fix Reference Guide
 
-## 25 Major Issues Fixed & How to Fix Them Again
+## 50 Major Issues Fixed & How to Fix Them Again
 
 ---
 
@@ -1413,6 +1413,133 @@ if (error.status === 401 && token) {
 
 ---
 
-**Last Updated**: April 2, 2026  
-**Total Issues Documented**: 48 (13 frontend + 6 architecture + 6 infrastructure/tooling + 8 auth/UX/DataTables + 8 security/integrity/architecture Apr-1 + 7 auth/interceptor/feature Apr-2)  
+---
+
+## 🚨 CRITICAL ISSUES (April 17, 2026)
+
+### 49. `/admin` Route Not Found — Admin Dashboard Inaccessible 🔗
+**Problem**: Navigating to `http://localhost:4200/admin` does not open the admin dashboard or login — it silently redirects to the teacher homepage or shows a blank page.  
+**Root Cause**: No route for the path `admin` existed in `app.routes.ts`. The Angular wildcard `{ path: '**', redirectTo: '' }` caught the request and redirected to `/` (teacher homepage, protected by `authGuard`). There was no way to reach the admin login or admin dashboard via the short `/admin` URL.  
+**Fix**: Add a redirect entry above the wildcard:
+```typescript
+// app.routes.ts — Admin routes block
+{ path: 'admin', redirectTo: 'admin/login', pathMatch: 'full' },  // ✅ ADD THIS
+{ path: 'admin/login', component: AdminLoginComponent, canActivate: [adminGuestGuard] },
+{ path: 'admin/dashboard', component: AdminDashboardComponent, canActivate: [adminAuthGuard] },
+```
+**How it now works**:  
+- `/admin` → redirects to `/admin/login`  
+- If `admin_token` exists in `localStorage` → `adminGuestGuard` redirects to `/admin/dashboard`  
+- After login → lands on `/admin/dashboard` (guarded by `adminAuthGuard`)  
+**File**: `StudentApp/src/app/app.routes.ts`  
+**Prevention**: When adding login/dashboard route pairs, always add a bare-name redirect entry (`admin` → `admin/login`). The wildcard catch-all silences missing-route errors making them hard to notice.
+
+---
+
+### 50. Swagger UI Not Sending HTTP Requests (CRUD Broken) 🔧
+**Problem**: Opening Swagger UI at `http://localhost:5000/swagger` shows the API documentation but clicking **Execute** either does nothing or returns no body. All CRUD operations (GET, POST, PUT, DELETE) fail to fire.  
+**Root Cause — three separate bugs**:
+
+**Bug 1 — Wrong middleware order (Critical)**  
+`UseSwagger()` and `UseSwaggerUI()` were placed *after* `UseAuthentication()` / `UseAuthorization()`. The auth middleware pipeline intercepted `/swagger/**` requests and matched them against the `MapFallbackToFile` SPA catch-all, corrupting the request before Swagger's own middleware could respond.
+
+**Bug 2 — Global security requirement on all operations**  
+`AddSecurityRequirement` in `AddSwaggerGen` locked *every* endpoint — including public ones like `/api/admins/login`. This made all operations appear locked in the UI, preventing unauthenticated calls to obtain a token (chicken-and-egg problem).
+
+**Bug 3 — No `EnableTryItOutByDefault()`**  
+Swagger UI requires a manual "Try it out" click per operation before the Execute button appears. Users never saw the Execute button, which directly caused the "not sending requests" symptom.
+
+**Fix — three changes in `Program.cs`**:
+
+**(a) Move Swagger before auth middleware:**
+```csharp
+// BEFORE (WRONG):
+app.UseCors("AllowAngular");
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseSwagger(...);
+app.UseSwaggerUI(...);
+
+// AFTER (CORRECT):
+app.UseCors("AllowAngular");
+app.UseSwagger(...);     // ← BEFORE auth
+app.UseSwaggerUI(...);  // ← BEFORE auth
+app.UseAuthentication();
+app.UseAuthorization();
+```
+
+**(b) Replace global `AddSecurityRequirement` with an operation filter:**
+```csharp
+// REMOVE from AddSwaggerGen:
+options.AddSecurityRequirement(new OpenApiSecurityRequirement { ... });
+
+// ADD instead:
+options.OperationFilter<SwaggerAuthOperationFilter>();
+```
+Create `Presentation/Swagger/SwaggerAuthOperationFilter.cs`:
+```csharp
+public class SwaggerAuthOperationFilter : IOperationFilter
+{
+    public void Apply(OpenApiOperation operation, OperationFilterContext context)
+    {
+        // Only apply Bearer requirement to [Authorize] actions
+        var hasAuthorize = context.MethodInfo.GetCustomAttributes(true)
+            .OfType<AuthorizeAttribute>().Any()
+            || (context.MethodInfo.DeclaringType?.GetCustomAttributes(true)
+                .OfType<AuthorizeAttribute>().Any() ?? false);
+        if (!hasAuthorize) return;
+
+        operation.Security = new List<OpenApiSecurityRequirement>
+        {
+            new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme {
+                        Reference = new OpenApiReference {
+                            Type = ReferenceType.SecurityScheme, Id = "Bearer"
+                        }
+                    },
+                    Array.Empty<string>()
+                }
+            }
+        };
+    }
+}
+```
+
+**(c) Enable TryItOut and persist the token:**
+```csharp
+app.UseSwaggerUI(options =>
+{
+    // ... existing options ...
+    options.EnableTryItOutByDefault();         // ✅ Execute button visible immediately
+    options.ConfigObject.PersistAuthorization = true; // ✅ Token survives page refresh
+});
+```
+**Files**: `StudentAssessmentTrackerAPI/Program.cs`, `StudentAssessmentTrackerAPI/Presentation/Swagger/SwaggerAuthOperationFilter.cs` *(new)*  
+**Prevention**:  
+- Swagger middleware must always be placed before `UseAuthentication()` to prevent SPA catch-all from intercepting `/swagger/**` paths.  
+- Never use global `AddSecurityRequirement` — use an `IOperationFilter` that reads `[Authorize]` attributes so public endpoints stay unlocked.  
+- Always call `EnableTryItOutByDefault()` during project setup.
+
+---
+
+## Diagnostic Checklist — Updated April 17, 2026
+
+**🔗 Navigating to `/admin` goes to wrong page?**
+1. ✅ Check `app.routes.ts` — is there a `{ path: 'admin', redirectTo: 'admin/login', pathMatch: 'full' }` entry?
+2. ✅ Make sure it appears *before* the `{ path: '**', redirectTo: '' }` wildcard
+3. ✅ Verify `adminGuestGuard` redirects to `/admin/dashboard` when `admin_token` is present in `localStorage`
+
+**🔧 Swagger UI Execute button absent / sends no requests?**
+1. ✅ Check middleware order in `Program.cs` — `UseSwagger()` and `UseSwaggerUI()` must come **before** `UseAuthentication()` and `UseAuthorization()`
+2. ✅ Check `AddSwaggerGen` — remove global `AddSecurityRequirement`; replace with `options.OperationFilter<SwaggerAuthOperationFilter>()`
+3. ✅ Add `options.EnableTryItOutByDefault()` to `UseSwaggerUI()` options
+4. ✅ Add `options.ConfigObject.PersistAuthorization = true` so the Bearer token survives page refreshes
+5. ✅ Public endpoints (login, register) should have no padlock icon — if they do, the global security requirement is still present
+
+---
+
+**Last Updated**: April 17, 2026  
+**Total Issues Documented**: 50 (13 frontend + 6 architecture + 6 infrastructure/tooling + 8 auth/UX/DataTables + 8 security/integrity/architecture Apr-1 + 7 auth/interceptor/feature Apr-2 + 2 routing/swagger Apr-17)  
 **Keep this guide nearby when developing!** 🚀

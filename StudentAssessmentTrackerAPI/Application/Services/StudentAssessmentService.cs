@@ -84,6 +84,15 @@ namespace StudentAssessmentTracker.Application.Services
         public async Task<StudentAssessmentDto> AddAsync(int studentId, CreateStudentAssessmentDto dto, int teacherId)
         {
             await EnsureStudentBelongsToTeacherAsync(studentId, teacherId);
+
+            // Issue #5: prevent duplicate assessment names per student before hitting the
+            // DB unique index. Two assessments named "Test 1" for the same student produce
+            // ambiguous reports and confuse students reviewing their results.
+            var duplicate = await _assessmentRepository.ExistsByNameForStudentAsync(studentId, dto.Name!);
+            if (duplicate)
+                throw new InvalidOperationException(
+                    $"An assessment named '{dto.Name}' already exists for student {studentId}.");
+
             var assessment = _mapper.Map<StudentAssessment>(dto);
             assessment.StudentId = studentId;
             assessment.CreatedAt = DateTime.UtcNow;
@@ -98,6 +107,15 @@ namespace StudentAssessmentTracker.Application.Services
         {
             await EnsureStudentBelongsToTeacherAsync(studentId, teacherId);
             var assessment = await FindAssessmentAsync(studentId, assessmentId);
+
+            // Prevent renaming to a name already used by another assessment on the same student.
+            // Without this, the DB unique index UX_StudentAssessments_StudentId_Name fires and
+            // surfaces as an unhandled DbUpdateException → HTTP 500 instead of a clean 409.
+            if (!string.Equals(dto.Name, assessment.Name, StringComparison.OrdinalIgnoreCase) &&
+                await _assessmentRepository.ExistsByNameForStudentAsync(studentId, dto.Name!))
+                throw new InvalidOperationException(
+                    $"An assessment named '{dto.Name}' already exists for student {studentId}.");
+
             _mapper.Map(dto, assessment);
             assessment.UpdatedAt = DateTime.UtcNow;
             await _assessmentRepository.UpdateAsync(assessment);

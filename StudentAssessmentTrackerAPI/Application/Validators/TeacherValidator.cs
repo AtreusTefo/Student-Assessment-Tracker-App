@@ -36,10 +36,30 @@ namespace StudentAssessmentTracker.Application.Validators
 
             RuleFor(x => x.SubjectId)
                 .GreaterThan(0).WithMessage("A valid subject must be selected.");
+        }
+    }
+
+    /// <summary>
+    /// FluentValidation validator for <see cref="TeacherActivateDto"/>
+    /// </summary>
+    public class TeacherActivateValidator : AbstractValidator<TeacherActivateDto>
+    {
+        /// <summary>
+        /// Initializes validation rules for teacher account activation
+        /// </summary>
+        public TeacherActivateValidator()
+        {
+            RuleFor(x => x.Email)
+                .NotEmpty().WithMessage("Email is required.")
+                .EmailAddress().WithMessage("A valid email address is required.");
 
             RuleFor(x => x.Password)
                 .NotEmpty().WithMessage("Password is required.")
                 .MinimumLength(6).WithMessage("Password must be at least 6 characters.");
+
+            RuleFor(x => x.ConfirmPassword)
+                .NotEmpty().WithMessage("Please confirm your password.")
+                .Equal(x => x.Password).WithMessage("Passwords do not match.");
         }
     }
 

@@ -23,7 +23,9 @@ export const routes: Routes = [
 
   // Teacher guest-only routes — redirect to home if already logged in
   { path: 'login', component: LoginFormComponent, canActivate: [guestGuard] },
-  { path: 'register', component: SignUpFormComponent, canActivate: [guestGuard] },
+  { path: 'activate', component: SignUpFormComponent, canActivate: [guestGuard] },
+  // Backward-compat redirect: old /register links → /activate
+  { path: 'register', redirectTo: 'activate', pathMatch: 'full' },
 
   // Student guest-only routes — redirect to dashboard if already logged in
   { path: 'student/login', component: StudentLoginComponent, canActivate: [studentGuestGuard] },
@@ -33,6 +35,7 @@ export const routes: Routes = [
   { path: 'student/dashboard', component: StudentDashboardComponent, canActivate: [studentAuthGuard] },
 
   // Admin routes
+  { path: 'admin', redirectTo: 'admin/login', pathMatch: 'full' },
   { path: 'admin/login', component: AdminLoginComponent, canActivate: [adminGuestGuard] },
   { path: 'admin/dashboard', component: AdminDashboardComponent, canActivate: [adminAuthGuard] },
 

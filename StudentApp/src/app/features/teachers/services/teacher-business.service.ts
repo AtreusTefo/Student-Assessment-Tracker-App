@@ -1,8 +1,8 @@
 import { Injectable } from '@angular/core';
-import { Observable, tap, catchError, throwError, switchMap, map } from 'rxjs';
+import { Observable, tap, catchError, throwError, map } from 'rxjs';
 import { TeacherApiService } from '../../../core/services/http';
 import { TeacherStateService, StudentAuthStateService } from '../../../core/services/state';
-import { Teacher, CreateTeacherDto, LoginDto, TeacherLoginResponse } from '../../../core/models';
+import { Teacher, CreateTeacherDto, LoginDto, TeacherLoginResponse, TeacherActivateDto } from '../../../core/models';
 
 /**
  * BUSINESS LOGIC LAYER - Teacher Business Service
@@ -54,19 +54,17 @@ export class TeacherBusinessService {
   }
 
   /**
-   * Register a new teacher
-   * Business Logic: Validate, create teacher account
+   * Activate a teacher account (first login — teacher sets their own password)
+   * Business Logic: Validate, activate account, store session
    */
-  register(teacherData: CreateTeacherDto): Observable<Teacher> {
-    // Business rule: Validate email format
-    if (!this.isValidEmail(teacherData.email)) {
+  activate(dto: TeacherActivateDto): Observable<Teacher> {
+    if (!this.isValidEmail(dto.email)) {
       const error = 'Invalid email format';
       this.teacherState.setError(error);
       return throwError(() => new Error(error));
     }
 
-    // Business rule: Validate password strength
-    if (!this.isValidPassword(teacherData.password)) {
+    if (!this.isValidPassword(dto.password)) {
       const error = 'Password must be at least 6 characters';
       this.teacherState.setError(error);
       return throwError(() => new Error(error));
@@ -74,12 +72,7 @@ export class TeacherBusinessService {
 
     this.teacherState.setLoading(true);
 
-    // After creating the account, immediately log in so a JWT is issued and stored.
-    // Without this step the user would have no token — causing 401 on all protected API calls.
-    return this.teacherApi.create(teacherData).pipe(
-      switchMap(() =>
-        this.teacherApi.login({ email: teacherData.email, password: teacherData.password })
-      ),
+    return this.teacherApi.activate(dto).pipe(
       map(response => {
         const teacher: Teacher = {
           id: response.teacher.teacherId,
@@ -92,9 +85,36 @@ export class TeacherBusinessService {
           subjectName: response.teacher.subjectName,
           createdAt: response.teacher.createdDate
         };
-        this.studentAuthState.logout(); // Clear any active student session
+        this.studentAuthState.logout();
         this.teacherState.setCurrentTeacher(teacher);
-        this.teacherState.setToken(response.token); // Store JWT for subsequent API calls
+        this.teacherState.setToken(response.token);
+        this.teacherState.setLoading(false);
+        return teacher;
+      }),
+      catchError(error => {
+        const errorMessage = this.extractErrorMessage(error);
+        this.teacherState.setError(errorMessage);
+        return throwError(() => error);
+      })
+    );
+  }
+
+  /**
+   * Update an existing teacher profile (admin / edit-profile path)
+   * Business Logic: Validate email, call update API
+   */
+  register(teacherData: CreateTeacherDto): Observable<Teacher> {
+    if (!this.isValidEmail(teacherData.email)) {
+      const error = 'Invalid email format';
+      this.teacherState.setError(error);
+      return throwError(() => new Error(error));
+    }
+
+    this.teacherState.setLoading(true);
+
+    return this.teacherApi.create(teacherData).pipe(
+      map(teacher => {
+        this.teacherState.setCurrentTeacher(teacher);
         this.teacherState.setLoading(false);
         return teacher;
       }),

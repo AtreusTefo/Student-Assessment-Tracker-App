@@ -54,7 +54,7 @@ import { takeUntil } from 'rxjs/operators';
           </div>
 
           <div class="form-group">
-            <label for="email">Email <span class="hint">(registered by your teacher)</span></label>
+            <label for="email">Email <span class="hint">(registered by your school admin)</span></label>
             <input
               type="email"
               id="email"

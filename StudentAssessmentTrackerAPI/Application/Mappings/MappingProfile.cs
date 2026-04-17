@@ -101,6 +101,8 @@ namespace StudentAssessmentTracker.Application.Mappings
                 .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow))
                 // EnrollmentDate is server-controlled — always set to UtcNow on first registration.
                 .ForMember(dest => dest.EnrollmentDate, opt => opt.MapFrom(_ => DateTime.UtcNow))
+                // Password is NOT set by admin — teacher activates their own account.
+                .ForMember(dest => dest.Password, opt => opt.Ignore())
                 .ForMember(dest => dest.SubjectNavigation, opt => opt.Ignore())
                 .ForMember(dest => dest.StudentAssignments, opt => opt.Ignore());
 

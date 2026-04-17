@@ -295,19 +295,11 @@ namespace StudentAssessmentTracker.Infrastructure.Repositories
         {
             var assignment = await _context.TeacherStudents
                 .FirstOrDefaultAsync(ts => ts.TeacherId == teacherId && ts.StudentId == studentId);
-            if (assignment is null) return; // already not assigned
+            if (assignment is null) return; // already not assigned — idempotent
 
-            // Issue 3 fix: enforce the one-teacher-minimum invariant at the repository level
-            // so that any caller (service, migration script, test) cannot leave a student
-            // orphaned with zero teacher assignments.
-            var assignmentCount = await _context.TeacherStudents
-                .AsNoTracking()
-                .CountAsync(ts => ts.StudentId == studentId);
-            if (assignmentCount <= 1)
-                throw new InvalidOperationException(
-                    $"Cannot unassign: student {studentId} would have no teachers remaining. " +
-                    "Assign another teacher first, or delete the student.");
-
+            // School-wide model: zero teacher assignments is a valid state (student enrolled
+            // but not yet timetabled). The old one-teacher-minimum invariant was removed
+            // because students are now created by admin without any teacher pre-assigned.
             _context.TeacherStudents.Remove(assignment);
             await _context.SaveChangesAsync();
         }

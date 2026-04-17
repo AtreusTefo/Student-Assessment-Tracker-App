@@ -87,20 +87,22 @@ export class StudentApiService {
   }
 
   /**
-   * Assign the authenticated teacher to a student (many-to-many)
-   * POST /api/students/{studentId}/teachers
+   * Assign a teacher to a student (admin operation)
+   * POST /api/students/{studentId}/teachers/{teacherId}
    * @param studentId - The student's primary key
+   * @param teacherId - The teacher's primary key
    */
-  assignTeacher(studentId: number): Observable<{ message: string }> {
-    return this.http.post<{ message: string }>(`${this.apiUrl}/${studentId}/teachers`, {});
+  assignTeacher(studentId: number, teacherId: number): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/${studentId}/teachers/${teacherId}`, {});
   }
 
   /**
-   * Remove the authenticated teacher's assignment from a student
-   * DELETE /api/students/{studentId}/teachers
+   * Remove a teacher assignment from a student (admin operation)
+   * DELETE /api/students/{studentId}/teachers/{teacherId}
    * @param studentId - The student's primary key
+   * @param teacherId - The teacher's primary key
    */
-  unassignTeacher(studentId: number): Observable<{ message: string }> {
-    return this.http.delete<{ message: string }>(`${this.apiUrl}/${studentId}/teachers`);
+  unassignTeacher(studentId: number, teacherId: number): Observable<{ message: string }> {
+    return this.http.delete<{ message: string }>(`${this.apiUrl}/${studentId}/teachers/${teacherId}`);
   }
 }

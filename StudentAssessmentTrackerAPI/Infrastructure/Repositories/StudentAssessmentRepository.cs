@@ -32,5 +32,15 @@ namespace StudentAssessmentTracker.Infrastructure.Repositories
                 .Include(a => a.Submissions)
                 .FirstOrDefaultAsync(a => a.Id == assessmentId && a.StudentId == studentId);
         }
+
+        /// <inheritdoc />
+        public async Task<bool> ExistsByNameForStudentAsync(int studentId, string name)
+        {
+            var normalizedName = name.Trim();
+            return await _context.StudentAssessments
+                .AsNoTracking()
+                .AnyAsync(a => a.StudentId == studentId
+                            && a.Name.ToLower() == normalizedName.ToLower());
+        }
     }
 }

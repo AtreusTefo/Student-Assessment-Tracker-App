@@ -75,7 +75,7 @@ export class App implements OnInit, OnDestroy {
   }
 
   navigateToSignUp() {
-    this.router.navigate(['/register']);
+    this.router.navigate(['/activate']);
   }
 
   navigateToList() {

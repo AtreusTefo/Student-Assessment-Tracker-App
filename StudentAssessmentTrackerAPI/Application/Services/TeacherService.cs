@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
@@ -6,6 +7,7 @@ using System.Text;
 using StudentAssessmentTracker.Application.DTOs;
 using StudentAssessmentTracker.Domain.Entities;
 using StudentAssessmentTracker.Domain.Interfaces;
+using StudentAssessmentTracker.Infrastructure.Data;
 
 namespace StudentAssessmentTracker.Application.Services
 {
@@ -42,8 +44,16 @@ namespace StudentAssessmentTracker.Application.Services
         /// <summary>
         /// Authenticates a teacher by email and password and returns a signed JWT on success.
         /// Returns <c>null</c> on credential mismatch.
+        /// Throws <see cref="InvalidOperationException"/> when the account has not been activated.
         /// </summary>
         Task<TeacherLoginResponseDto?> LoginAsync(TeacherLoginDto dto);
+
+        /// <summary>
+        /// Activates a teacher account by setting the initial password.
+        /// Returns <c>null</c> when no teacher with that email exists.
+        /// Throws <see cref="InvalidOperationException"/> when the account is already active.
+        /// </summary>
+        Task<TeacherLoginResponseDto?> ActivateTeacherAsync(TeacherActivateDto dto);
     }
 
     /// <summary>
@@ -53,6 +63,7 @@ namespace StudentAssessmentTracker.Application.Services
     {
         private readonly ITeacherRepository _repository;
         private readonly IRepository<Subject> _subjectRepository;
+        private readonly ApplicationDbContext _db;
         private readonly IMapper _mapper;
         private readonly ILogger<TeacherService> _logger;
         private readonly IConfiguration _configuration;
@@ -61,12 +72,14 @@ namespace StudentAssessmentTracker.Application.Services
         public TeacherService(
             ITeacherRepository repository,
             IRepository<Subject> subjectRepository,
+            ApplicationDbContext db,
             IMapper mapper,
             ILogger<TeacherService> logger,
             IConfiguration configuration)
         {
             _repository = repository;
             _subjectRepository = subjectRepository;
+            _db = db;
             _mapper = mapper;
             _logger = logger;
             _configuration = configuration;
@@ -102,11 +115,22 @@ namespace StudentAssessmentTracker.Application.Services
             if (existing is not null)
                 throw new InvalidOperationException($"A teacher with email '{dto.Email}' is already registered.");
 
+            // Issue #6: cross-entity email uniqueness — email must be unique across Teachers,
+            // Students, and Admins to prevent credential confusion and impersonation.
+            var emailLower = dto.Email.Trim().ToLower();
+            if (await _db.Students.AnyAsync(s => s.Email == emailLower))
+                throw new InvalidOperationException($"Email '{dto.Email}' is already in use by a student account.");
+            if (await _db.Admins.AnyAsync(a => a.Email == emailLower))
+                throw new InvalidOperationException($"Email '{dto.Email}' is already in use by an admin account.");
+
             // Issue 4: detect duplicate ID/Passport number.
             if (await _repository.ExistsByIdPassportNoAsync(dto.IdPassportNo))
                 throw new InvalidOperationException($"A teacher with ID/Passport No. '{dto.IdPassportNo}' is already registered.");
 
             var teacher = _mapper.Map<Teacher>(dto);
+            // SECURITY: password is NOT set here — teacher activates their own account via POST /api/teachers/activate.
+            // Issue #4: normalise email to lowercase before storage.
+            teacher.Email = dto.Email.Trim().ToLower();
             teacher.CreatedDate = DateTime.UtcNow;
             // Issue 5: AddAsync already calls SaveChangesAsync internally — do not call it again.
             await _repository.AddAsync(teacher);
@@ -138,11 +162,23 @@ namespace StudentAssessmentTracker.Application.Services
             if (await _repository.ExistsByEmailAsync(dto.Email, excludeTeacherId: id))
                 throw new InvalidOperationException($"A teacher with email '{dto.Email}' is already registered.");
 
+            // Issue #3: cross-entity email uniqueness — UpdateTeacherAsync must repeat the
+            // same cross-table checks that CreateTeacherAsync applies. Omitting this would
+            // allow a teacher to change their email to one already held by a student or admin.
+            var updateEmailLower = dto.Email.Trim().ToLower();
+            if (await _db.Students.AnyAsync(s => s.Email == updateEmailLower))
+                throw new InvalidOperationException($"Email '{dto.Email}' is already in use by a student account.");
+            if (await _db.Admins.AnyAsync(a => a.Email == updateEmailLower))
+                throw new InvalidOperationException($"Email '{dto.Email}' is already in use by an admin account.");
+
             // Detect duplicate ID/Passport number, excluding the record being updated.
             if (await _repository.ExistsByIdPassportNoAsync(dto.IdPassportNo, excludeTeacherId: id))
                 throw new InvalidOperationException($"A teacher with ID/Passport No. '{dto.IdPassportNo}' is already registered.");
 
             _mapper.Map(dto, teacher);
+            // Issue #4: normalise email to lowercase before storage on update.
+            teacher.Email = dto.Email.Trim().ToLower();
+            teacher.UpdatedAt = DateTime.UtcNow; // Issue #8: stamp UpdatedAt on every update
             await _repository.UpdateAsync(teacher);
             return true;
         }
@@ -161,23 +197,37 @@ namespace StudentAssessmentTracker.Application.Services
                     $"Teacher with ID {id} cannot be deleted because they have students assigned. " +
                     "Reassign or delete the students first.");
 
+            // Issue #2: also block deletion when the teacher owns class groups that still
+            // have enrolled students. The DB cascade would silently remove those class groups
+            // AND all enrollments — data loss with no audit trail.
+            if (await _db.ClassGroups.AnyAsync(cg => cg.TeacherId == id &&
+                    cg.Enrollments.Any()))
+                throw new InvalidOperationException(
+                    $"Teacher with ID {id} cannot be deleted because they have class groups with enrolled students. " +
+                    "Unenroll all students from their class groups first.");
+
             // DeleteAsync already calls SaveChangesAsync internally — no second call needed.
             await _repository.DeleteAsync(id);
             return true;
         }
 
-        /// <summary>
-        /// Authenticates a teacher by email using a single indexed DB query (no full-table
-        /// scan) and returns a signed JWT containing the teacher's ID as a claim.
-        /// </summary>
+        /// <inheritdoc />
         public async Task<TeacherLoginResponseDto?> LoginAsync(TeacherLoginDto dto)
         {
             _logger.LogInformation("Login attempt for email {Email}", dto.Email);
 
-            // Single server-side query â€” no GetAllAsync() table scan
             var teacher = await _repository.FindByEmailAsync(dto.Email);
 
-            if (teacher is null || teacher.Password != dto.Password)
+            if (teacher is null)
+            {
+                _logger.LogWarning("Failed login attempt for email {Email}", dto.Email);
+                return null;
+            }
+
+            if (string.IsNullOrEmpty(teacher.Password))
+                throw new InvalidOperationException("Account not yet activated. Please use POST /api/teachers/activate to set your password.");
+
+            if (!BCrypt.Net.BCrypt.Verify(dto.Password, teacher.Password))
             {
                 _logger.LogWarning("Failed login attempt for email {Email}", dto.Email);
                 return null;
@@ -190,8 +240,39 @@ namespace StudentAssessmentTracker.Application.Services
             };
         }
 
-        // â”€â”€ Private helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        /// <inheritdoc />
+        public async Task<TeacherLoginResponseDto?> ActivateTeacherAsync(TeacherActivateDto dto)
+        {
+            _logger.LogInformation("Activation attempt for teacher email {Email}", dto.Email);
 
+            var emailLower = dto.Email.Trim().ToLower();
+            var teacher = await _repository.FindByEmailAsync(emailLower);
+            if (teacher is null)
+            {
+                _logger.LogWarning("Activation failed - no teacher found for email {Email}", emailLower);
+                return null;
+            }
+
+            if (!string.IsNullOrEmpty(teacher.Password))
+                throw new InvalidOperationException("This account has already been activated. Please use the login page.");
+
+            if (dto.Password != dto.ConfirmPassword)
+                throw new ArgumentException("Password and confirmation password do not match.");
+
+            // OWASP A02: BCrypt - same approach as student and admin activation.
+            teacher.Password = BCrypt.Net.BCrypt.HashPassword(dto.Password);
+            teacher.UpdatedAt = DateTime.UtcNow;
+            await _repository.UpdateAsync(teacher);
+
+            _logger.LogInformation("Teacher {TeacherId} account activated", teacher.Id);
+            return new TeacherLoginResponseDto
+            {
+                Token = GenerateJwtToken(teacher),
+                Teacher = _mapper.Map<TeacherResponseDto>(teacher)
+            };
+        }
+
+        // ── Private helpers ───────────────────────────────────────────────────
         private string GenerateJwtToken(Teacher teacher)
         {
             var keyBytes = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!);

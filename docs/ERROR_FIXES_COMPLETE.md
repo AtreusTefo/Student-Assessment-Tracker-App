@@ -466,3 +466,155 @@ All reported issues have been comprehensively fixed:
 ✅ **User Experience** - Modern, professional UI with smooth interactions
 
 The application is now ready for production-quality usage with proper data binding between frontend and backend, professional table presentation, and responsive design across all device sizes.
+
+---
+
+## Session: April 17, 2026 — Routing & Swagger Fixes
+
+### Issue 4: `/admin` URL Not Resolving to Admin Login (FIXED)
+
+**Symptom:** Navigating to `http://localhost:4200/admin` redirects to the teacher homepage or shows a blank page instead of the admin login form.
+
+**Root Cause:**
+The Angular route configuration had entries for `/admin/login` and `/admin/dashboard` but no entry for the bare path `/admin`. The wildcard route `{ path: '**', redirectTo: '' }` caught the request and redirected to `/` (the teacher-authenticated homepage), making it impossible to reach the admin area via the intuitive short URL.
+
+**Fix Applied:**
+
+**File:** `StudentApp/src/app/app.routes.ts`
+
+```typescript
+// BEFORE (MISSING ENTRY — /admin fell through to wildcard):
+{ path: 'admin/login', component: AdminLoginComponent, canActivate: [adminGuestGuard] },
+{ path: 'admin/dashboard', component: AdminDashboardComponent, canActivate: [adminAuthGuard] },
+
+// AFTER (CORRECT — added redirect before wildcard):
+{ path: 'admin', redirectTo: 'admin/login', pathMatch: 'full' },  // ✅ NEW
+{ path: 'admin/login', component: AdminLoginComponent, canActivate: [adminGuestGuard] },
+{ path: 'admin/dashboard', component: AdminDashboardComponent, canActivate: [adminAuthGuard] },
+```
+
+**Navigation flow after fix:**
+- `/admin` → redirects to `/admin/login`
+- Already authenticated admin → `adminGuestGuard` redirects to `/admin/dashboard`
+- After login → `/admin/dashboard` (protected by `adminAuthGuard`)
+
+**Prevention:** When adding a section with a login + dashboard pair, always add the bare-name redirect entry at the same time. Wildcard catch-all routes swallow all unmatched paths silently.
+
+---
+
+### Issue 5: Swagger UI Not Sending HTTP Requests — CRUD Operations Broken (FIXED)
+
+**Symptom:** Swagger UI at `http://localhost:5000/swagger` loads the documentation page but clicking **Execute** either does nothing, produces no response, or the Execute button is not visible. All CRUD operations (GET, POST, PUT, DELETE) fail to fire.
+
+**Root Causes (3 bugs in `Program.cs`):**
+
+**Bug 1 — Swagger middleware placed after auth middleware (Critical)**
+
+`UseSwagger()` and `UseSwaggerUI()` were registered after `UseAuthentication()` and `UseAuthorization()`. ASP.NET Core processes middlewares in order; `/swagger/**` requests were being intercepted by the auth middleware, matched against the `MapFallbackToFile("index.html")` SPA catch-all, and the request context was corrupted before Swagger's middleware could respond.
+
+**Bug 2 — Global `AddSecurityRequirement` locked all operations including public ones**
+
+The Bear token security requirement was applied globally to all API operations via `options.AddSecurityRequirement(...)`. Every endpoint — including public ones like `POST /api/admins/login` — appeared locked in Swagger UI with a padlock icon. This created a chicken-and-egg problem: to get a token you must call the login endpoint, but the login endpoint appeared to require a token.
+
+**Bug 3 — `EnableTryItOutByDefault()` not set**
+
+Swagger UI requires the user to click "Try it out" on each operation before an **Execute** button appears. Without this setting, all operations render in read-only view mode. Users who saw no Execute button naturally reported "Swagger is not sending requests."
+
+**Fixes Applied:**
+
+**File 1:** `StudentAssessmentTrackerAPI/Program.cs`
+
+```csharp
+// BEFORE (WRONG — auth before Swagger):
+app.UseCors("AllowAngular");
+app.UseAuthentication();
+app.UseAuthorization();
+app.UseSwagger(...);
+app.UseSwaggerUI(...);
+
+// AFTER (CORRECT — Swagger before auth):
+app.UseCors("AllowAngular");
+app.UseSwagger(...);      // ← BEFORE authentication
+app.UseSwaggerUI(options =>
+{
+    options.SwaggerEndpoint("/swagger/v1/swagger.json", "Student Assessment Tracker API v1");
+    options.RoutePrefix = "swagger";
+    // ... other options ...
+    options.EnableTryItOutByDefault();                 // ✅ Execute button always visible
+    options.ConfigObject.PersistAuthorization = true;  // ✅ Token survives page refresh
+});
+app.UseAuthentication();
+app.UseAuthorization();
+```
+
+Replace `AddSecurityRequirement` in `AddSwaggerGen` with:
+```csharp
+// REMOVE:
+options.AddSecurityRequirement(new OpenApiSecurityRequirement { ... });
+
+// ADD:
+options.OperationFilter<SwaggerAuthOperationFilter>();
+```
+
+**File 2 (New):** `StudentAssessmentTrackerAPI/Presentation/Swagger/SwaggerAuthOperationFilter.cs`
+
+```csharp
+public class SwaggerAuthOperationFilter : IOperationFilter
+{
+    public void Apply(OpenApiOperation operation, OperationFilterContext context)
+    {
+        // Only attach Bearer requirement to [Authorize]-decorated actions
+        var hasAuthorize = context.MethodInfo.GetCustomAttributes(true)
+            .OfType<AuthorizeAttribute>().Any()
+            || (context.MethodInfo.DeclaringType?.GetCustomAttributes(true)
+                .OfType<AuthorizeAttribute>().Any() ?? false);
+
+        if (!hasAuthorize) return;
+
+        operation.Responses.TryAdd("401", new OpenApiResponse { Description = "Unauthorized" });
+        operation.Responses.TryAdd("403", new OpenApiResponse { Description = "Forbidden" });
+
+        operation.Security = new List<OpenApiSecurityRequirement>
+        {
+            new OpenApiSecurityRequirement
+            {
+                {
+                    new OpenApiSecurityScheme {
+                        Reference = new OpenApiReference {
+                            Type = ReferenceType.SecurityScheme, Id = "Bearer"
+                        }
+                    },
+                    Array.Empty<string>()
+                }
+            }
+        };
+    }
+}
+```
+
+**Result after fix:**
+- Public login endpoints (`/api/admins/login`, `/api/teachers/login`, `/api/students/login`) show no padlock — callable without a token
+- Protected endpoints show a padlock — require Bearer token entry via the Authorize button
+- Execute button is immediately visible on all operations
+- Bearer token persists across browser refreshes
+
+**Files Changed:**
+- `StudentAssessmentTrackerAPI/Program.cs`
+- `StudentAssessmentTrackerAPI/Presentation/Swagger/SwaggerAuthOperationFilter.cs` *(new)*
+
+**Prevention:**
+- Swagger middleware must always come before `UseAuthentication()` in the pipeline order
+- Never use `AddSecurityRequirement` globally — use an `IOperationFilter` that reads `[Authorize]` attributes so unauthenticated (public) endpoints remain unlocked
+- Always call `EnableTryItOutByDefault()` when setting up Swagger UI for a project
+
+---
+
+## Updated Summary Table
+
+| Issue | Root Cause | Fix Applied | Date |
+|-------|-----------|------------|------|
+| Detail form error | API response property name mismatch | Updated `StudentDetailDto` interface & template bindings | Feb 2026 |
+| Table styling poor | Basic CSS/layout | Complete professional redesign with responsive layout | Feb 2026 |
+| Delete/View/Edit fails (`undefined`) | `StudentListDto` used `studentId` vs API `id` | Changed property name + updated all template references | Feb 2026 |
+| `/admin` URL inaccessible | Missing `{ path: 'admin' }` route entry | Added `redirectTo: 'admin/login'` redirect before wildcard | Apr 17, 2026 |
+| Swagger CRUD not executing | 3 bugs: middleware order, global auth lock, no TryItOut | Moved Swagger before auth; added `SwaggerAuthOperationFilter`; enabled `TryItOutByDefault` | Apr 17, 2026 |
