@@ -88,7 +88,7 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             {
                 _logger.LogInformation("CreateStudent for teacher {TeacherId}", teacherId);
                 var student = await _studentService.CreateStudentAsync(dto, teacherId);
-                _ = _auditLog.LogAsync("Student", student.Id, "Create", null,
+                await _auditLog.LogAsync("Student", student.Id, "Create", null,
                     JsonSerializer.Serialize(new { student.StudentUniqueId, student.Email, student.GradeId }),
                     teacherId.ToString(), "Teacher");
                 return CreatedAtAction(nameof(GetStudent), new { id = student.Id }, student);
@@ -118,7 +118,7 @@ namespace StudentAssessmentTracker.Presentation.Controllers
                 _logger.LogInformation("UpdateStudent {StudentId} for teacher {TeacherId}", id, teacherId);
                 var before = await _studentService.GetStudentByIdAsync(id, teacherId);
                 var student = await _studentService.UpdateStudentAsync(id, dto, teacherId);
-                _ = _auditLog.LogAsync("Student", id, "Update",
+                await _auditLog.LogAsync("Student", id, "Update",
                     JsonSerializer.Serialize(new { before.Email, before.GradeId, before.Phone }),
                     JsonSerializer.Serialize(new { student.Email, student.GradeId, student.Phone }),
                     teacherId.ToString(), "Teacher");
@@ -147,7 +147,7 @@ namespace StudentAssessmentTracker.Presentation.Controllers
                 _logger.LogInformation("DeleteStudent {StudentId} for teacher {TeacherId}", id, teacherId);
                 var before = await _studentService.GetStudentByIdAsync(id, teacherId);
                 await _studentService.DeleteStudentAsync(id, teacherId);
-                _ = _auditLog.LogAsync("Student", id, "Delete",
+                await _auditLog.LogAsync("Student", id, "Delete",
                     JsonSerializer.Serialize(new { before.StudentUniqueId, before.Email }),
                     null, teacherId.ToString(), "Teacher");
                 return Ok(new { message = $"Student with ID {id} successfully deleted" });

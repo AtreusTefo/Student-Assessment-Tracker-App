@@ -33,6 +33,15 @@ namespace StudentAssessmentTracker.Application.Services
 
         /// <summary>Deletes a student account regardless of which teacher owns them.</summary>
         Task DeleteStudentAsync(int studentId);
+
+        /// <summary>
+        /// Changes the password for admin with <paramref name="adminId"/>.
+        /// Requires the current password for verification.
+        /// </summary>
+        /// <exception cref="KeyNotFoundException">Admin not found.</exception>
+        /// <exception cref="UnauthorizedAccessException">Current password is incorrect.</exception>
+        /// <exception cref="ArgumentException">New passwords do not match or fail length requirement.</exception>
+        Task ChangePasswordAsync(int adminId, ChangeAdminPasswordDto dto);
     }
 
     /// <summary>Implements admin account management and cross-entity oversight operations.</summary>
@@ -151,6 +160,27 @@ namespace StudentAssessmentTracker.Application.Services
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────
+
+        /// <inheritdoc />
+        public async Task ChangePasswordAsync(int adminId, ChangeAdminPasswordDto dto)
+        {
+            if (string.IsNullOrWhiteSpace(dto.NewPassword) || dto.NewPassword.Length < 6)
+                throw new ArgumentException("New password must be at least 6 characters.");
+
+            if (dto.NewPassword != dto.ConfirmNewPassword)
+                throw new ArgumentException("New password and confirmation do not match.");
+
+            var admin = await _db.Admins.FirstOrDefaultAsync(a => a.Id == adminId)
+                ?? throw new KeyNotFoundException($"Admin {adminId} not found.");
+
+            if (!BCrypt.Net.BCrypt.Verify(dto.CurrentPassword, admin.Password))
+                throw new UnauthorizedAccessException("Current password is incorrect.");
+
+            admin.Password = BCrypt.Net.BCrypt.HashPassword(dto.NewPassword);
+            admin.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+            _logger.LogInformation("Password changed for admin {AdminId}", adminId);
+        }
 
         private string GenerateJwt(Admin admin)
         {
