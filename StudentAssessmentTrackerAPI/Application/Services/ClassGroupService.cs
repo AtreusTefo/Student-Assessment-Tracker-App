@@ -196,6 +196,7 @@ namespace StudentAssessmentTracker.Application.Services
             var subjectConflict = await _db.ClassGroupStudents
                 .AnyAsync(cgs => cgs.StudentId == studentId
                               && cgs.ClassGroupId != classGroupId
+                              && cgs.ClassGroup != null
                               && cgs.ClassGroup.SubjectId == group.SubjectId);
             if (subjectConflict)
                 throw new InvalidOperationException(

@@ -292,7 +292,8 @@ export class StudentLoginComponent implements OnInit, OnDestroy {
       const dto: StudentActivateDto = {
         studentUniqueId: this.studentUniqueId.toUpperCase().trim(),
         email: this.email.trim(),
-        password: this.password
+        password: this.password,
+        confirmPassword: this.confirmPassword
       };
 
       this.studentAuthBusiness.activate(dto).subscribe({

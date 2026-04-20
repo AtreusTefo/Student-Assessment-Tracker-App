@@ -444,8 +444,9 @@ export class AdminDashboardComponent implements OnInit {
         this.showSuccess(`Teacher account created. Share email "${teacher.email}" so they can activate their account.`);
       },
       error: err => {
-        this.error = err?.error?.message || err?.error?.errors
-          ? JSON.stringify(err.error.errors) : 'Failed to create teacher.';
+        this.error = err?.error?.message
+          || (err?.error?.errors ? JSON.stringify(err.error.errors) : null)
+          || 'Failed to create teacher.';
         this.loading = false;
       }
     });

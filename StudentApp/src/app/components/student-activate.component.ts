@@ -224,7 +224,7 @@ import { takeUntil } from 'rxjs/operators';
   `]
 })
 export class StudentActivateComponent implements OnInit, OnDestroy {
-  formData: StudentActivateDto = { studentUniqueId: '', email: '', password: '' };
+  formData: StudentActivateDto = { studentUniqueId: '', email: '', password: '', confirmPassword: '' };
   confirmPassword = '';
   loading = false;
   error: string | null = null;
@@ -269,6 +269,8 @@ export class StudentActivateComponent implements OnInit, OnDestroy {
 
     // Normalise StudentUniqueId to uppercase before sending
     this.formData.studentUniqueId = this.formData.studentUniqueId.toUpperCase().trim();
+    // Mirror the separate confirmPassword field into the DTO so the backend validator receives it
+    this.formData.confirmPassword = this.confirmPassword;
 
     this.studentAuthBusiness.activate(this.formData).subscribe({
       next: () => this.router.navigate(['/student/dashboard']),

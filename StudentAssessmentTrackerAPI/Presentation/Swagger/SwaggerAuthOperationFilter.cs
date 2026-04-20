@@ -12,6 +12,7 @@ namespace StudentAssessmentTracker.Presentation.Swagger
     /// </summary>
     public class SwaggerAuthOperationFilter : IOperationFilter
     {
+        /// <inheritdoc />
         public void Apply(OpenApiOperation operation, OperationFilterContext context)
         {
             // Collect all [Authorize] and [AllowAnonymous] attributes on the action + controller

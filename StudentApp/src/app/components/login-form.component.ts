@@ -40,6 +40,7 @@ import { takeUntil } from 'rxjs/operators';
           </div>
           <span class="error" *ngIf="(form.submitted || password.touched) && password.hasError('required')">Password is required</span>
           <span class="error" *ngIf="(form.submitted || password.touched) && password.hasError('minlength')">Password must be at least 6 characters</span>
+          <span class="error" *ngIf="(form.submitted || password.touched) && password.hasError('maxlength')">Password cannot exceed 20 characters</span>
         </div>
         
         <div class="actions">

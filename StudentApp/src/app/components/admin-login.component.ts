@@ -33,15 +33,14 @@ import { AdminApiService } from '../core/services/http/admin-api.service';
           </div>
 
           <div class="form-group">
-            <label for="password">Password</label>
-            <input type="password" id="password" name="password" [(ngModel)]="credentials.password"
-              required minlength="6" #passwordField="ngModel"
-              [class.invalid]="(form.submitted || passwordField.touched) && passwordField.invalid"
-              placeholder="••••••" />
-            <span class="error-msg"
-              *ngIf="(form.submitted || passwordField.touched) && passwordField.hasError('required')">
-              Password is required
-            </span>
+          <label for="password">Password:</label>
+          <div class="input-wrapper">
+            <input [type]="showPassword ? 'text' : 'password'" id="password" [(ngModel)]="credentials.password" name="password" #password="ngModel" autocomplete="current-password" required minlength="6" maxlength="20" [disabled]="loading" (input)="clearError()" />
+            <button type="button" class="toggle-password" (click)="showPassword = !showPassword" tabindex="-1">{{ showPassword ? 'Hide' : 'Show' }}</button>
+          </div>
+          <span class="error" *ngIf="(form.submitted || password.touched) && password.hasError('required')">Password is required</span>
+          <span class="error" *ngIf="(form.submitted || password.touched) && password.hasError('minlength')">Password must be at least 6 characters</span>
+          <span class="error" *ngIf="(form.submitted || password.touched) && password.hasError('maxlength')">Password cannot exceed 20 characters</span>
           </div>
 
           <button type="submit" class="btn-login" [disabled]="loading">
@@ -64,6 +63,30 @@ import { AdminApiService } from '../core/services/http/admin-api.service';
       background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%);
       padding: 20px;
     }
+     .input-wrapper {
+      position: relative;
+      display: flex;
+      align-items: center;
+    }
+
+    .input-wrapper input {
+      flex: 1;
+      padding-right: 60px;
+    }
+    .toggle-password {
+      position: absolute;
+      right: 8px;
+      background: none;
+      border: none;
+      color: #2196F3;
+      cursor: pointer;
+      font-size: 12px;
+      font-weight: bold;
+      padding: 4px 6px;
+    }
+    .toggle-password:hover {
+      text-decoration: underline;
+    }   
     .login-card {
       background: #fff;
       border-radius: 12px;
@@ -105,8 +128,13 @@ export class AdminLoginComponent {
   credentials = { email: '', password: '' };
   loading = false;
   error = '';
+  showPassword = false;
 
   constructor(private adminApi: AdminApiService, private router: Router) {}
+
+  clearError(): void {
+    this.error = '';
+  }
 
   onSubmit(form: NgForm): void {
     this.error = '';
