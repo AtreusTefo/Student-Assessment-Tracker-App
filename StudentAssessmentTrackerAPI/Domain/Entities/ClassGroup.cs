@@ -35,6 +35,9 @@ namespace StudentAssessmentTracker.Domain.Entities
         /// <summary>UTC timestamp when the class group was created.</summary>
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
+        /// <summary>UTC timestamp of the most recent update to this class group.</summary>
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
         /// <summary>Students enrolled in this class group (many-to-many via ClassGroupStudent).</summary>
         public ICollection<ClassGroupStudent> Enrollments { get; set; } = new List<ClassGroupStudent>();
     }

@@ -17,16 +17,19 @@ namespace StudentAssessmentTracker.Presentation.Controllers
     public class StudentsController : ControllerBase
     {
         private readonly IStudentService _studentService;
+        private readonly IAdminService _adminService;
         private readonly IAuditLogService _auditLog;
         private readonly ILogger<StudentsController> _logger;
 
         /// <summary>Initialises the controller with the student service and logger.</summary>
         public StudentsController(
             IStudentService studentService,
+            IAdminService adminService,
             IAuditLogService auditLog,
             ILogger<StudentsController> logger)
         {
             _studentService = studentService;
+            _adminService = adminService;
             _auditLog = auditLog;
             _logger = logger;
         }
@@ -75,22 +78,20 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             }
         }
 
-        /// <summary>Creates a new student under the authenticated teacher.</summary>
-        /// <param name="dto">Student creation data. TeacherId is taken from the JWT — not from the request body.</param>
-        [Authorize(Roles = "Teacher")]
+        /// <summary>Creates a new student (admin enrollment).</summary>
+        /// <param name="dto">Student creation data.</param>
+        [Authorize(Roles = "Admin")]
         [HttpPost]
         public async Task<ActionResult<StudentDto>> CreateStudent([FromBody] CreateStudentDto dto)
         {
-            if (!TryGetTeacherId(out var teacherId))
-                return Unauthorized(new { message = "Invalid or missing token." });
             if (!ModelState.IsValid) return BadRequest(ModelState);
             try
             {
-                _logger.LogInformation("CreateStudent for teacher {TeacherId}", teacherId);
-                var student = await _studentService.CreateStudentAsync(dto, teacherId);
+                _logger.LogInformation("Admin creating student");
+                var student = await _adminService.CreateStudentAsync(dto);
                 await _auditLog.LogAsync("Student", student.Id, "Create", null,
                     JsonSerializer.Serialize(new { student.StudentUniqueId, student.Email, student.GradeId }),
-                    teacherId.ToString(), "Teacher");
+                    GetAdminId(), "Admin");
                 return CreatedAtAction(nameof(GetStudent), new { id = student.Id }, student);
             }
             catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
@@ -103,25 +104,24 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             }
         }
 
-        /// <summary>Updates an existing student owned by the authenticated teacher.</summary>
+        /// <summary>Updates an existing student's profile (admin only).</summary>
         /// <param name="id">The student's primary key.</param>
         /// <param name="dto">Updated student data.</param>
-        [Authorize(Roles = "Teacher")]
+        [Authorize(Roles = "Admin")]
         [HttpPut("{id:int}")]
         public async Task<IActionResult> UpdateStudent(int id, [FromBody] UpdateStudentDto dto)
         {
-            if (!TryGetTeacherId(out var teacherId))
-                return Unauthorized(new { message = "Invalid or missing token." });
             if (!ModelState.IsValid) return BadRequest(ModelState);
             try
             {
-                _logger.LogInformation("UpdateStudent {StudentId} for teacher {TeacherId}", id, teacherId);
-                var before = await _studentService.GetStudentByIdAsync(id, teacherId);
-                var student = await _studentService.UpdateStudentAsync(id, dto, teacherId);
+                _logger.LogInformation("Admin updating student {StudentId}", id);
+                var before = await _adminService.GetStudentByIdAsync(id);
+                if (before is null) return NotFound(new { message = $"Student with ID {id} not found." });
+                var student = await _adminService.UpdateStudentAsync(id, dto);
                 await _auditLog.LogAsync("Student", id, "Update",
                     JsonSerializer.Serialize(new { before.Email, before.GradeId, before.Phone }),
                     JsonSerializer.Serialize(new { student.Email, student.GradeId, student.Phone }),
-                    teacherId.ToString(), "Teacher");
+                    GetAdminId(), "Admin");
                 return Ok(student);
             }
             catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
@@ -134,22 +134,21 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             }
         }
 
-        /// <summary>Deletes a student owned by the authenticated teacher.</summary>
+        /// <summary>Deletes a student account (admin only).</summary>
         /// <param name="id">The student's primary key.</param>
-        [Authorize(Roles = "Teacher")]
+        [Authorize(Roles = "Admin")]
         [HttpDelete("{id:int}")]
         public async Task<IActionResult> DeleteStudent(int id)
         {
-            if (!TryGetTeacherId(out var teacherId))
-                return Unauthorized(new { message = "Invalid or missing token." });
             try
             {
-                _logger.LogInformation("DeleteStudent {StudentId} for teacher {TeacherId}", id, teacherId);
-                var before = await _studentService.GetStudentByIdAsync(id, teacherId);
-                await _studentService.DeleteStudentAsync(id, teacherId);
+                _logger.LogInformation("Admin deleting student {StudentId}", id);
+                var before = await _adminService.GetStudentByIdAsync(id);
+                if (before is null) return NotFound(new { message = $"Student with ID {id} not found." });
+                await _adminService.DeleteStudentAsync(id);
                 await _auditLog.LogAsync("Student", id, "Delete",
                     JsonSerializer.Serialize(new { before.StudentUniqueId, before.Email }),
-                    null, teacherId.ToString(), "Teacher");
+                    null, GetAdminId(), "Admin");
                 return Ok(new { message = $"Student with ID {id} successfully deleted" });
             }
             catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
@@ -163,22 +162,21 @@ namespace StudentAssessmentTracker.Presentation.Controllers
 
         // ── Teacher assignment management ─────────────────────────────────────
 
-        /// <summary>Assigns the authenticated teacher to an existing student (many-to-many).</summary>
+        /// <summary>Assigns a teacher to a student (admin timetabling).</summary>
         /// <param name="studentId">The student's primary key.</param>
-        [Authorize(Roles = "Teacher")]
-        [HttpPost("{studentId:int}/teachers")]
+        /// <param name="teacherId">The teacher's primary key.</param>
+        [Authorize(Roles = "Admin")]
+        [HttpPost("{studentId:int}/teachers/{teacherId:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> AssignTeacher(int studentId)
+        public async Task<IActionResult> AssignTeacher(int studentId, int teacherId)
         {
-            if (!TryGetTeacherId(out var teacherId))
-                return Unauthorized(new { message = "Invalid or missing token." });
             try
             {
-                _logger.LogInformation("AssignTeacher: teacher {TeacherId} → student {StudentId}", teacherId, studentId);
-                await _studentService.AssignStudentToTeacherAsync(studentId, teacherId);
-                return Ok(new { message = $"You have been assigned to student {studentId}." });
+                _logger.LogInformation("Admin assigning teacher {TeacherId} → student {StudentId}", teacherId, studentId);
+                await _adminService.AssignStudentToTeacherAsync(studentId, teacherId);
+                return Ok(new { message = $"Teacher {teacherId} has been assigned to student {studentId}." });
             }
             catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
             catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
@@ -189,22 +187,21 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             }
         }
 
-        /// <summary>Removes the authenticated teacher's assignment from a student.</summary>
+        /// <summary>Removes a teacher assignment from a student (admin timetabling).</summary>
         /// <param name="studentId">The student's primary key.</param>
-        [Authorize(Roles = "Teacher")]
-        [HttpDelete("{studentId:int}/teachers")]
+        /// <param name="teacherId">The teacher's primary key.</param>
+        [Authorize(Roles = "Admin")]
+        [HttpDelete("{studentId:int}/teachers/{teacherId:int}")]
         [ProducesResponseType(StatusCodes.Status200OK)]
         [ProducesResponseType(StatusCodes.Status401Unauthorized)]
         [ProducesResponseType(StatusCodes.Status404NotFound)]
-        public async Task<IActionResult> UnassignTeacher(int studentId)
+        public async Task<IActionResult> UnassignTeacher(int studentId, int teacherId)
         {
-            if (!TryGetTeacherId(out var teacherId))
-                return Unauthorized(new { message = "Invalid or missing token." });
             try
             {
-                _logger.LogInformation("UnassignTeacher: teacher {TeacherId} → student {StudentId}", teacherId, studentId);
-                await _studentService.UnassignStudentFromTeacherAsync(studentId, teacherId);
-                return Ok(new { message = $"You have been unassigned from student {studentId}." });
+                _logger.LogInformation("Admin unassigning teacher {TeacherId} from student {StudentId}", teacherId, studentId);
+                await _adminService.UnassignStudentFromTeacherAsync(studentId, teacherId);
+                return Ok(new { message = $"Teacher {teacherId} has been unassigned from student {studentId}." });
             }
             catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
             catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
@@ -275,5 +272,10 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             var value = User.FindFirstValue("teacherId");
             return value != null && int.TryParse(value, out teacherId);
         }
+
+        /// <summary>Returns the admin's subject ID from the JWT sub/NameIdentifier claim.</summary>
+        private string? GetAdminId() =>
+            User?.FindFirst(ClaimTypes.NameIdentifier)?.Value
+            ?? User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
     }
 }

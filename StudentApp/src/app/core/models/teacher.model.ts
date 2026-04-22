@@ -29,7 +29,8 @@ export interface Teacher {
 }
 
 /**
- * Create Teacher DTO - Data required for teacher registration
+ * Create Teacher DTO - Data required for admin to create a teacher account.
+ * Password is NOT included — teacher sets their own password via the activation flow.
  */
 export interface CreateTeacherDto {
   idPassportNo: string;
@@ -38,7 +39,16 @@ export interface CreateTeacherDto {
   email: string;
   phone: string;
   subjectId: number;
+}
+
+/**
+ * Teacher Activate DTO - Teacher self-activation (first login).
+ * Teacher provides the email created by admin and chooses a password.
+ */
+export interface TeacherActivateDto {
+  email: string;
   password: string;
+  confirmPassword: string;
 }
 
 /**

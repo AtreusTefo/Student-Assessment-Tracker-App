@@ -175,6 +175,12 @@ namespace StudentAssessmentTracker.Infrastructure.Data
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
 
+                // Issue #5: prevent duplicate assessment names per student (e.g. two "Test 1" rows
+                // for the same student) which causes reporting ambiguity and confuses students.
+                entity.HasIndex(e => new { e.StudentId, e.Name })
+                    .IsUnique()
+                    .HasDatabaseName("UX_StudentAssessments_StudentId_Name");
+
                 // FK → Students (CASCADE: deleting a student removes all their assessments)
                 entity.HasOne(e => e.Student)
                     .WithMany(s => s.Assessments)
@@ -217,6 +223,7 @@ namespace StudentAssessmentTracker.Infrastructure.Data
                 entity.Property(e => e.Password).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.EnrollmentDate).HasDefaultValueSql("GETUTCDATE()");
                 entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
 
                 // FK → Subjects (RESTRICT: cannot delete a subject that has teachers)
                 entity.HasOne(e => e.SubjectNavigation)
@@ -263,6 +270,11 @@ namespace StudentAssessmentTracker.Infrastructure.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.EntityName).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.Action).IsRequired().HasMaxLength(20);
+                // DB guard: only well-known action values are allowed — prevents typos and
+                // raw-SQL writes from polluting the audit trail with arbitrary strings.
+                entity.ToTable(t => t.HasCheckConstraint(
+                    "CK_AuditLogs_Action",
+                    "[Action] IN ('Create', 'Update', 'Delete')"));
                 entity.Property(e => e.OldValues).IsRequired(false);
                 entity.Property(e => e.NewValues).IsRequired(false);
                 entity.Property(e => e.ChangedBy).IsRequired(false).HasMaxLength(100);
@@ -280,6 +292,7 @@ namespace StudentAssessmentTracker.Infrastructure.Data
                 entity.HasKey(e => e.Id);
                 entity.Property(e => e.Name).IsRequired().HasMaxLength(100);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
+                entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
 
                 // Each class group name must be unique per teacher
                 entity.HasIndex(e => new { e.TeacherId, e.Name })

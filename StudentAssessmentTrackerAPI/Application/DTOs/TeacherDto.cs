@@ -58,9 +58,20 @@ namespace StudentAssessmentTracker.Application.DTOs
 
         /// <summary>Gets or sets the subject identifier</summary>
         public int SubjectId { get; set; }
+    }
 
-        /// <summary>Gets or sets the password</summary>
+    /// <summary>
+    /// DTO for teacher account activation — teacher sets their own password on first login.
+    /// Admin creates the account (without a password); the teacher activates it using their email.
+    /// </summary>
+    public class TeacherActivateDto
+    {
+        /// <summary>Email address on record for the teacher — used as the identity anchor.</summary>
+        public string Email { get; set; } = string.Empty;
+        /// <summary>New password the teacher wants to set.</summary>
         public string Password { get; set; } = string.Empty;
+        /// <summary>Must match <see cref="Password"/>. Server-side check prevents bypassing frontend confirmation.</summary>
+        public string ConfirmPassword { get; set; } = string.Empty;
     }
 
     /// <summary>

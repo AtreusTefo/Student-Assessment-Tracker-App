@@ -57,7 +57,7 @@ import { takeUntil } from 'rxjs/operators';
 
           <!-- Email — only shown in activate mode -->
           <div class="form-group" *ngIf="activateMode">
-            <label for="email">Email <span class="hint">(registered by your teacher)</span></label>
+            <label for="email">Email <span class="hint">(registered by your school admin)</span></label>
             <input
               type="email"
               id="email"
@@ -292,7 +292,8 @@ export class StudentLoginComponent implements OnInit, OnDestroy {
       const dto: StudentActivateDto = {
         studentUniqueId: this.studentUniqueId.toUpperCase().trim(),
         email: this.email.trim(),
-        password: this.password
+        password: this.password,
+        confirmPassword: this.confirmPassword
       };
 
       this.studentAuthBusiness.activate(dto).subscribe({

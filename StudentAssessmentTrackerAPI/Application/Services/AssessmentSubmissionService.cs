@@ -87,6 +87,13 @@ namespace StudentAssessmentTracker.Application.Services
             if (assessment is null)
                 throw new KeyNotFoundException($"Assessment {assessmentId} not found for student {studentId}.");
 
+            // Issue #10: reject submissions for assessments that haven't been published yet.
+            // IsAssigned == false means the teacher created a draft — students should not be
+            // able to submit files until the teacher explicitly assigns/publishes it.
+            if (!assessment.IsAssigned)
+                throw new InvalidOperationException(
+                    $"Assessment {assessmentId} has not been assigned yet and does not accept submissions.");
+
             // ── Build storage path ────────────────────────────────────────────
             var submissionsRoot = Path.Combine(_env.WebRootPath, "uploads", "submissions", studentId.ToString());
             Directory.CreateDirectory(submissionsRoot);

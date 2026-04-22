@@ -38,6 +38,9 @@ namespace StudentAssessmentTracker.Domain.Entities
         /// <summary>Gets or sets the creation date</summary>
         public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
 
+        /// <summary>Gets or sets the last-updated timestamp (UTC).</summary>
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+
         /// <summary>
         /// Many-to-many: the students this teacher is currently assigned to instruct.
         /// Each entry in this collection represents one student–teacher pairing.

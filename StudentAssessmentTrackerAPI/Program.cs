@@ -15,6 +15,7 @@ using StudentAssessmentTracker.Application.Validators;
 using StudentAssessmentTracker.Application.Mappings;
 using StudentAssessmentTracker.Application.Services;
 using StudentAssessmentTracker.Application.DTOs;
+using StudentAssessmentTracker.Presentation.Swagger;
 
 var contentRoot = Directory.GetCurrentDirectory();
 var logsDirectory = Path.Combine(contentRoot, "Logs");
@@ -116,17 +117,9 @@ builder.Services.AddSwaggerGen(options =>
             • Student token  → POST /api/students/login
             """
     });
-    options.AddSecurityRequirement(new Microsoft.OpenApi.Models.OpenApiSecurityRequirement
-    {
-        {
-            new Microsoft.OpenApi.Models.OpenApiSecurityScheme
-            {
-                Reference = new Microsoft.OpenApi.Models.OpenApiReference
-                    { Type = Microsoft.OpenApi.Models.ReferenceType.SecurityScheme, Id = "Bearer" }
-            },
-            Array.Empty<string>()
-        }
-    });
+    // Security requirement is applied per-operation via the filter (not globally),
+    // so public endpoints (login, register) remain unlocked in Swagger UI.
+    options.OperationFilter<SwaggerAuthOperationFilter>();
 });
 
 // ============================================================================
@@ -257,6 +250,58 @@ var uploadsRoot = Path.Combine(app.Environment.WebRootPath, "uploads", "submissi
 Directory.CreateDirectory(uploadsRoot);
 
 // ============================================================================
+// ORPHANED FILE CLEANUP (Issue #11)
+// Deletes any files under uploads/submissions that have no matching row in
+// AssessmentSubmissions.  These arise when the API crashes after writing the
+// file to disk but before committing the DB row.  The scan is intentionally
+// best-effort: failures are logged at Warning level and never surface to the
+// caller, so a bad disk or permissions issue cannot prevent the app from
+// starting.
+// ============================================================================
+using (var cleanupScope = app.Services.CreateScope())
+{
+    var cleanupDb = cleanupScope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+    var cleanupLog = cleanupScope.ServiceProvider.GetRequiredService<ILogger<ApplicationDbContext>>();
+    try
+    {
+        // Collect every stored filename the DB knows about.
+        var knownFiles = new HashSet<string>(
+            await cleanupDb.AssessmentSubmissions
+                .Select(s => s.StoredFileName)
+                .ToListAsync(),
+            StringComparer.OrdinalIgnoreCase);
+
+        // Walk every physical file under uploads/submissions.
+        var orphanCount = 0;
+        foreach (var filePath in Directory.EnumerateFiles(uploadsRoot, "*", SearchOption.AllDirectories))
+        {
+            var fileName = Path.GetFileName(filePath);
+            if (!knownFiles.Contains(fileName))
+            {
+                try
+                {
+                    File.Delete(filePath);
+                    orphanCount++;
+                    cleanupLog.LogWarning("Deleted orphaned submission file: {FilePath}", filePath);
+                }
+                catch (Exception ex)
+                {
+                    cleanupLog.LogWarning(ex, "Could not delete orphaned file: {FilePath}", filePath);
+                }
+            }
+        }
+
+        if (orphanCount > 0)
+            cleanupLog.LogInformation("Startup cleanup removed {Count} orphaned submission file(s).", orphanCount);
+    }
+    catch (Exception ex)
+    {
+        // Non-fatal: log and continue startup.
+        cleanupLog.LogWarning(ex, "Orphaned-file startup scan encountered an error and was skipped.");
+    }
+}
+
+// ============================================================================
 // MIDDLEWARE PIPELINE
 // ============================================================================
 app.UseSerilogRequestLogging();
@@ -265,11 +310,13 @@ app.UseDefaultFiles();
 app.UseStaticFiles();
 app.UseRouting();
 app.UseCors("AllowAngular");
-app.UseAuthentication();
-app.UseAuthorization();
 
 // ============================================================================
 // SWAGGER UI - API DOCUMENTATION
+// Must be placed BEFORE UseAuthentication / UseAuthorization so that
+// /swagger/** routes are served directly without passing through the auth
+// middleware, which would match them to the SPA fallback endpoint and corrupt
+// the request context before Swagger middleware can handle them.
 // ============================================================================
 app.UseSwagger(options =>
 {
@@ -287,7 +334,15 @@ app.UseSwaggerUI(options =>
     options.DefaultModelsExpandDepth(1);
     options.EnableDeepLinking();
     options.ShowExtensions();
+    // Automatically enable editing/execution on all operations — removes the
+    // extra "Try it out" click that previously prevented request execution.
+    options.EnableTryItOutByDefault();
+    // Preserve the Bearer token across full-page refreshes.
+    options.ConfigObject.PersistAuthorization = true;
 });
+
+app.UseAuthentication();
+app.UseAuthorization();
 
 app.MapControllers();
 app.MapFallbackToFile("index.html");

@@ -10,11 +10,12 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const studentAuthState = inject(StudentAuthStateService);
   const router = inject(Router);
 
-  // Admin token takes priority for /api/admins routes
+  // Admin token takes priority for all API routes when the admin is logged in.
+  // This covers /api/teachers, /api/students, and any other endpoint that the
+  // admin dashboard calls which sits outside the /api/admins namespace.
   const adminToken = localStorage.getItem('admin_token');
-  const isAdminRoute = req.url.includes('/api/admins');
 
-  if (isAdminRoute && adminToken) {
+  if (adminToken) {
     const adminReq = req.clone({ setHeaders: { Authorization: `Bearer ${adminToken}` } });
     return next(adminReq).pipe(
       catchError((error: HttpErrorResponse) => {

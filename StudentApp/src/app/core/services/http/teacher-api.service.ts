@@ -1,7 +1,7 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Teacher, CreateTeacherDto, UpdateTeacherDto, LoginDto, TeacherLoginResponse } from '../../models';
+import { Teacher, CreateTeacherDto, UpdateTeacherDto, LoginDto, TeacherLoginResponse, TeacherActivateDto } from '../../models';
 
 /**
  * DATA ACCESS LAYER - Teacher HTTP API Service
@@ -60,6 +60,14 @@ export class TeacherApiService {
    */
   delete(id: number): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
+  }
+
+  /**
+   * Activate a teacher account (first-time login — teacher sets their own password)
+   * POST /api/teachers/activate
+   */
+  activate(dto: TeacherActivateDto): Observable<TeacherLoginResponse> {
+    return this.http.post<TeacherLoginResponse>(`${this.apiUrl}/activate`, dto);
   }
 
   /**

@@ -1,6 +1,6 @@
 # Student Assessment Tracker
 
-Student Assessment Tracker is a **full-stack web application** built with **ASP.NET Core 8** backend and **Angular 21** frontend following **Clean Architecture** principles. It features a **dual-role system** — teachers can register, log in, and manage students with full CRUD operations and named assessment tracking; students can activate their accounts, log in, and view their own performance through a self-service dashboard. The system supports flexible scoring, file submission uploads, JWT-based authentication for both roles, automated performance calculations, and a DataTables-powered student list.
+Student Assessment Tracker is a **full-stack web application** built with **ASP.NET Core 8** backend and **Angular 21** frontend following **Clean Architecture** principles. It features a **three-role system** — admins manage the entire platform (create teachers and students, assign teachers, view audit logs); teachers manage assessments for their assigned students; students activate their accounts, log in, and view their own performance through a self-service dashboard. The system supports flexible scoring, file submission uploads, JWT-based authentication for all three roles, automated performance calculations, email notifications, CSV/PDF exports, and a DataTables-powered student list.
 
 ## Architecture Overview
 
@@ -18,7 +18,7 @@ StudentAssessmentTracker/                  ← Solution Root
 │   ├── Presentation/                      (REST API controllers)
 │   └── Program.cs
 │
-├── StudentApp/                            ← Frontend Angular 18 SPA
+├── StudentApp/                            ← Frontend Angular 21 SPA
 │   └── src/app/
 │
 ├── docs/                                  ← Documentation
@@ -98,18 +98,22 @@ The connection string is configured in `appsettings.Development.json`:
 ## Features
 
 **Authentication & Security**
-- Teacher registration with ID/Passport No., name, email, phone, subject (dropdown from API), and password
-- Teacher and student JWT Bearer authentication (separate `Teacher` / `Student` roles with custom claims)
+- Admin creates teacher accounts; teachers activate their own accounts at `/activate` by setting a password
+- Admin creates student records; students activate their own accounts at `/student/login` using their `StudentUniqueId`
+- Three separate JWT roles: `Teacher`, `Student`, and `Admin` with custom claims
+- BCrypt password hashing for all stored credentials
 - HTTP interceptor auto-attaches JWT to every request and auto-redirects to login on 401
-- Route guards for both roles: `authGuard`, `guestGuard`, `studentAuthGuard`, `studentGuestGuard`
+- Route guards for all three roles: `authGuard`, `guestGuard`, `studentAuthGuard`, `studentGuestGuard`, `adminAuthGuard`, `adminGuestGuard`
 - FluentValidation enforces all rules server-side; invalid payloads return HTTP 400
 
-**Student Management (Teacher Role)**
-- Add students with ID/Passport No., name, email, phone, and grade (seeded dropdown, Grades 7–12)
+**Student Management (Admin Role)**
+- Admin creates students with ID/Passport No., name, email, phone, and grade (seeded dropdown, Grades 7–12)
 - Auto-generated `StudentUniqueId` (format: `STU-XXXXXXXX`) assigned on creation
-- Edit student details; delete with confirmation modal and DataTable row removal
-- Cascade delete removes all assessments and submissions when a student is deleted
-- DataTables-powered student list with pagination, column sorting, and global search
+- Admin edits student details and deletes students with cascade removal of all assessments and submissions
+- Admin assigns and unassigns teachers to students via timetabling endpoints
+
+**Student List (Teacher Role)**
+- DataTables-powered list of students assigned to the authenticated teacher, with pagination, column sorting, and global search
 - Colour-coded performance level badge per student on both list and detail views
 
 **Assessment Tracking (Teacher Role)**
@@ -139,7 +143,10 @@ The connection string is configured in `appsettings.Development.json`:
 - Dedicated admin account (BCrypt-hashed password, separate `Admin` JWT role)
 - Admin login page at `/admin/login` with its own authentication guard
 - Admin dashboard with tabs: manage Teachers, manage Students, view Audit Log
+- Admins create teacher accounts (without a password) and student records
+- Admins assign teachers to students and manage teacher–student relationships
 - Admins can delete any teacher or student system-wide with confirmation modal
+- Admin can create additional admin accounts (requires existing Admin JWT)
 
 **Audit Logging**
 - Every Create, Update, and Delete across Students, Teachers, and Assessments emits an immutable audit entry
@@ -168,33 +175,45 @@ StudentAssessmentTracker/                       ← Solution Root
 ├── StudentAssessmentTrackerAPI/                ← Backend API Project
 │   ├── Domain/                                 (Core business logic)
 │   │   ├── Entities/
-│   │   │   ├── Student.cs
-│   │   │   ├── Teacher.cs
-│   │   │   ├── Grade.cs
-│   │   │   ├── Subject.cs
-│   │   │   ├── StudentAssessment.cs
+│   │   │   ├── Admin.cs
+│   │   │   ├── AuditLog.cs
 │   │   │   ├── AssessmentSubmission.cs
+│   │   │   ├── ClassGroup.cs
+│   │   │   ├── ClassGroupStudent.cs
+│   │   │   ├── Grade.cs
+│   │   │   ├── Student.cs
+│   │   │   ├── StudentAssessment.cs
+│   │   │   ├── Subject.cs
+│   │   │   ├── Teacher.cs
 │   │   │   └── TeacherStudent.cs
 │   │   └── Interfaces/
 │   │       └── IRepository.cs
 │   │
 │   ├── Application/                            (Use cases & orchestration)
 │   │   ├── DTOs/
-│   │   │   ├── StudentDto.cs
-│   │   │   ├── TeacherDto.cs
-│   │   │   ├── StudentAssessmentDto.cs
+│   │   │   ├── AdminDto.cs
 │   │   │   ├── AssessmentSubmissionDto.cs
+│   │   │   ├── AuditLogDto.cs
+│   │   │   ├── ClassGroupDto.cs
 │   │   │   ├── GradeDto.cs
-│   │   │   └── SubjectDto.cs
+│   │   │   ├── StudentAssessmentDto.cs
+│   │   │   ├── StudentDto.cs
+│   │   │   ├── SubjectDto.cs
+│   │   │   └── TeacherDto.cs
 │   │   ├── Services/
-│   │   │   ├── StudentService.cs
-│   │   │   ├── TeacherService.cs
+│   │   │   ├── AdminService.cs
+│   │   │   ├── AssessmentSubmissionService.cs
+│   │   │   ├── AuditLogService.cs
+│   │   │   ├── ClassGroupService.cs
+│   │   │   ├── EmailService.cs
+│   │   │   ├── ExportService.cs
 │   │   │   ├── StudentAssessmentService.cs
-│   │   │   └── AssessmentSubmissionService.cs
+│   │   │   ├── StudentService.cs
+│   │   │   └── TeacherService.cs
 │   │   ├── Validators/
+│   │   │   ├── StudentAssessmentValidator.cs
 │   │   │   ├── StudentValidator.cs
-│   │   │   ├── TeacherValidator.cs
-│   │   │   └── StudentAssessmentValidator.cs
+│   │   │   └── TeacherValidator.cs
 │   │   └── Mappings/
 │   │       └── MappingProfile.cs
 │   │
@@ -209,12 +228,15 @@ StudentAssessmentTracker/                       ← Solution Root
 │   │
 │   ├── Presentation/                           (REST API)
 │   │   └── Controllers/
-│   │       ├── StudentsController.cs
-│   │       ├── TeachersController.cs
-│   │       ├── StudentAssessmentsController.cs
+│   │       ├── AdminsController.cs
 │   │       ├── AssessmentSubmissionsController.cs
+│   │       ├── ClassGroupsController.cs
 │   │       ├── GradesController.cs
-│   │       └── SubjectsController.cs
+│   │       ├── ReportsController.cs
+│   │       ├── StudentAssessmentsController.cs
+│   │       ├── StudentsController.cs
+│   │       ├── SubjectsController.cs
+│   │       └── TeachersController.cs
 │   │
 │   ├── Program.cs                              (Entry point)
 │   └── appsettings.json                        (Configuration)
@@ -353,7 +375,8 @@ All endpoints requiring authentication use **JWT Bearer** (`Authorization: Beare
 ### Teachers
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| `POST` | `/api/teachers` | Public | Register a new teacher |
+| `POST` | `/api/teachers` | Admin JWT | Create a new teacher account (admin only) |
+| `POST` | `/api/teachers/activate` | Public | Activate teacher account and set password |
 | `POST` | `/api/teachers/login` | Public | Login and receive JWT |
 | `GET` | `/api/teachers` | Teacher JWT | List all teachers |
 | `GET` | `/api/teachers/{id}` | Teacher JWT | Get teacher by ID |
@@ -363,11 +386,13 @@ All endpoints requiring authentication use **JWT Bearer** (`Authorization: Beare
 ### Students
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
-| `GET` | `/api/students` | Teacher JWT | List teacher's students |
+| `GET` | `/api/students` | Teacher JWT | List students assigned to the authenticated teacher |
 | `GET` | `/api/students/{id}` | Teacher JWT | Get student detail |
-| `POST` | `/api/students` | Teacher JWT | Create new student |
-| `PUT` | `/api/students/{id}` | Teacher JWT | Update student |
-| `DELETE` | `/api/students/{id}` | Teacher JWT | Delete student (cascade) |
+| `POST` | `/api/students` | Admin JWT | Create new student (admin only) |
+| `PUT` | `/api/students/{id}` | Admin JWT | Update student (admin only) |
+| `DELETE` | `/api/students/{id}` | Admin JWT | Delete student with cascade (admin only) |
+| `POST` | `/api/students/{sid}/teachers/{tid}` | Admin JWT | Assign a teacher to a student |
+| `DELETE` | `/api/students/{sid}/teachers/{tid}` | Admin JWT | Remove a teacher from a student |
 | `POST` | `/api/students/activate` | Public | Activate student account |
 | `POST` | `/api/students/login` | Public | Student login and receive JWT |
 
@@ -388,6 +413,38 @@ All endpoints requiring authentication use **JWT Bearer** (`Authorization: Beare
 | `GET` | `/api/students/{id}/assessments/{aid}/submissions/{sid}/download` | Teacher or Student JWT | Download file |
 | `DELETE` | `/api/students/{id}/assessments/{aid}/submissions/{sid}` | Teacher or Student JWT | Delete submission |
 
+### Reports
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/reports/students/csv` | Teacher JWT | Export all teacher's students to CSV |
+| `GET` | `/api/reports/students/{id}/csv` | Teacher JWT | Export one student's report to CSV |
+| `GET` | `/api/reports/students/{id}/pdf` | Teacher JWT | Export one student's report to PDF |
+
+### Class Groups
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `GET` | `/api/class-groups` | Teacher JWT | List teacher's class groups |
+| `GET` | `/api/class-groups/{id}` | Teacher JWT | Get class group by ID |
+| `POST` | `/api/class-groups` | Teacher JWT | Create a class group |
+| `PUT` | `/api/class-groups/{id}` | Teacher JWT | Update a class group |
+| `DELETE` | `/api/class-groups/{id}` | Teacher JWT | Delete a class group |
+| `POST` | `/api/class-groups/{id}/students/{sid}` | Teacher JWT | Enrol a student in the group |
+| `DELETE` | `/api/class-groups/{id}/students/{sid}` | Teacher JWT | Remove a student from the group |
+
+### Admin
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/api/admins/login` | Public | Admin login and receive JWT |
+| `POST` | `/api/admins` | Admin JWT | Create a new admin account |
+| `GET` | `/api/admins/{id}` | Admin JWT | Get admin profile |
+| `PUT` | `/api/admins/{id}/password` | Admin JWT | Change own password |
+| `GET` | `/api/admins/teachers` | Admin JWT | List all teachers |
+| `DELETE` | `/api/admins/teachers/{id}` | Admin JWT | Delete a teacher (override) |
+| `GET` | `/api/admins/students` | Admin JWT | List all students |
+| `DELETE` | `/api/admins/students/{id}` | Admin JWT | Delete a student (override) |
+| `GET` | `/api/admins/audit-logs` | Admin JWT | Get paginated audit log |
+| `GET` | `/api/admins/audit-logs/{entity}/{id}` | Admin JWT | Get audit log for an entity |
+
 ### Lookups
 | Method | Endpoint | Auth | Description |
 |--------|----------|------|-------------|
@@ -396,14 +453,21 @@ All endpoints requiring authentication use **JWT Bearer** (`Authorization: Beare
 
 ## Usage
 
+**Admin Workflow**
+1. Navigate to `/admin/login` and log in with your admin credentials
+2. From the **Teachers** tab: create teacher accounts (ID/Passport No., name, email, phone, subject — no password; the teacher sets it on first login)
+3. From the **Students** tab: create student records (ID/Passport No., name, email, phone, grade); assign teachers to students
+4. From the **Audit Log** tab: browse all create/update/delete events system-wide
+
 **Teacher Workflow**
-1. Navigate to `/register` — fill in your details (ID/Passport No., name, email, phone, subject, password) and register
-2. Navigate to `/login` — log in with your email and password to receive a JWT session
-3. The student list (`/`) shows all your students with DataTables sorting, search, and pagination
-4. Click **Create Student** to add a new student; a unique `StudentUniqueId` is generated automatically
-5. Click a student’s name to open the detail page with full assessment history and file submissions
+1. Contact your admin to have an account created for you
+2. Navigate to `/activate` — enter your registered email and choose a password to activate your account
+3. Navigate to `/login` — log in with your email and password to receive a JWT session
+4. The student list (`/`) shows all students assigned to you, with DataTables sorting, search, and pagination
+5. Click a student's name to open the detail page with full assessment history and file submissions
 6. Add, edit, or delete assessments inline; performance summary updates immediately
 7. Download or delete student file submissions from the detail page
+8. Export the student list to CSV, or download an individual student report as CSV or PDF
 
 **Student Workflow**
 1. Navigate to `/student/login` and click the activation tab
@@ -414,13 +478,17 @@ All endpoints requiring authentication use **JWT Bearer** (`Authorization: Beare
 
 ## Form Validation Rules
 
-**Teacher Registration:**
+**Teacher Account (Admin-created — no password at creation time):**
 - **ID/Passport No.**: Required, exactly 9 alphanumeric characters (letters and digits only)
-- **First / Last Name**: Required, 2–50 characters, letters/spaces/hyphens only
+- **First / Last Name**: Required, max 50 characters
 - **Email**: Required, valid email format, unique
 - **Phone**: Required, exactly 8 digits
 - **Subject**: Required, selected from API-seeded dropdown
-- **Password**: Required, 6–20 characters
+
+**Teacher Activation (self-service, first login):**
+- **Email**: Required, valid email format (must match the admin-registered email)
+- **Password**: Required, minimum 6 characters
+- **Confirm Password**: Must exactly match password
 
 **Student Form (Create/Edit):**
 - **ID/Passport No.**: Required, 9 characters

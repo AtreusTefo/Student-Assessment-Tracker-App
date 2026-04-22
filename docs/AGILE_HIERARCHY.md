@@ -14,7 +14,7 @@ The project work is organized using a **five-level Agile hierarchy** — **Appli
 ### Application
 The **Application** is the complete product being built — the entire system delivered at the end of all Sprints. It sits at the top of the hierarchy and represents the overarching project goal.
 
-> **This project**: *Student Assessment Tracker* — a full-stack web application enabling teachers to manage students, record assessments, and track performance — and allowing students to log in and view their own results through a self-service portal.
+> **This project**: *Student Assessment Tracker* — a full-stack web application built on a **three-role system (Admin / Teacher / Student)**. Admins onboard teachers and students, assign teachers to students, and oversee the system via an audit log. Teachers manage their assigned students' assessments and performance. Students activate their own accounts and access a self-service performance portal.
 
 ---
 
@@ -58,25 +58,30 @@ A **Task** is the smallest unit of work — a concrete, implementable step requi
 APPLICATION: Student Assessment Tracker
 │
 ├── EPIC-01: Security
-│   ├── FEAT-01: Teacher Registration
-│   │   ├── US-01: As a teacher, I want to register with my full profile details, so that I can access the system securely.
-│   │   │   ├── TASK-01: Create TeacherRegisterDto with IdPassportNo and all registration fields
-│   │   │   ├── TASK-02: Implement POST /api/teachers controller action
-│   │   │   ├── TASK-03: Build Angular registration form component
-│   │   │   └── TASK-04: Connect Angular form to API via TeacherService
-│   │   └── US-02: As a teacher, I want registration fields to be validated, so that I cannot submit incomplete or invalid information.
-│   │       ├── TASK-05: Add Angular template-driven form validators
-│   │       ├── TASK-06: Implement TeacherRegisterValidator (FluentValidation)
+│   ├── FEAT-01: Teacher Account Lifecycle
+│   │   ├── US-01: As an admin, I want to create a teacher account, so that the teacher can be onboarded to the system.
+│   │   │   ├── TASK-01: Create TeacherCreateDto with all registration fields
+│   │   │   ├── TASK-02: Implement POST /api/teachers (Admin JWT) controller action
+│   │   │   ├── TASK-03: Build Angular teacher creation form in the admin panel
+│   │   │   └── TASK-04: Connect Angular form to API via AdminTeacherService
+│   │   └── US-02: As an admin, I want teacher creation fields to be validated, so that I cannot submit incomplete or invalid information.
+│   │       ├── TASK-05: Add Angular validators to admin teacher creation form
+│   │       ├── TASK-06: Implement TeacherCreateValidator (FluentValidation)
 │   │       └── TASK-07: Display inline error messages on invalid fields
-│   ├── FEAT-02: Teacher Login
+│   ├── FEAT-02: Teacher Login & Activation
 │   │   ├── US-03: As a registered teacher, I want to log in using my email and password, so that I can access the student management dashboard.
 │   │   │   ├── TASK-08: Create TeacherLoginDto and login response model
 │   │   │   ├── TASK-09: Implement POST /api/teachers/login controller action
 │   │   │   ├── TASK-10: Build Angular login form component
 │   │   │   └── TASK-11: Store teacher session in TeacherStateService on success
-│   │   └── US-04: As a teacher, I want to see clear error messages when my login credentials are invalid, so that only registered teachers can log in and I understand why access is denied.
-│   │       ├── TASK-12: Return 401 Unauthorized for invalid credentials in API
-│   │       └── TASK-13: Display friendly error message in Angular on failed login
+│   │   ├── US-04: As a teacher, I want to see clear error messages when my login credentials are invalid, so that only registered teachers can log in and I understand why access is denied.
+│   │   │   ├── TASK-12: Return 401 Unauthorized for invalid credentials in API
+│   │   │   └── TASK-13: Display friendly error message in Angular on failed login
+│   │   └── US-32: As a teacher, I want to activate my account using my email and a new password, so that I can set my credentials and log in for the first time.
+│   │       ├── TASK-100: Create TeacherActivateDto with Email and Password fields
+│   │       ├── TASK-101: Implement POST /api/teachers/activate (public) controller action
+│   │       ├── TASK-102: Build Angular teacher activate component (teacher-activate.component.ts) at /activate
+│   │       └── TASK-103: Redirect to /login on successful teacher account activation
 │   └── FEAT-03: Input Validation
 │       ├── US-06: As a teacher, I want student input fields to be validated, so that I cannot submit incomplete or invalid student data.
 │       │   ├── TASK-14: Add Angular validators to student create/edit form
@@ -89,14 +94,14 @@ APPLICATION: Student Assessment Tracker
 │
 ├── EPIC-02: Student Management
 │   ├── FEAT-04: Create Student
-│   │   └── US-05: As a teacher, I want to add a new student record, so that I can manage my class list.
+│   │   └── US-05: As an admin, I want to add a new student record, so that the student can be assigned to teachers and tracked in the system.
 │   │       ├── TASK-20: Create StudentCreateDto with required fields
-│   │       ├── TASK-21: Implement POST /api/students controller action
+│   │       ├── TASK-21: Implement POST /api/students (Admin JWT) controller action
 │   │       ├── TASK-22: Generate StudentUniqueId (STU-XXXXXXXX) in service layer
-│   │       ├── TASK-23: Build Angular student creation form component
+│   │       ├── TASK-23: Build Angular student creation form in the admin panel
 │   │       └── TASK-24: Redirect to student list on successful creation
 │   ├── FEAT-05: View Students
-│   │   ├── US-07: As a teacher, I want to view all my students and their performance, so that I can monitor progress and identify students who need support.
+│   │   ├── US-07: As a teacher, I want to view all my assigned students and their performance, so that I can monitor progress and identify students who need support.
 │   │   │   ├── TASK-25: Create StudentListDto with all display fields
 │   │   │   ├── TASK-26: Implement GET /api/students returning StudentListDto array
 │   │   │   ├── TASK-27: Build Angular student list component
@@ -111,23 +116,23 @@ APPLICATION: Student Assessment Tracker
 │   │       ├── TASK-34: Implement GET /api/grades read-only endpoint
 │   │       └── TASK-35: Populate grade dropdown in Angular forms from API response
 │   ├── FEAT-06: Edit Student
-│   │   └── US-09: As a teacher, I want to edit student details and assessments, so that I can keep student information up to date.
+│   │   └── US-09: As an admin, I want to edit a student's personal details, so that I can keep student records accurate and up to date.
 │   │       ├── TASK-36: Create StudentUpdateDto for personal details
-│   │       ├── TASK-37: Implement PUT /api/students/{id} controller action
+│   │       ├── TASK-37: Implement PUT /api/students/{id} (Admin JWT) controller action
 │   │       ├── TASK-38: Build Angular edit form pre-populated with current student data
 │   │       └── TASK-39: Redirect to detail view on successful update
 │   ├── FEAT-07: Delete Student
-│   │   └── US-10: As a teacher, I want to delete a student record, so that I can remove students who are no longer in my class.
-│   │       ├── TASK-40: Implement DELETE /api/students/{id} with cascade delete
+│   │   └── US-10: As an admin, I want to delete a student record, so that I can permanently remove students who are no longer in the system.
+│   │       ├── TASK-40: Implement DELETE /api/students/{id} (Admin JWT) with cascade delete
 │   │       ├── TASK-41: Add confirmation modal to Angular student list component
 │   │       └── TASK-42: Remove deleted row from DataTable on confirmed delete
 │   └── FEAT-08: Communication
-│       ├── US-16: As a developer, I want the Angular frontend to communicate with the student API endpoints, so that all student data operations are persisted via the backend.
+│       ├── US-16: As a developer, I want the Angular frontend to communicate with the student and admin API endpoints, so that all data operations are persisted via the backend.
 │       │   ├── TASK-43: Implement StudentApiService with all CRUD and assessment HTTP methods
 │       │   ├── TASK-44: Wire StudentBusinessService to call StudentApiService methods
 │       │   └── TASK-45: Handle API errors gracefully in Angular components
-│       └── US-17: As a developer, I want the Angular frontend to communicate with the teacher API endpoints, so that registration and login functionality works end-to-end.
-│           ├── TASK-46: Implement TeacherApiService (register and login HTTP methods)
+│       └── US-17: As a developer, I want the Angular frontend to communicate with the teacher API endpoints, so that login and activation functionality works end-to-end.
+│           ├── TASK-46: Implement TeacherApiService (login and activate HTTP methods)
 │           └── TASK-47: Wire TeacherBusinessService to call TeacherApiService methods
 │
 ├── EPIC-03: Assessment
@@ -170,49 +175,102 @@ APPLICATION: Student Assessment Tracker
 │           ├── TASK-69: Add XML doc comments to all controller actions
 │           └── TASK-70: Verify Swagger UI lists all endpoints with request/response models
 │
-└── EPIC-06: Student Portal
-    ├── FEAT-12: Student Account Activation
-    │   ├── US-23: As a student, I want to activate my account using my Student ID and email, so that I can set a password and access my dashboard.
-    │   │   ├── TASK-71: Create StudentActivateDto with StudentUniqueId, Email, Password fields
-    │   │   ├── TASK-72: Implement POST /api/students/activate controller action
-    │   │   ├── TASK-73: Build Angular student activate component (student-activate.component.ts)
-    │   │   └── TASK-74: Redirect to /student/dashboard on successful account activation
-    │   └── US-24: As a student, I want activation form fields to be validated, so that I cannot submit incomplete or invalid information.
-    │       ├── TASK-75: Add Angular validators (required, STU-format pattern, email, minlength 6)
-    │       ├── TASK-76: Implement StudentActivateValidator using FluentValidation rules
-    │       └── TASK-77: Show confirmPassword mismatch error on frontend before submission
-    ├── FEAT-13: Student Login
-    │   ├── US-25: As a student, I want to log in with my Student ID and password, so that I can access my personal performance dashboard.
-    │   │   ├── TASK-78: Create StudentLoginDto and StudentLoginResponseDto
-    │   │   ├── TASK-79: Implement POST /api/students/login controller action
-    │   │   ├── TASK-80: Build Angular student login component (student-login.component.ts)
-    │   │   └── TASK-81: Store student session in StudentAuthStateService on successful response
-    │   └── US-26: As a student, I want to see clear error messages when my login credentials are invalid, so that I understand why access is denied.
-    │       ├── TASK-82: Return 401 Unauthorized for wrong credentials / 400 for unactivated account
-    │       └── TASK-83: Display friendly error message in Angular on failed student login
-    ├── FEAT-14: Student Dashboard
-    │   ├── US-27: As a student, I want to view my personal performance summary, so that I can track my academic progress.
-    │   │   ├── TASK-84: Create StudentProfileDto with calculated score fields
-    │   │   ├── TASK-85: Return StudentProfileDto with computed scores on login/activation response
-    │   │   ├── TASK-86: Build Angular student dashboard with performance summary cards
-    │   │   └── TASK-87: Display progress bar with colour-coded performance band legend
-    │   ├── US-28: As a student, I want to view my personal assessment list, so that I can see all my results in one place.
-    │   │   ├── TASK-88: Include assessments array in StudentProfileDto from API response
-    │   │   ├── TASK-89: Render assessments table in Angular student dashboard
-    │   │   └── TASK-90: Apply Overdue/Submitted status badge based on due date
-    │   └── US-29: As a student, I want to view my personal profile information, so that I can verify my details are correct.
-    │       ├── TASK-91: Map all student personal fields in StudentProfileDto
-    │       └── TASK-92: Render My Profile section in Angular student dashboard component
-    └── FEAT-15: Assessment File Submissions
-        ├── US-30: As a student, I want to upload a file submission for an assessment, so that I can submit my completed work digitally.
-        │   ├── TASK-93: Create AssessmentSubmission entity and EF Core migration
-        │   ├── TASK-94: Implement POST /api/students/{id}/assessments/{id}/submissions endpoint (Student JWT only)
-        │   ├── TASK-95: Build file upload modal in Angular student dashboard
-        │   └── TASK-96: Display filename, upload date, and download link in submissions panel
-        └── US-31: As a teacher, I want to download and delete student file submissions, so that I can review and manage submitted work.
-            ├── TASK-97: Implement GET /api/students/{id}/assessments/{id}/submissions (Teacher JWT)
-            ├── TASK-98: Implement GET .../submissions/{id}/download endpoint (Teacher or owning Student JWT)
-            └── TASK-99: Implement DELETE /api/students/{id}/assessments/{id}/submissions/{id} endpoint
+├── EPIC-06: Student Portal
+│   ├── FEAT-12: Student Account Activation
+│   │   ├── US-23: As a student, I want to activate my account using my Student ID and email, so that I can set a password and access my dashboard.
+│   │   │   ├── TASK-71: Create StudentActivateDto with StudentUniqueId, Email, Password fields
+│   │   │   ├── TASK-72: Implement POST /api/students/activate controller action
+│   │   │   ├── TASK-73: Build Angular student activate component (student-activate.component.ts)
+│   │   │   └── TASK-74: Redirect to /student/dashboard on successful account activation
+│   │   └── US-24: As a student, I want activation form fields to be validated, so that I cannot submit incomplete or invalid information.
+│   │       ├── TASK-75: Add Angular validators (required, STU-format pattern, email, minlength 6)
+│   │       ├── TASK-76: Implement StudentActivateValidator using FluentValidation rules
+│   │       └── TASK-77: Show confirmPassword mismatch error on frontend before submission
+│   ├── FEAT-13: Student Login
+│   │   ├── US-25: As a student, I want to log in with my Student ID and password, so that I can access my personal performance dashboard.
+│   │   │   ├── TASK-78: Create StudentLoginDto and StudentLoginResponseDto
+│   │   │   ├── TASK-79: Implement POST /api/students/login controller action
+│   │   │   ├── TASK-80: Build Angular student login component (student-login.component.ts)
+│   │   │   └── TASK-81: Store student session in StudentAuthStateService on successful response
+│   │   └── US-26: As a student, I want to see clear error messages when my login credentials are invalid, so that I understand why access is denied.
+│   │       ├── TASK-82: Return 401 Unauthorized for wrong credentials / 400 for unactivated account
+│   │       └── TASK-83: Display friendly error message in Angular on failed student login
+│   ├── FEAT-14: Student Dashboard
+│   │   ├── US-27: As a student, I want to view my personal performance summary, so that I can track my academic progress.
+│   │   │   ├── TASK-84: Create StudentProfileDto with calculated score fields
+│   │   │   ├── TASK-85: Return StudentProfileDto with computed scores on login/activation response
+│   │   │   ├── TASK-86: Build Angular student dashboard with performance summary cards
+│   │   │   └── TASK-87: Display progress bar with colour-coded performance band legend
+│   │   ├── US-28: As a student, I want to view my personal assessment list, so that I can see all my results in one place.
+│   │   │   ├── TASK-88: Include assessments array in StudentProfileDto from API response
+│   │   │   ├── TASK-89: Render assessments table in Angular student dashboard
+│   │   │   └── TASK-90: Apply Overdue/Submitted status badge based on due date
+│   │   └── US-29: As a student, I want to view my personal profile information, so that I can verify my details are correct.
+│   │       ├── TASK-91: Map all student personal fields in StudentProfileDto
+│   │       └── TASK-92: Render My Profile section in Angular student dashboard component
+│   └── FEAT-15: Assessment File Submissions
+│       ├── US-30: As a student, I want to upload a file submission for an assessment, so that I can submit my completed work digitally.
+│       │   ├── TASK-93: Create AssessmentSubmission entity and EF Core migration
+│       │   ├── TASK-94: Implement POST /api/students/{id}/assessments/{id}/submissions endpoint (Student JWT only)
+│       │   ├── TASK-95: Build file upload modal in Angular student dashboard
+│       │   └── TASK-96: Display filename, upload date, and download link in submissions panel
+│       └── US-31: As a teacher, I want to download and delete student file submissions, so that I can review and manage submitted work.
+│           ├── TASK-97: Implement GET /api/students/{id}/assessments/{id}/submissions (Teacher JWT)
+│           ├── TASK-98: Implement GET .../submissions/{id}/download endpoint (Teacher or owning Student JWT)
+│           └── TASK-99: Implement DELETE /api/students/{id}/assessments/{id}/submissions/{id} endpoint
+│
+├── EPIC-07: Admin Management
+│   ├── FEAT-16: Admin Authentication
+│   │   └── US-33: As an admin, I want to log in using my email and password, so that I can access the admin management panel.
+│   │       ├── TASK-104: Create AdminLoginDto and AdminLoginResponseDto (with Admin JWT)
+│   │       ├── TASK-105: Implement POST /api/admins/login controller action
+│   │       ├── TASK-106: Build Angular admin login component (admin-login.component.ts) at /admin/login
+│   │       └── TASK-107: Store admin session in AdminAuthStateService; implement adminAuthGuard and adminGuestGuard
+│   ├── FEAT-17: Teacher and Student Onboarding
+│   │   ├── US-34: As an admin, I want to create and manage teacher accounts, so that new teachers can be onboarded and existing ones updated or removed.
+│   │   │   ├── TASK-108: Enforce Admin JWT on POST/GET/PUT/DELETE /api/teachers endpoints
+│   │   │   ├── TASK-109: Build Angular teacher management section in admin panel
+│   │   │   └── TASK-110: Display teacher list with create / edit / delete actions in admin panel
+│   │   └── US-35: As an admin, I want to assign and unassign teachers to students, so that teachers can access only their relevant students.
+│   │       ├── TASK-111: Implement POST /api/students/{sid}/teachers/{tid} (Admin JWT)
+│   │       ├── TASK-112: Implement DELETE /api/students/{sid}/teachers/{tid} (Admin JWT)
+│   │       └── TASK-113: Build teacher-assignment UI in admin panel student detail view
+│   └── FEAT-18: Audit Logging
+│       └── US-36: As an admin, I want to view an immutable audit log of all system changes, so that I can monitor activity and investigate issues.
+│           ├── TASK-114: Create AuditLog entity and EF Core migration
+│           ├── TASK-115: Write AuditLog entries on every Create / Update / Delete operation via AuditLogService
+│           ├── TASK-116: Implement GET /api/audit-logs with pagination and filtering (Admin JWT)
+│           └── TASK-117: Build Angular audit log page in admin panel
+│
+├── EPIC-08: Notifications
+│   └── FEAT-19: Email Notifications
+│       └── US-37: As a student, I want to receive an email notification when a new assessment is added to my record, so that I am kept informed of my academic progress.
+│           ├── TASK-118: Configure MailKit SMTP in appsettings.json and register EmailService in DI
+│           ├── TASK-119: Trigger fire-and-forget email via EmailService when POST /api/students/{id}/assessments succeeds
+│           └── TASK-120: Template email with assessment name, score, and performance level
+│
+├── EPIC-09: Data Export
+│   └── FEAT-20: Reports
+│       ├── US-38: As a teacher, I want to export the full student list to a CSV file, so that I can analyse class performance in spreadsheet tools.
+│       │   ├── TASK-121: Implement GET /api/reports/students/csv using CsvHelper (Teacher JWT)
+│       │   └── TASK-122: Build export button in Angular student list that triggers CSV download
+│       └── US-39: As a teacher, I want to export an individual student's assessment report as CSV or PDF, so that I can share a detailed performance record.
+│           ├── TASK-123: Implement GET /api/reports/students/{id}/csv using CsvHelper (Teacher JWT)
+│           ├── TASK-124: Implement GET /api/reports/students/{id}/pdf using QuestPDF (Teacher JWT)
+│           └── TASK-125: Add CSV and PDF download buttons to the Angular student detail page
+│
+└── EPIC-10: Class Groups
+    └── FEAT-21: Class Group Management
+        ├── US-40: As a teacher, I want to create and manage named class groups linked to a subject and grade, so that I can organise students into meaningful teaching units.
+        │   ├── TASK-126: Create ClassGroup entity (Name, Subject, Grade FK) and EF Core migration
+        │   ├── TASK-127: Implement POST /api/class-groups (Teacher JWT) and GET /api/class-groups
+        │   ├── TASK-128: Implement PUT /api/class-groups/{id} and DELETE /api/class-groups/{id} (Teacher JWT)
+        │   └── TASK-129: Build Angular class-groups component with create / edit / delete UI
+        └── US-41: As a teacher, I want to enrol and unenrol students in my class groups, so that each group reflects its actual class membership.
+            ├── TASK-130: Create ClassGroupStudent join entity and EF Core migration
+            ├── TASK-131: Implement POST /api/class-groups/{id}/students/{sid} (Teacher JWT)
+            ├── TASK-132: Implement DELETE /api/class-groups/{id}/students/{sid} (Teacher JWT)
+            └── TASK-133: Build enrol / unenrol UI on the Angular class group detail page
 ```
 
 ---
@@ -240,7 +298,7 @@ Scrum is an Agile framework that organizes work into short, time-boxed iteration
 ### Scrum Artifacts
 
 #### 1. Product Backlog
-A living, prioritized list of all work needed for the product. All 31 User Stories reside here, estimated in story points and ordered by business priority. The Product Owner is responsible for its content and ordering.
+A living, prioritized list of all work needed for the product. All 41 User Stories reside here, estimated in story points and ordered by business priority. The Product Owner is responsible for its content and ordering.
 
 #### 2. Sprint Backlog
 The set of Product Backlog items selected for a given Sprint, along with the Sprint Goal and the plan for delivering the Increment. Each Sprint section below contains its own Sprint Backlog.
@@ -291,29 +349,30 @@ A User Story is **Done** only when ALL of the following criteria are satisfied:
 
 ### Product Backlog
 
-All 31 User Stories, prioritized by business value, with story point estimates and Sprint assignments. **Total estimated effort: 102 story points**.
+All 41 User Stories, prioritized by business value, with story point estimates and Sprint assignments. **Total estimated effort: 144 story points**.
 
 | ID | User Story | Priority | Points | Sprint |
 |----|-----------|----------|:------:|:------:|
 | US-18 | Reject invalid data server-side | High | 3 | Sprint 1 |
 | US-19 | Explore API via Swagger UI | High | 2 | Sprint 1 |
-| US-01 | Register with full profile | High | 5 | Sprint 1 |
-| US-02 | Validate registration fields | High | 3 | Sprint 1 |
-| US-03 | Log in with email and password | High | 5 | Sprint 2 |
-| US-04 | Handle invalid login credentials | High | 2 | Sprint 2 |
-| US-05 | Add a new student record | High | 5 | Sprint 2 |
+| US-01 | Admin creates teacher account | High | 5 | Sprint 1 |
+| US-02 | Validate teacher creation fields | High | 3 | Sprint 1 |
+| US-03 | Teacher logs in with email and password | High | 5 | Sprint 2 |
+| US-04 | Handle invalid teacher login credentials | High | 2 | Sprint 2 |
+| US-05 | Admin adds a new student record | High | 5 | Sprint 2 |
 | US-06 | Validate student input fields | High | 3 | Sprint 2 |
-| US-16 | Consume student API from frontend | High | 5 | Sprint 2 |
+| US-16 | Consume student and admin API from frontend | High | 5 | Sprint 2 |
 | US-07 | View all students in a table | High | 5 | Sprint 3 |
 | US-08 | View detailed student profile | Medium | 3 | Sprint 3 |
-| US-09 | Update student information | Medium | 5 | Sprint 3 |
-| US-10 | Delete a student record | Medium | 3 | Sprint 3 |
-| US-17 | Consume teacher API from frontend | Medium | 3 | Sprint 3 |
+| US-09 | Admin updates student information | Medium | 5 | Sprint 3 |
+| US-10 | Admin deletes a student record | Medium | 3 | Sprint 3 |
+| US-17 | Consume teacher API (login + activation) from frontend | Medium | 3 | Sprint 3 |
 | US-20 | Select grade from controlled dropdown | Medium | 2 | Sprint 3 |
 | US-23 | Activate student account | High | 3 | Sprint 3 |
-| US-24 | Validate activation form fields | High | 2 | Sprint 3 |
-| US-25 | Log in with Student ID and password | High | 3 | Sprint 3 |
+| US-24 | Validate student activation form fields | High | 2 | Sprint 3 |
+| US-25 | Student logs in with Student ID and password | High | 3 | Sprint 3 |
 | US-26 | Handle invalid student credentials | High | 2 | Sprint 3 |
+| US-32 | Teacher activates account with email and password | High | 3 | Sprint 3 |
 | US-11 | Add named assessments with flexible scoring | Medium | 5 | Sprint 4 |
 | US-21 | Add a named assessment to a student | Medium | 3 | Sprint 4 |
 | US-22 | Edit and delete an individual assessment | Medium | 3 | Sprint 4 |
@@ -326,7 +385,16 @@ All 31 User Stories, prioritized by business value, with story point estimates a
 | US-29 | View personal profile information | Medium | 2 | Sprint 4 |
 | US-30 | Upload file submission for an assessment | Medium | 5 | Sprint 5 |
 | US-31 | Download and delete file submissions | Medium | 3 | Sprint 5 |
-| **Total** | | | **102** | |
+| US-33 | Admin logs in to management panel | High | 3 | Sprint 6 |
+| US-34 | Admin creates and manages teacher accounts | High | 5 | Sprint 6 |
+| US-35 | Admin assigns / unassigns teachers to students | High | 3 | Sprint 6 |
+| US-36 | Admin views immutable audit log | Medium | 5 | Sprint 6 |
+| US-37 | Student receives email on new assessment | Medium | 3 | Sprint 7 |
+| US-38 | Export full student list to CSV | Medium | 3 | Sprint 7 |
+| US-39 | Export individual student report as CSV or PDF | Medium | 5 | Sprint 7 |
+| US-40 | Teacher creates and manages class groups | Medium | 5 | Sprint 7 |
+| US-41 | Teacher enrols and unenrols students in class groups | Medium | 3 | Sprint 7 |
+| **Total** | | | **144** | |
 
 ---
 
@@ -334,18 +402,18 @@ All 31 User Stories, prioritized by business value, with story point estimates a
 
 #### Sprint 1 — Foundation & Authentication
 **Dates**: March 2–8, 2026
-**Sprint Goal**: *Establish project infrastructure, configure server-side validation and API documentation, and deliver a fully working teacher registration system.*
+**Sprint Goal**: *Establish project infrastructure, configure server-side validation and API documentation, and enable admins to create teacher accounts.*
 **Velocity**: 13 story points
 
 | Story | Title | Points | Status |
 |-------|-------|:------:|:------:|
 | US-18 | Reject invalid data server-side | 3 | Done |
 | US-19 | Explore API via Swagger UI | 2 | Done |
-| US-01 | Register with full profile | 5 | Done |
-| US-02 | Validate registration fields | 3 | Done |
+| US-01 | Admin creates a teacher account | 5 | Done |
+| US-02 | Validate teacher creation fields | 3 | Done |
 | **Total** | | **13** | |
 
-**Sprint Review**: Teacher registration form is functional end-to-end. FluentValidation rejects invalid data with HTTP 400. Swagger UI documents all available endpoints. Backend infrastructure (layered architecture, EF Core, SQL Server LocalDB) is fully configured and running.
+**Sprint Review**: Infrastructure and validation are fully functional. FluentValidation rejects invalid data with HTTP 400. Swagger UI documents all available endpoints. Backend infrastructure (layered Clean Architecture, EF Core, SQL Server LocalDB) is fully configured and running. *Note: The initial sprint planned teacher self-registration; the architecture subsequently evolved so that admins create teacher accounts and teachers activate them — the underlying validation and infrastructure work from this sprint remained valid and was reused.*
 
 **Sprint Retrospective**:
 
@@ -366,12 +434,12 @@ All 31 User Stories, prioritized by business value, with story point estimates a
 |-------|-------|:------:|:------:|
 | US-03 | Log in with email and password | 5 | Done |
 | US-04 | Handle invalid login credentials | 2 | Done |
-| US-05 | Add a new student record | 5 | Done |
+| US-05 | Admin adds a new student record | 5 | Done |
 | US-06 | Validate student input fields | 3 | Done |
-| US-16 | Consume student API from frontend | 5 | Done |
+| US-16 | Consume student and admin API from frontend | 5 | Done |
 | **Total** | | **20** | |
 
-**Sprint Review**: Teachers can register, log in, and add students via the Angular frontend. The Angular `StudentService` calls real API endpoints. Student creation triggers live feedback and redirects to the list. Node.js PATH fix applied and npm dependencies resolved; Angular dev server stable at `localhost:4200`.
+**Sprint Review**: Teachers can log in and students can be created and managed via the Angular frontend. The Angular `StudentService` calls real API endpoints. Student creation triggers live feedback and redirects to the list. Node.js PATH fix applied and npm dependencies resolved; Angular dev server stable at `localhost:4200`. *Note: Student CRUD (create, edit, delete) is enforced with Admin JWT on the backend; the Angular admin panel manages these operations.*
 
 **Sprint Retrospective**:
 
@@ -392,9 +460,9 @@ All 31 User Stories, prioritized by business value, with story point estimates a
 |-------|-------|:------:|:------:|
 | US-07 | View all students in a table | 5 | Done |
 | US-08 | View detailed student profile | 3 | Done |
-| US-09 | Update student information | 5 | Done |
-| US-10 | Delete a student record | 3 | Done |
-| US-17 | Consume teacher API from frontend | 3 | Done |
+| US-09 | Admin updates student information | 5 | Done |
+| US-10 | Admin deletes a student record | 3 | Done |
+| US-17 | Consume teacher API (login + activation) from frontend | 3 | Done |
 | US-20 | Select grade from controlled dropdown | 2 | Done |
 | US-23 | Activate student account | 3 | Done |
 | US-24 | Validate activation form fields | 2 | Done |
@@ -468,49 +536,101 @@ All 31 User Stories, prioritized by business value, with story point estimates a
 
 ---
 
+#### Sprint 6 — Admin Management Platform
+**Dates**: April 6–12, 2026
+**Sprint Goal**: *Deliver the full admin management platform — admin login, teacher and student lifecycle management, teacher-student assignment, and an immutable audit log.*
+**Velocity**: 16 story points
+
+| Story | Title | Points | Status |
+|-------|-------|:------:|:------:|
+| US-33 | Admin logs in to management panel | 3 | Done |
+| US-34 | Admin creates and manages teacher accounts | 5 | Done |
+| US-35 | Admin assigns / unassigns teachers to students | 3 | Done |
+| US-36 | Admin views immutable audit log | 5 | Done |
+| **Total** | | **16** | |
+
+**Sprint Review**: The admin management platform is fully operational. Admins log in at `/admin/login` using a dedicated Admin JWT (`POST /api/admins/login`). The admin panel exposes teacher creation and management (POST/GET/PUT/DELETE `/api/teachers` all require Admin JWT), teacher-to-student assignment/unassignment (`POST` and `DELETE /api/students/{sid}/teachers/{tid}`), and student record management. An `AuditLog` entity records all Create, Update, and Delete operations across the system; admins can browse the paginated log at `GET /api/audit-logs`. `AdminAuthStateService`, `adminAuthGuard`, and `adminGuestGuard` manage admin session state in Angular. Teacher activation (`POST /api/teachers/activate`) is public-access, allowing onboarded teachers to set their own passwords before their first login.
+
+**Sprint Retrospective**:
+
+| | Notes |
+|-|-------|
+| Start | Automating audit log assertions in the Postman collection as post-response tests |
+| Stop | Sharing JWT secret configuration between roles without per-role isolation |
+| Continue | Keeping all admin-scoped endpoints grouped in a dedicated Swagger tag for clarity |
+
+---
+
+#### Sprint 7 — Notifications, Exports & Class Groups
+**Dates**: April 13–19, 2026
+**Sprint Goal**: *Deliver automated email notifications on assessment creation, CSV and PDF data exports, and the class group management feature so teachers can organise students into teaching units.*
+**Velocity**: 19 story points
+
+| Story | Title | Points | Status |
+|-------|-------|:------:|:------:|
+| US-37 | Student receives email on new assessment | 3 | Done |
+| US-38 | Export full student list to CSV | 3 | Done |
+| US-39 | Export individual student report as CSV or PDF | 5 | Done |
+| US-40 | Teacher creates and manages class groups | 5 | Done |
+| US-41 | Teacher enrols and unenrols students in class groups | 3 | Done |
+| **Total** | | **19** | |
+
+**Sprint Review**: Email notifications are delivered fire-and-forget via MailKit SMTP whenever a new assessment is created (`POST /api/students/{id}/assessments`); the email includes the assessment name, score, and performance level. Data export endpoints are live: `GET /api/reports/students/csv` returns all students as CSV (CsvHelper); `GET /api/reports/students/{id}/csv` and `GET /api/reports/students/{id}/pdf` return per-student reports; the PDF is generated with QuestPDF. Angular download buttons on the student list and detail pages trigger these exports. Class group management is complete: teachers create named groups linked to a subject and grade (`POST /api/class-groups`), update or delete them, and enrol/unenrol students (`POST`/`DELETE /api/class-groups/{id}/students/{sid}`); the Angular class-groups component renders the full CRUD UI.
+
+**Sprint Retrospective**:
+
+| | Notes |
+|-|-------|
+| Start | Throttling email notifications to prevent repeated sends for bulk assessment imports |
+| Stop | Generating PDFs synchronously on the request thread — move to background task for large reports |
+| Continue | Keeping CsvHelper and QuestPDF configuration centralized in ExportService for maintainability |
+
+---
+
 ## EPIC-01: Security
 
-> **Goal**: Protect the application through validated registration and login, and enforce data integrity rules on both the frontend and backend so bad data never reaches the database.
+> **Goal**: Protect the application through a three-role authentication system (Admin / Teacher / Student), enforce data integrity rules on both the frontend and backend, and ensure that only authorised users can access sensitive operations.
 
 ---
 
-### FEAT-01: Teacher Registration
+### FEAT-01: Teacher Account Lifecycle
 
-> **Description**: Allow a new teacher to create an account by filling in their personal and professional details.
+> **Description**: Admin creates a teacher account with personal details; the teacher then activates the account by setting their own password before logging in for the first time.
 
 ---
 
-#### US-01: Register with Full Profile
+#### US-01: Admin Creates a Teacher Account
 
 > **Story Points**: 5 &nbsp;|&nbsp; **Sprint**: Sprint 1
 
-**As a** teacher,
-**I want** to register an account with my ID/Passport No., name, email, phone, subject, and password,
-**so that** I can access the Student Assessment Tracker.
+**As an** admin,
+**I want** to create a teacher account by supplying the teacher's personal and professional details,
+**so that** the teacher can be onboarded to the system and sent their credentials.
 
 **Acceptance Criteria:**
-- [ ] Registration form collects: ID/Passport No., first name, last name, email, phone, subject, password.
-- [ ] ID/Passport No. is required, exactly 9 alphanumeric characters (letters and digits only — no hyphens or special characters).
-- [ ] On successful submission, the user is redirected to the Login page.
-- [ ] A success confirmation is shown before redirect.
+- [ ] Admin panel form collects: ID/Passport No., first name, last name, email, phone, subject.
+- [ ] ID/Passport No. is required, exactly 9 alphanumeric characters (letters and digits only).
+- [ ] `POST /api/teachers` requires a valid Admin JWT; unauthenticated requests return 401.
+- [ ] On successful submission, the new teacher record appears in the teacher list.
+- [ ] A `201 Created` response is returned with the created teacher details.
 
 **Tasks:**
-- TASK-01: Create `TeacherRegisterDto` with `IdPassportNo` and all registration fields
-- TASK-02: Implement `POST /api/teachers` controller action
-- TASK-03: Build Angular registration form component (`signup-form.component.ts`)
-- TASK-04: Connect Angular form to API via `TeacherService` and handle redirect
+- TASK-01: Create `TeacherCreateDto` with `IdPassportNo` and all required fields
+- TASK-02: Implement `POST /api/teachers` (Admin JWT) controller action
+- TASK-03: Build Angular teacher creation form in the admin panel
+- TASK-04: Connect Angular form to API via `AdminTeacherService` and handle success feedback
 
 **App Example:**
-> A teacher named "Mrs. Smith" opens the app for the first time. She navigates to `/register`, fills in her details (e.g., ID: `AB1234567`, email: `smith@school.com`, subject: `Mathematics`, phone: `12345678`), clicks Register, and is redirected to the `/login` page.
+> The admin opens the Admin Panel, navigates to Teachers, clicks "Add Teacher", fills in Mrs. Smith's details (ID: `AB1234567`, email: `smith@school.com`, subject: `Mathematics`, phone: `12345678`), and clicks Create. Mrs. Smith appears in the teacher list with status "Pending Activation".
 
 ---
 
-#### US-02: Validate Registration Fields
+#### US-02: Validate Teacher Creation Fields
 
 > **Story Points**: 3 &nbsp;|&nbsp; **Sprint**: Sprint 1
 
-**As a** teacher,
-**I want** the registration form to show inline errors for invalid inputs,
+**As an** admin,
+**I want** the teacher creation form to show inline errors for invalid inputs,
 **so that** I know exactly what needs to be corrected before submitting.
 
 **Acceptance Criteria:**
@@ -519,23 +639,23 @@ All 31 User Stories, prioritized by business value, with story point estimates a
 - [ ] Email: required, must be a valid email format.
 - [ ] Phone: required, exactly 8 digits.
 - [ ] Subject: required, max 100 characters.
-- [ ] Password: required, 6–20 characters.
 - [ ] Error messages appear inline next to the invalid field.
 - [ ] The form cannot be submitted while validation errors exist.
+- [ ] Backend (FluentValidation) also rejects invalid payloads with HTTP 400.
 
 **Tasks:**
-- TASK-05: Add Angular template-driven form validators (required, minlength, pattern — including `^[a-zA-Z0-9]+$` for IdPassportNo)
-- TASK-06: Implement `TeacherRegisterValidator` using FluentValidation rules (NotEmpty, Length(9), Matches alphanumeric)
+- TASK-05: Add Angular validators (required, minlength, pattern including `^[a-zA-Z0-9]+$` for IdPassportNo) to the admin teacher form
+- TASK-06: Implement `TeacherCreateValidator` using FluentValidation rules
 - TASK-07: Display inline error messages next to each invalid field
 
 **App Example:**
-> Mrs. Smith types only `"A"` for her first name and submits. The form does not post; instead, an inline error appears: *"First name must be 2–50 characters"*. If she enters `"AB-12345"` as her ID/Passport No. it is rejected as hyphens are not allowed — only letters and digits. The backend (FluentValidation) also validates and returns a 400 error if incorrect data somehow reaches the API.
+> The admin types `"A"` for the teacher's first name and clicks Create. The form shows: *"First name must be 2–50 characters"*. Entering `"AB-12345"` as the ID is also rejected — only letters and digits are allowed.
 
 ---
 
-### FEAT-02: Teacher Login
+### FEAT-02: Teacher Login & Activation
 
-> **Description**: Allow a registered teacher to authenticate with their email and password.
+> **Description**: Allow a teacher who has been created by an admin to activate their account (setting their own password), and subsequently log in with email and password to access the student management dashboard.
 
 ---
 
@@ -582,6 +702,32 @@ All 31 User Stories, prioritized by business value, with story point estimates a
 
 **App Example:**
 > Mrs. Smith accidentally types the wrong password. The page displays: *"Invalid email or password. Please try again."* — she is not logged in and remains on the `/login` page.
+
+---
+
+#### US-32: Activate Teacher Account
+
+> **Story Points**: 3 &nbsp;|&nbsp; **Sprint**: Sprint 3
+
+**As a** teacher,
+**I want** to activate my account using my registered email and a new password of my choice,
+**so that** I can set my own credentials and log in to the system for the first time.
+
+**Acceptance Criteria:**
+- [ ] Activation form at `/activate` collects: email address, new password, and confirm password.
+- [ ] Account can only be activated once — attempting to re-activate a previously activated account returns a clear error.
+- [ ] On successful activation, the teacher is redirected to `/login`.
+- [ ] `POST /api/teachers/activate` is a public endpoint (no JWT required).
+- [ ] Password: required, minimum 6 characters; confirm password must match.
+
+**Tasks:**
+- TASK-100: Create `TeacherActivateDto` with `Email`, `Password`, and `ConfirmPassword` fields
+- TASK-101: Implement `POST /api/teachers/activate` (public) controller action; hash password with BCrypt
+- TASK-102: Build Angular teacher activate component (`teacher-activate.component.ts`) at `/activate`
+- TASK-103: Redirect to `/login` on successful teacher account activation
+
+**App Example:**
+> Mrs. Smith receives her school email with the activation link. She opens `/activate`, enters `smith@school.com`, chooses a password, confirms it, and clicks Activate. She is redirected to `/login` and can now log in with her new credentials.
 
 ---
 
@@ -644,39 +790,39 @@ All 31 User Stories, prioritized by business value, with story point estimates a
 
 ## EPIC-02: Student Management
 
-> **Goal**: Enable teachers to fully manage student records — creating, viewing, editing, and deleting — through an intuitive Angular interface backed by a RESTful API.
+> **Goal**: Allow admins to fully manage student records — creating, editing, and deleting — and enable teachers to view, search, and add assessments to their assigned students through an intuitive Angular interface backed by a RESTful API.
 
 ---
 
 ### FEAT-04: Create Student
 
-> **Description**: Allow a teacher to add a new student with personal details and grade assignment.
+> **Description**: Allow an admin to add a new student record with personal details and grade assignment. The student is then assigned to teachers and can activate their own account.
 
 ---
 
-#### US-05: Add a New Student Record
+#### US-05: Admin Adds a New Student Record
 
 > **Story Points**: 5 &nbsp;|&nbsp; **Sprint**: Sprint 2
 
-**As a** teacher,
+**As an** admin,
 **I want** to add a new student by filling in their details,
-**so that** their performance can be tracked in the system.
+**so that** the student can be assigned to teachers and their performance can be tracked.
 
 **Acceptance Criteria:**
-- [ ] Create form collects: ID/Passport No., first name, last name, email, phone, grade (selected from a controlled dropdown).
+- [ ] Admin panel form collects: ID/Passport No., first name, last name, email, phone, grade (selected from a controlled dropdown).
 - [ ] A system-generated StudentUniqueId (e.g., `STU-A1B2C3D4`) is assigned automatically on creation.
-- [ ] On successful submission, the student appears in the list.
-- [ ] The teacher is redirected to the students list after creation.
+- [ ] `POST /api/students` requires a valid Admin JWT; unauthenticated requests return 401.
+- [ ] On successful submission, the student appears in the student list.
 
 **Tasks:**
 - TASK-20: Create `StudentCreateDto` with required fields
-- TASK-21: Implement `POST /api/students` controller action
+- TASK-21: Implement `POST /api/students` (Admin JWT) controller action
 - TASK-22: Generate `StudentUniqueId` (`STU-XXXXXXXX`) in the service layer
-- TASK-23: Build Angular student creation form component (`student-form.component.ts`)
+- TASK-23: Build Angular student creation form in the admin panel
 - TASK-24: Redirect to student list on successful creation
 
 **App Example:**
-> Mrs. Smith clicks "Add Student", fills in: `ID/Passport No.: 123456789, John Doe, john@school.com, 12345678, Grade 10`, and clicks Create. John Doe appears in the students table.
+> The admin opens the Admin Panel, clicks "Add Student", fills in: `ID/Passport No.: 123456789, John Doe, john@school.com, 12345678, Grade 10`, and clicks Create. John Doe appears in the students table with a generated `STU-A1B2C3D4` ID.
 
 ---
 
@@ -767,62 +913,63 @@ All 31 User Stories, prioritized by business value, with story point estimates a
 
 ### FEAT-06: Edit Student
 
-> **Description**: Allow teachers to update existing student personal information.
+> **Description**: Allow an admin to update a student's personal information to correct mistakes or reflect changes.
 
 ---
 
-#### US-09: Update Student Information
+#### US-09: Admin Updates Student Information
 
 > **Story Points**: 5 &nbsp;|&nbsp; **Sprint**: Sprint 3
 
-**As a** teacher,
-**I want** to edit a student's record,
-**so that** I can correct mistakes or update their personal details.
+**As an** admin,
+**I want** to edit a student's personal details,
+**so that** I can correct mistakes or update their information.
 
 **Acceptance Criteria:**
 - [ ] Edit form at `/edit/:id` pre-populates personal details: ID/Passport No., first name, last name, email, phone, grade.
-- [ ] Teacher can change any personal detail field.
-- [ ] On save, the record is updated and the teacher is redirected to the detail view.
+- [ ] Admin can change any personal detail field.
+- [ ] `PUT /api/students/{id}` requires a valid Admin JWT.
+- [ ] On save, the record is updated and the admin is redirected to the detail view.
 - [ ] Assessment scores are managed separately via the inline assessment controls on the detail page.
 
 **Tasks:**
 - TASK-36: Create `StudentUpdateDto` for personal detail fields
-- TASK-37: Implement `PUT /api/students/{id}` controller action
+- TASK-37: Implement `PUT /api/students/{id}` (Admin JWT) controller action
 - TASK-38: Build Angular edit form pre-populated with current student data
 - TASK-39: Redirect to detail view on successful update
 
 **App Example:**
-> Mrs. Smith realizes she mis-entered John Doe's email. She navigates to `/edit/1`, corrects the email, and clicks Update. She is redirected to `/detail/1` where all personal info is updated.
+> The admin realizes Mrs. Smith mis-entered John Doe's email. They navigate to `/edit/1`, correct the email, and click Update. The record is immediately updated.
 
 ---
 
 ### FEAT-07: Delete Student
 
-> **Description**: Allow teachers to permanently remove a student from the system with a confirmation step.
+> **Description**: Allow an admin to permanently remove a student from the system with a confirmation step.
 
 ---
 
-#### US-10: Delete a Student Record
+#### US-10: Admin Deletes a Student Record
 
 > **Story Points**: 3 &nbsp;|&nbsp; **Sprint**: Sprint 3
 
-**As a** teacher,
+**As an** admin,
 **I want** to delete a student record with a confirmation step,
 **so that** I don't accidentally remove students from the system.
 
 **Acceptance Criteria:**
-- [ ] A "Delete" button is available on the student list.
+- [ ] A "Delete" button is available on the student list (Admin JWT required).
 - [ ] Clicking Delete requests confirmation before proceeding.
 - [ ] After deletion, the student is removed from the list immediately.
-- [ ] The API returns a 204 No Content on successful deletion.
+- [ ] `DELETE /api/students/{id}` requires a valid Admin JWT and returns 204 No Content.
 
 **Tasks:**
-- TASK-40: Implement `DELETE /api/students/{id}` with cascade delete for assessments
+- TASK-40: Implement `DELETE /api/students/{id}` (Admin JWT) with cascade delete for assessments
 - TASK-41: Add confirmation modal to Angular student list component
 - TASK-42: Remove the deleted row from the DataTable on confirmed delete
 
 **App Example:**
-> Mrs. Smith clicks Delete on a student who has left the school. A confirmation dialog appears: *"Are you sure you want to delete this student?"*. She confirms, and the student is removed from the table.
+> The admin clicks Delete on a student who has left the school. A confirmation dialog appears: *"Are you sure you want to delete this student?"*. They confirm, and the student is removed from the table.
 
 ---
 
@@ -832,25 +979,27 @@ All 31 User Stories, prioritized by business value, with story point estimates a
 
 ---
 
-#### US-16: Consume Student API from Frontend
+#### US-16: Consume Student and Admin API from Frontend
 
 > **Story Points**: 5 &nbsp;|&nbsp; **Sprint**: Sprint 2
 
 **As a** developer,
-**I want** the Angular frontend to communicate with the student API endpoints,
-**so that** all student data operations are persisted via the backend.
+**I want** the Angular frontend to communicate with the student, assessment, and admin API endpoints,
+**so that** all data operations are persisted via the backend.
 
 **Acceptance Criteria:**
-- [ ] `GET /api/students` — retrieves all students.
-- [ ] `POST /api/students` — creates a new student.
-- [ ] `GET /api/students/{id}` — retrieves a single student with their assessments.
-- [ ] `PUT /api/students/{id}` — updates a student's personal details.
-- [ ] `DELETE /api/students/{id}` — deletes a student and all their assessments (cascade).
+- [ ] `GET /api/students` — retrieves all students (Teacher JWT).
+- [ ] `POST /api/students` — creates a new student (Admin JWT).
+- [ ] `GET /api/students/{id}` — retrieves a single student with their assessments (Teacher JWT).
+- [ ] `PUT /api/students/{id}` — updates a student's personal details (Admin JWT).
+- [ ] `DELETE /api/students/{id}` — deletes a student and all their assessments (Admin JWT).
 - [ ] `GET /api/grades` — retrieves all grade levels for dropdown population.
-- [ ] `GET /api/students/{id}/assessments` — retrieves all assessments for a student.
-- [ ] `POST /api/students/{id}/assessments` — adds a new assessment to a student.
-- [ ] `PUT /api/students/{id}/assessments/{assessmentId}` — updates a single assessment.
-- [ ] `DELETE /api/students/{id}/assessments/{assessmentId}` — deletes a single assessment.
+- [ ] `GET /api/students/{id}/assessments` — retrieves all assessments for a student (Teacher JWT).
+- [ ] `POST /api/students/{id}/assessments` — adds a new assessment (Teacher JWT).
+- [ ] `PUT /api/students/{id}/assessments/{assessmentId}` — updates a single assessment (Teacher JWT).
+- [ ] `DELETE /api/students/{id}/assessments/{assessmentId}` — deletes a single assessment (Teacher JWT).
+- [ ] `POST /api/students/{sid}/teachers/{tid}` — assigns a teacher to a student (Admin JWT).
+- [ ] `DELETE /api/students/{sid}/teachers/{tid}` — unassigns a teacher from a student (Admin JWT).
 - [ ] All responses use consistent JSON shapes (StudentDto, GradeDto, StudentAssessmentDto).
 
 **Tasks:**
@@ -859,29 +1008,30 @@ All 31 User Stories, prioritized by business value, with story point estimates a
 - TASK-45: Handle API errors gracefully in Angular components
 
 **App Example:**
-> When Mrs. Smith loads the homepage, Angular fires `GET /api/students` → the API returns `StudentDto[]` → DataTables renders them. Adding an assessment calls `POST /api/students/{id}/assessments`.
+> When a teacher loads the homepage, Angular fires `GET /api/students` → the API returns `StudentDto[]` → DataTables renders them. Adding an assessment calls `POST /api/students/{id}/assessments`. The admin creating a student calls `POST /api/students` with an Admin JWT.
 
 ---
 
-#### US-17: Consume Teacher API from Frontend
+#### US-17: Consume Teacher API (Login + Activation) from Frontend
 
 > **Story Points**: 3 &nbsp;|&nbsp; **Sprint**: Sprint 3
 
 **As a** developer,
 **I want** the Angular frontend to communicate with the teacher API endpoints,
-**so that** registration and login functionality works end-to-end.
+**so that** login and account activation functionality work end-to-end.
 
 **Acceptance Criteria:**
-- [ ] `POST /api/teachers` — registers a new teacher.
-- [ ] `POST /api/teachers/login` — authenticates a teacher.
-- [ ] Login response includes teacher profile data.
+- [ ] `POST /api/teachers/activate` — activates a teacher account (public).
+- [ ] `POST /api/teachers/login` — authenticates a teacher and returns a JWT.
+- [ ] Login response includes teacher profile data and the JWT stored in `TeacherStateService`.
+- [ ] Angular `teacherAuthGuard` and `teacherGuestGuard` protect teacher-scoped routes.
 
 **Tasks:**
-- TASK-46: Implement `TeacherApiService` with register and login HTTP methods
+- TASK-46: Implement `TeacherApiService` with activate and login HTTP methods
 - TASK-47: Wire `TeacherBusinessService` to call `TeacherApiService` methods
 
 **App Example:**
-> When Mrs. Smith submits the registration form, Angular sends `POST /api/teachers` with her details. The API returns 201 Created, and she is redirected to `/login`.
+> When Mrs. Smith submits the activation form, Angular sends `POST /api/teachers/activate` with her email and new password. The API returns 200, and she is redirected to `/login`. On login, `POST /api/teachers/login` returns a JWT stored in `TeacherStateService`.
 
 ---
 
@@ -1368,34 +1518,320 @@ All 31 User Stories, prioritized by business value, with story point estimates a
 
 ---
 
+## EPIC-07: Admin Management
+
+> **Goal**: Provide a dedicated admin platform so that a system administrator can log in, onboard teachers and students, manage teacher-student assignments, and review an immutable audit trail of all system changes.
+
+---
+
+### FEAT-16: Admin Authentication
+
+> **Description**: Allow a system administrator to log in using their email and password and receive a dedicated Admin JWT, which is required for all admin-scoped endpoints.
+
+---
+
+#### US-33: Admin Logs In to the Management Panel
+
+> **Story Points**: 3 &nbsp;|&nbsp; **Sprint**: Sprint 6
+
+**As an** admin,
+**I want** to log in using my email and password,
+**so that** I can access the admin management panel and perform system administration tasks.
+
+**Acceptance Criteria:**
+- [ ] Login form at `/admin/login` collects email and password.
+- [ ] `POST /api/admins/login` returns an Admin JWT and admin profile on success.
+- [ ] Admin session is stored via `AdminAuthStateService`.
+- [ ] `adminAuthGuard` protects all admin panel routes; `adminGuestGuard` redirects authenticated admins away from `/admin/login`.
+- [ ] Invalid credentials return a friendly error message.
+
+**Tasks:**
+- TASK-104: Create `AdminLoginDto` and `AdminLoginResponseDto` (containing Admin JWT and profile)
+- TASK-105: Implement `POST /api/admins/login` controller action
+- TASK-106: Build Angular admin login component (`admin-login.component.ts`) at `/admin/login`
+- TASK-107: Implement `AdminAuthStateService`, `adminAuthGuard`, and `adminGuestGuard`
+
+**App Example:**
+> The school IT admin opens `/admin/login`, enters their credentials, and is redirected to the Admin Panel dashboard. All admin-scoped actions (create teachers, assign students, view audit log) are now accessible.
+
+---
+
+### FEAT-17: Teacher and Student Onboarding
+
+> **Description**: Allow admins to create and manage teacher accounts, and assign or unassign teachers to students so that each teacher can access only their relevant students.
+
+---
+
+#### US-34: Admin Creates and Manages Teacher Accounts
+
+> **Story Points**: 5 &nbsp;|&nbsp; **Sprint**: Sprint 6
+
+**As an** admin,
+**I want** to create, view, edit, and delete teacher accounts from the admin panel,
+**so that** I can manage the full lifecycle of teacher access to the system.
+
+**Acceptance Criteria:**
+- [ ] `POST /api/teachers` creates a new teacher (Admin JWT required).
+- [ ] `GET /api/teachers` lists all teachers (Admin JWT required).
+- [ ] `PUT /api/teachers/{id}` updates a teacher's details (Admin JWT required).
+- [ ] `DELETE /api/teachers/{id}` removes a teacher (Admin JWT required).
+- [ ] The admin panel displays a teacher list with Create / Edit / Delete actions.
+- [ ] Newly created teachers are marked "Pending Activation" until they activate their accounts.
+
+**Tasks:**
+- TASK-108: Enforce Admin JWT on POST/GET/PUT/DELETE `/api/teachers` endpoints
+- TASK-109: Build Angular teacher management section in the admin panel
+- TASK-110: Display teacher list with create / edit / delete actions and activation status
+
+**App Example:**
+> The admin adds Mrs. Smith via the Admin Panel. She appears in the teacher list as "Pending Activation". The admin can later edit her subject or delete her account if she leaves.
+
+---
+
+#### US-35: Admin Assigns and Unassigns Teachers to Students
+
+> **Story Points**: 3 &nbsp;|&nbsp; **Sprint**: Sprint 6
+
+**As an** admin,
+**I want** to assign and unassign teachers to individual students,
+**so that** each teacher can see and manage only their own students.
+
+**Acceptance Criteria:**
+- [ ] `POST /api/students/{sid}/teachers/{tid}` assigns a teacher to a student (Admin JWT required).
+- [ ] `DELETE /api/students/{sid}/teachers/{tid}` removes the assignment (Admin JWT required).
+- [ ] The admin panel student detail view shows currently assigned teachers and provides assign/unassign controls.
+- [ ] A teacher can only access students they are assigned to.
+
+**Tasks:**
+- TASK-111: Implement `POST /api/students/{sid}/teachers/{tid}` (Admin JWT)
+- TASK-112: Implement `DELETE /api/students/{sid}/teachers/{tid}` (Admin JWT)
+- TASK-113: Build teacher-assignment UI in the admin panel student detail view
+
+**App Example:**
+> The admin opens John Doe's record in the admin panel and assigns Mrs. Smith as his teacher. Mrs. Smith can now see John Doe in her students list. If she is unassigned, John Doe disappears from her view.
+
+---
+
+### FEAT-18: Audit Logging
+
+> **Description**: Record an immutable entry for every Create, Update, and Delete operation in the system, and expose a paginated admin-only endpoint so administrators can review all system activity.
+
+---
+
+#### US-36: Admin Views Immutable Audit Log
+
+> **Story Points**: 5 &nbsp;|&nbsp; **Sprint**: Sprint 6
+
+**As an** admin,
+**I want** to view a paginated, immutable audit log of all system changes,
+**so that** I can monitor activity, track who changed what, and investigate any issues.
+
+**Acceptance Criteria:**
+- [ ] An `AuditLog` entry is written on every Create, Update, and Delete operation across all entities.
+- [ ] Each entry records: entity type, entity ID, operation type, performed-by user, and timestamp.
+- [ ] `GET /api/audit-logs` returns a paginated list of audit entries (Admin JWT required).
+- [ ] The admin panel displays the audit log as a filterable table.
+- [ ] Audit entries are immutable — they cannot be edited or deleted.
+
+**Tasks:**
+- TASK-114: Create `AuditLog` entity and EF Core migration
+- TASK-115: Write `AuditLog` entries in `AuditLogService` and call it from all service Create/Update/Delete operations
+- TASK-116: Implement `GET /api/audit-logs` with pagination and filtering (Admin JWT)
+- TASK-117: Build Angular audit log page in the admin panel
+
+**App Example:**
+> The admin navigates to the Audit Log page in the admin panel and sees all recent changes: *"Student 'John Doe' created by admin@school.com at 14:30"*, *"Assessment 'Math Test 1' added to student 42 by teacher@school.com at 15:05"*.
+
+---
+
+## EPIC-08: Notifications
+
+> **Goal**: Keep students informed of new academic activity by sending automatic email notifications when assessments are added to their record.
+
+---
+
+### FEAT-19: Email Notifications
+
+> **Description**: Send a fire-and-forget email notification to a student whenever a new assessment is created for them, using MailKit and SMTP.
+
+---
+
+#### US-37: Student Receives Email on New Assessment
+
+> **Story Points**: 3 &nbsp;|&nbsp; **Sprint**: Sprint 7
+
+**As a** student,
+**I want** to receive an email notification when a new assessment is added to my record,
+**so that** I am immediately informed of new academic activity without having to check my dashboard.
+
+**Acceptance Criteria:**
+- [ ] An email is sent automatically when a teacher successfully creates a new assessment (`POST /api/students/{id}/assessments`).
+- [ ] The email is sent asynchronously (fire-and-forget) so it does not block the API response.
+- [ ] The email includes: student name, assessment name, score, max score, and performance level.
+- [ ] SMTP settings (host, port, sender address) are configured in `appsettings.json`.
+- [ ] A failed email send does not cause the API request to return an error.
+
+**Tasks:**
+- TASK-118: Configure MailKit SMTP client and register `EmailService` in the DI container
+- TASK-119: Trigger fire-and-forget `EmailService.SendAssessmentNotificationAsync` when a new assessment is saved
+- TASK-120: Template the email body with assessment name, score, max score, and performance level label
+
+**App Example:**
+> Mrs. Smith adds "Math Test 1" (Score: 18/20) to John Doe's profile. Within seconds, John Doe receives an email: *"A new assessment has been added: Math Test 1 — 18/20 (90% — Excellent)"*.
+
+---
+
+## EPIC-09: Data Export
+
+> **Goal**: Allow teachers to export student performance data as CSV files and individual student reports as CSV or professionally formatted PDF documents.
+
+---
+
+### FEAT-20: Reports
+
+> **Description**: Expose report endpoints that generate CSV and PDF exports of student data for use in spreadsheets, meetings, and parent communications.
+
+---
+
+#### US-38: Export Full Student List to CSV
+
+> **Story Points**: 3 &nbsp;|&nbsp; **Sprint**: Sprint 7
+
+**As a** teacher,
+**I want** to export the full student list to a CSV file,
+**so that** I can analyse class performance in spreadsheet tools such as Excel.
+
+**Acceptance Criteria:**
+- [ ] `GET /api/reports/students/csv` returns a downloadable CSV file (Teacher JWT required).
+- [ ] The CSV includes all students with columns: Student ID, Name, Email, Grade, Total Score, Max Possible, Percentage, Performance Level.
+- [ ] The browser initiates a file download when the Angular export button is clicked.
+- [ ] The endpoint uses CsvHelper for mapping and serialisation.
+
+**Tasks:**
+- TASK-121: Implement `GET /api/reports/students/csv` using CsvHelper (Teacher JWT)
+- TASK-122: Build "Export CSV" button in the Angular student list that triggers the download
+
+**App Example:**
+> Mrs. Smith clicks "Export CSV" on the students list page. Her browser downloads `students_export.csv` containing all 25 students with their scores and performance levels, ready to open in Excel.
+
+---
+
+#### US-39: Export Individual Student Report as CSV or PDF
+
+> **Story Points**: 5 &nbsp;|&nbsp; **Sprint**: Sprint 7
+
+**As a** teacher,
+**I want** to export an individual student's assessment report as a CSV or a formatted PDF,
+**so that** I can share a detailed performance record with the student or their parents.
+
+**Acceptance Criteria:**
+- [ ] `GET /api/reports/students/{id}/csv` returns a per-student CSV (Teacher JWT).
+- [ ] `GET /api/reports/students/{id}/pdf` returns a professionally formatted PDF (Teacher JWT) generated by QuestPDF.
+- [ ] The PDF includes: student profile header, assessment table, performance summary, and performance level badge.
+- [ ] CSV and PDF download buttons are available on the Angular student detail page.
+
+**Tasks:**
+- TASK-123: Implement `GET /api/reports/students/{id}/csv` using CsvHelper (Teacher JWT)
+- TASK-124: Implement `GET /api/reports/students/{id}/pdf` using QuestPDF (Teacher JWT)
+- TASK-125: Add "Export CSV" and "Export PDF" download buttons to the Angular student detail page
+
+**App Example:**
+> Mrs. Smith opens John Doe's detail page and clicks "Export PDF". Her browser downloads a formatted PDF showing John's name, grade, all assessment results in a table, and a summary card with his overall performance level of "Excellent".
+
+---
+
+## EPIC-10: Class Groups
+
+> **Goal**: Allow teachers to organise students into named class groups linked to a subject and grade level, and to manage group membership by enrolling and unenrolling students.
+
+---
+
+### FEAT-21: Class Group Management
+
+> **Description**: Provide full CRUD management for class groups (create, read, update, delete) and membership controls (enrol / unenrol students), backed by a dedicated set of RESTful endpoints.
+
+---
+
+#### US-40: Teacher Creates and Manages Class Groups
+
+> **Story Points**: 5 &nbsp;|&nbsp; **Sprint**: Sprint 7
+
+**As a** teacher,
+**I want** to create and manage named class groups linked to a subject and grade,
+**so that** I can organise my students into meaningful teaching units.
+
+**Acceptance Criteria:**
+- [ ] `POST /api/class-groups` creates a new class group with Name, Subject, and Grade FK (Teacher JWT).
+- [ ] `GET /api/class-groups` returns all class groups for the authenticated teacher (Teacher JWT).
+- [ ] `PUT /api/class-groups/{id}` updates a class group's details (Teacher JWT).
+- [ ] `DELETE /api/class-groups/{id}` removes a class group (Teacher JWT).
+- [ ] The Angular class-groups component renders create / edit / delete UI for managing groups.
+
+**Tasks:**
+- TASK-126: Create `ClassGroup` entity (Name, Subject, Grade FK) and EF Core migration
+- TASK-127: Implement `POST /api/class-groups` (Teacher JWT) and `GET /api/class-groups`
+- TASK-128: Implement `PUT /api/class-groups/{id}` and `DELETE /api/class-groups/{id}` (Teacher JWT)
+- TASK-129: Build Angular class-groups component with create / edit / delete UI
+
+**App Example:**
+> Mrs. Smith creates a group called "Grade 10 Mathematics". The group appears in her class groups list. She can edit the name later or delete the group at the end of the year.
+
+---
+
+#### US-41: Teacher Enrols and Unenrols Students in Class Groups
+
+> **Story Points**: 3 &nbsp;|&nbsp; **Sprint**: Sprint 7
+
+**As a** teacher,
+**I want** to enrol and unenrol students in my class groups,
+**so that** each group accurately reflects its current class membership.
+
+**Acceptance Criteria:**
+- [ ] `POST /api/class-groups/{id}/students/{sid}` enrols a student in a group (Teacher JWT).
+- [ ] `DELETE /api/class-groups/{id}/students/{sid}` unenrols a student from a group (Teacher JWT).
+- [ ] `GET /api/class-groups/{id}` returns the group details including the list of enrolled students.
+- [ ] The Angular class group detail page shows enrolled students and provides enrol/unenrol controls.
+
+**Tasks:**
+- TASK-130: Create `ClassGroupStudent` join entity and EF Core migration
+- TASK-131: Implement `POST /api/class-groups/{id}/students/{sid}` (Teacher JWT)
+- TASK-132: Implement `DELETE /api/class-groups/{id}/students/{sid}` (Teacher JWT)
+- TASK-133: Build enrol / unenrol UI on the Angular class group detail page
+
+**App Example:**
+> Mrs. Smith opens "Grade 10 Mathematics" and clicks "Add Student". She selects John Doe from the dropdown and clicks Enrol. John appears in the group's student list. At the end of the term she can unenrol students who have moved classes.
+
+---
+
 ## Summary Table
 
 | ID | Level | Title | Parent | Points | Sprint |
 |----|-------|-------|--------|:------:|:------:|
 | EPIC-01 | Epic | Security | Application | — | — |
-| FEAT-01 | Feature | Teacher Registration | EPIC-01 | — | — |
-| US-01 | User Story | Register with Full Profile | FEAT-01 | 5 | Sprint 1 |
-| US-02 | User Story | Validate Registration Fields | FEAT-01 | 3 | Sprint 1 |
-| FEAT-02 | Feature | Teacher Login | EPIC-01 | — | — |
+| FEAT-01 | Feature | Teacher Account Lifecycle | EPIC-01 | — | — |
+| US-01 | User Story | Admin Creates a Teacher Account | FEAT-01 | 5 | Sprint 1 |
+| US-02 | User Story | Validate Teacher Creation Fields | FEAT-01 | 3 | Sprint 1 |
+| FEAT-02 | Feature | Teacher Login & Activation | EPIC-01 | — | — |
 | US-03 | User Story | Log In with Email and Password | FEAT-02 | 5 | Sprint 2 |
 | US-04 | User Story | Handle Invalid Login Credentials | FEAT-02 | 2 | Sprint 2 |
+| US-32 | User Story | Activate Teacher Account | FEAT-02 | 3 | Sprint 3 |
 | FEAT-03 | Feature | Input Validation | EPIC-01 | — | — |
 | US-06 | User Story | Validate Student Input Fields | FEAT-03 | 3 | Sprint 2 |
 | US-18 | User Story | Reject Invalid Data Server-Side | FEAT-03 | 3 | Sprint 1 |
 | EPIC-02 | Epic | Student Management | Application | — | — |
 | FEAT-04 | Feature | Create Student | EPIC-02 | — | — |
-| US-05 | User Story | Add a New Student Record | FEAT-04 | 5 | Sprint 2 |
+| US-05 | User Story | Admin Adds a New Student Record | FEAT-04 | 5 | Sprint 2 |
 | FEAT-05 | Feature | View Students | EPIC-02 | — | — |
 | US-07 | User Story | View All Students in a Table | FEAT-05 | 5 | Sprint 3 |
 | US-08 | User Story | View Detailed Student Profile | FEAT-05 | 3 | Sprint 3 |
 | US-20 | User Story | Select Grade from Controlled Dropdown | FEAT-05 | 2 | Sprint 3 |
 | FEAT-06 | Feature | Edit Student | EPIC-02 | — | — |
-| US-09 | User Story | Update Student Information | FEAT-06 | 5 | Sprint 3 |
+| US-09 | User Story | Admin Updates Student Information | FEAT-06 | 5 | Sprint 3 |
 | FEAT-07 | Feature | Delete Student | EPIC-02 | — | — |
-| US-10 | User Story | Delete a Student Record | FEAT-07 | 3 | Sprint 3 |
+| US-10 | User Story | Admin Deletes a Student Record | FEAT-07 | 3 | Sprint 3 |
 | FEAT-08 | Feature | Communication | EPIC-02 | — | — |
-| US-16 | User Story | Consume Student API from Frontend | FEAT-08 | 5 | Sprint 2 |
-| US-17 | User Story | Consume Teacher API from Frontend | FEAT-08 | 3 | Sprint 3 |
+| US-16 | User Story | Consume Student and Admin API from Frontend | FEAT-08 | 5 | Sprint 2 |
+| US-17 | User Story | Consume Teacher API (Login + Activation) from Frontend | FEAT-08 | 3 | Sprint 3 |
 | EPIC-03 | Epic | Assessment | Application | — | — |
 | FEAT-09 | Feature | Scoring | EPIC-03 | — | — |
 | US-11 | User Story | Add Named Assessments with Flexible Scoring | FEAT-09 | 5 | Sprint 4 |
@@ -1424,4 +1860,23 @@ All 31 User Stories, prioritized by business value, with story point estimates a
 | FEAT-15 | Feature | Assessment File Submissions | EPIC-06 | — | — |
 | US-30 | User Story | Upload File Submission for an Assessment | FEAT-15 | 5 | Sprint 5 |
 | US-31 | User Story | Download and Delete File Submissions | FEAT-15 | 3 | Sprint 5 |
-| **Totals** | | **31 User Stories · 99 Tasks** | | **102 pts** | **5 Sprints** |
+| EPIC-07 | Epic | Admin Management | Application | — | — |
+| FEAT-16 | Feature | Admin Authentication | EPIC-07 | — | — |
+| US-33 | User Story | Admin Logs In to the Management Panel | FEAT-16 | 3 | Sprint 6 |
+| FEAT-17 | Feature | Teacher and Student Onboarding | EPIC-07 | — | — |
+| US-34 | User Story | Admin Creates and Manages Teacher Accounts | FEAT-17 | 5 | Sprint 6 |
+| US-35 | User Story | Admin Assigns and Unassigns Teachers to Students | FEAT-17 | 3 | Sprint 6 |
+| FEAT-18 | Feature | Audit Logging | EPIC-07 | — | — |
+| US-36 | User Story | Admin Views Immutable Audit Log | FEAT-18 | 5 | Sprint 6 |
+| EPIC-08 | Epic | Notifications | Application | — | — |
+| FEAT-19 | Feature | Email Notifications | EPIC-08 | — | — |
+| US-37 | User Story | Student Receives Email on New Assessment | FEAT-19 | 3 | Sprint 7 |
+| EPIC-09 | Epic | Data Export | Application | — | — |
+| FEAT-20 | Feature | Reports | EPIC-09 | — | — |
+| US-38 | User Story | Export Full Student List to CSV | FEAT-20 | 3 | Sprint 7 |
+| US-39 | User Story | Export Individual Student Report as CSV or PDF | FEAT-20 | 5 | Sprint 7 |
+| EPIC-10 | Epic | Class Groups | Application | — | — |
+| FEAT-21 | Feature | Class Group Management | EPIC-10 | — | — |
+| US-40 | User Story | Teacher Creates and Manages Class Groups | FEAT-21 | 5 | Sprint 7 |
+| US-41 | User Story | Teacher Enrols and Unenrols Students in Class Groups | FEAT-21 | 3 | Sprint 7 |
+| **Totals** | | **41 User Stories · 133 Tasks** | | **144 pts** | **7 Sprints** |

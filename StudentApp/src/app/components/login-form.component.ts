@@ -40,18 +40,19 @@ import { takeUntil } from 'rxjs/operators';
           </div>
           <span class="error" *ngIf="(form.submitted || password.touched) && password.hasError('required')">Password is required</span>
           <span class="error" *ngIf="(form.submitted || password.touched) && password.hasError('minlength')">Password must be at least 6 characters</span>
+          <span class="error" *ngIf="(form.submitted || password.touched) && password.hasError('maxlength')">Password cannot exceed 20 characters</span>
         </div>
         
         <div class="actions">
           <button type="submit" class="btn btn-primary" [disabled]="loading">
             {{ loading ? 'Logging in...' : 'Login' }}
           </button>
-          <a routerLink="/register" class="btn btn-secondary">Register</a>
+          <a routerLink="/activate" class="btn btn-secondary">Activate Account</a>
         </div>
       </form>
       
       <div class="signup-link">
-        <p>Don't have an account? <a routerLink="/register">Sign up here</a></p>
+        <p>New teacher? <a routerLink="/activate">Activate your account here</a></p>
       </div>
     </div>
   `,

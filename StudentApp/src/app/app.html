@@ -7,7 +7,6 @@
       <!-- Shown when nobody is logged in -->
       <ng-container *ngIf="!isAuthenticated && !isStudentAuthenticated">
         <button class="nav-btn" (click)="navigateToLogin()">Teacher Login</button>
-        <button class="nav-btn" (click)="navigateToSignUp()">Teacher Sign Up</button>
         <button class="nav-btn student-btn" (click)="navigateToStudentLogin()">Student Login</button>
       </ng-container>
 

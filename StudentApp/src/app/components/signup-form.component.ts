@@ -2,7 +2,7 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule, NgForm } from '@angular/forms';
-import { CreateTeacherDto, SubjectDto } from '../core/models';
+import { CreateTeacherDto, TeacherActivateDto, SubjectDto } from '../core/models';
 import { TeacherStateService } from '../core/services/state';
 import { TeacherBusinessService } from '../features/teachers/services/teacher-business.service';
 import { SubjectApiService } from '../core/services/http';
@@ -21,61 +21,66 @@ import { takeUntil } from 'rxjs/operators';
   imports: [CommonModule, FormsModule, RouterLink],
   template: `
     <div class="container">
-      <h2>{{ isEdit ? 'Edit Teacher Profile' : 'Register as Teacher' }}</h2>
+      <h2>{{ isEdit ? 'Edit Teacher Profile' : 'Activate Your Teacher Account' }}</h2>
+      <p *ngIf="!isEdit" class="activate-hint">Enter the email address set up for you by your school admin and choose a password to activate your account.</p>
       
       <div *ngIf="error && isServerError" class="server-error">{{ error }}</div>
       
       <form (ngSubmit)="onSubmit(form)" #form="ngForm" class="form">
-        <div class="form-group">
-          <label for="idPassportNo">ID / Passport No.:</label>
-          <input type="text" id="idPassportNo" [(ngModel)]="teacher.idPassportNo" name="idPassportNo" #idPassportNo="ngModel" placeholder="e.g., 123416789 or PA1234567" autocomplete="off" required minlength="9" maxlength="9" pattern="^[a-zA-Z0-9]+$" [disabled]="loading" (keypress)="allowOnlyAlphanumeric($event)" (input)="clearError()" />
-          <span class="error" *ngIf="(form.submitted || idPassportNo.touched || idPassportNo.dirty) && idPassportNo.hasError('required')">ID/Passport No. is required</span>
-          <span class="error" *ngIf="(form.submitted || idPassportNo.touched || idPassportNo.dirty) && idPassportNo.hasError('pattern')">ID/Passport No. can only contain letters and numbers</span>
-          <span class="error" *ngIf="(form.submitted || idPassportNo.touched || idPassportNo.dirty) && (idPassportNo.hasError('minlength') || idPassportNo.hasError('maxlength'))">ID/Passport No. must be exactly 9 characters</span>
-        </div>
-        
-        <div class="form-group">
-          <label for="firstName">First Name:</label>
-          <input type="text" id="firstName" [(ngModel)]="teacher.firstName" name="firstName" #firstName="ngModel" autocomplete="given-name" required minlength="2" maxlength="50" pattern="^[a-zA-Z]+$" (keypress)="allowOnlyLetters($event)" [disabled]="loading" (input)="clearError()" />
-          <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('required')">First name is required</span>
-          <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('minlength')">First name must be at least 2 characters</span>
-          <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('maxlength')">First name cannot exceed 50 characters</span>
-          <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('pattern')">First name can only contain letters</span>
-        </div>
-        
-        <div class="form-group">
-          <label for="lastName">Last Name:</label>
-          <input type="text" id="lastName" [(ngModel)]="teacher.lastName" name="lastName" #lastName="ngModel" autocomplete="family-name" required minlength="2" maxlength="50" pattern="^[a-zA-Z]+$" (keypress)="allowOnlyLetters($event)" [disabled]="loading" (input)="clearError()" />
-          <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('required')">Last name is required</span>
-          <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('minlength')">Last name must be at least 2 characters</span>
-          <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('maxlength')">Last name cannot exceed 50 characters</span>
-          <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('pattern')">Last name can only contain letters</span>
-        </div>
-        
+        <ng-container *ngIf="isEdit">
+          <div class="form-group">
+            <label for="idPassportNo">ID / Passport No.:</label>
+            <input type="text" id="idPassportNo" [(ngModel)]="teacher.idPassportNo" name="idPassportNo" #idPassportNo="ngModel" placeholder="e.g., 123416789 or PA1234567" autocomplete="off" required minlength="9" maxlength="9" pattern="^[a-zA-Z0-9]+$" [disabled]="loading" (keypress)="allowOnlyAlphanumeric($event)" (input)="clearError()" />
+            <span class="error" *ngIf="(form.submitted || idPassportNo.touched || idPassportNo.dirty) && idPassportNo.hasError('required')">ID/Passport No. is required</span>
+            <span class="error" *ngIf="(form.submitted || idPassportNo.touched || idPassportNo.dirty) && idPassportNo.hasError('pattern')">ID/Passport No. can only contain letters and numbers</span>
+            <span class="error" *ngIf="(form.submitted || idPassportNo.touched || idPassportNo.dirty) && (idPassportNo.hasError('minlength') || idPassportNo.hasError('maxlength'))">ID/Passport No. must be exactly 9 characters</span>
+          </div>
+
+          <div class="form-group">
+            <label for="firstName">First Name:</label>
+            <input type="text" id="firstName" [(ngModel)]="teacher.firstName" name="firstName" #firstName="ngModel" autocomplete="given-name" required minlength="2" maxlength="50" pattern="^[a-zA-Z]+$" (keypress)="allowOnlyLetters($event)" [disabled]="loading" (input)="clearError()" />
+            <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('required')">First name is required</span>
+            <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('minlength')">First name must be at least 2 characters</span>
+            <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('maxlength')">First name cannot exceed 50 characters</span>
+            <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('pattern')">First name can only contain letters</span>
+          </div>
+
+          <div class="form-group">
+            <label for="lastName">Last Name:</label>
+            <input type="text" id="lastName" [(ngModel)]="teacher.lastName" name="lastName" #lastName="ngModel" autocomplete="family-name" required minlength="2" maxlength="50" pattern="^[a-zA-Z]+$" (keypress)="allowOnlyLetters($event)" [disabled]="loading" (input)="clearError()" />
+            <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('required')">Last name is required</span>
+            <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('minlength')">Last name must be at least 2 characters</span>
+            <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('maxlength')">Last name cannot exceed 50 characters</span>
+            <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('pattern')">Last name can only contain letters</span>
+          </div>
+        </ng-container>
+
         <div class="form-group">
           <label for="email">Email:</label>
           <input type="email" id="email" [(ngModel)]="teacher.email" name="email" #email="ngModel" autocomplete="email" required email maxlength="100" [disabled]="loading || isEdit" (input)="clearError()" />
-          <span class="hint" *ngIf="isEdit">Email cannot be changed after registration</span>
+          <span class="hint" *ngIf="isEdit">Email cannot be changed after activation</span>
           <span class="error" *ngIf="(form.submitted || email.touched || email.dirty) && email.hasError('required')">Email is required</span>
           <span class="error" *ngIf="(form.submitted || email.touched || email.dirty) && email.hasError('email')">Email must be a valid email address</span>
           <span class="error" *ngIf="(form.submitted || email.touched || email.dirty) && email.hasError('maxlength')">Email cannot exceed 100 characters</span>
         </div>
-        
-        <div class="form-group">
-          <label for="phone">Phone (8 digits, e.g., 77754256):</label>
-          <input type="text" id="phone" [(ngModel)]="teacher.phone" name="phone" #phone="ngModel" placeholder="77754256" minlength="8" maxlength="8" pattern="^\\d{8}$" autocomplete="tel" (input)="validatePhone(); clearError()" (keypress)="allowOnlyNumbers($event)" required [disabled]="loading" />
-          <span class="error" *ngIf="(form.submitted || phone.touched || phone.dirty) && phone.hasError('required')">Phone is required</span>
-          <span class="error" *ngIf="(form.submitted || phone.touched || phone.dirty) && (phone.hasError('pattern') || phone.hasError('minlength') || phone.hasError('maxlength'))">Phone must be exactly 8 digits</span>
-        </div>
-        
-        <div class="form-group">
-          <label for="subject">Subject:</label>
-          <select id="subject" [(ngModel)]="teacher.subjectId" name="subject" #subject="ngModel" required [disabled]="loading" (change)="clearError()">
-            <option [ngValue]="0" disabled>-- Select a subject --</option>
-            <option *ngFor="let s of subjects" [ngValue]="s.id">{{ s.name }}</option>
-          </select>
-          <span class="error" *ngIf="(form.submitted || subject.touched || subject.dirty) && (subject.hasError('required') || teacher.subjectId === 0)">Please select a subject</span>
-        </div>
+
+        <ng-container *ngIf="isEdit">
+          <div class="form-group">
+            <label for="phone">Phone (8 digits, e.g., 77754256):</label>
+            <input type="text" id="phone" [(ngModel)]="teacher.phone" name="phone" #phone="ngModel" placeholder="77754256" minlength="8" maxlength="8" pattern="^\\d{8}$" autocomplete="tel" (input)="validatePhone(); clearError()" (keypress)="allowOnlyNumbers($event)" required [disabled]="loading" />
+            <span class="error" *ngIf="(form.submitted || phone.touched || phone.dirty) && phone.hasError('required')">Phone is required</span>
+            <span class="error" *ngIf="(form.submitted || phone.touched || phone.dirty) && (phone.hasError('pattern') || phone.hasError('minlength') || phone.hasError('maxlength'))">Phone must be exactly 8 digits</span>
+          </div>
+
+          <div class="form-group">
+            <label for="subject">Subject:</label>
+            <select id="subject" [(ngModel)]="teacher.subjectId" name="subject" #subject="ngModel" required [disabled]="loading" (change)="clearError()">
+              <option [ngValue]="0" disabled>-- Select a subject --</option>
+              <option *ngFor="let s of subjects" [ngValue]="s.id">{{ s.name }}</option>
+            </select>
+            <span class="error" *ngIf="(form.submitted || subject.touched || subject.dirty) && (subject.hasError('required') || teacher.subjectId === 0)">Please select a subject</span>
+          </div>
+        </ng-container>
 
         <div class="form-group" *ngIf="!isEdit">
           <label for="password">Password:</label>
@@ -100,7 +105,7 @@ import { takeUntil } from 'rxjs/operators';
         
         <div class="actions">
           <button type="submit" class="btn btn-primary" [disabled]="loading">
-            {{ loading ? 'Saving...' : (isEdit ? 'Update' : 'Register') }}
+            {{ loading ? 'Saving...' : (isEdit ? 'Update Profile' : 'Activate Account') }}
           </button>
           <a routerLink="/login" class="btn btn-secondary">Cancel</a>
         </div>
@@ -112,6 +117,13 @@ import { takeUntil } from 'rxjs/operators';
       max-width: 500px;
       margin: 20px auto;
       padding: 20px;
+    }
+
+    .activate-hint {
+      color: #555;
+      font-size: 13px;
+      margin-bottom: 16px;
+      line-height: 1.5;
     }
     
     .form {
@@ -415,7 +427,7 @@ export class SignUpFormComponent implements OnInit, OnDestroy {
     return Object.keys(errors).length > 0;
   }
 
-  private handleServerError(action: 'register' | 'update', err: any): void {
+  private handleServerError(action: string, err: any): void {
     this.loading = false;
 
     if (this.isValidationErrorResponse(err)) {
@@ -449,25 +461,37 @@ export class SignUpFormComponent implements OnInit, OnDestroy {
       return;
     }
 
-    if (this.teacher.subjectId === 0) {
-      return;
+    if (!this.isEdit) {
+      // Activation path: email + password only
+      const activateDto: TeacherActivateDto = {
+        email: this.teacher.email,
+        password: this.teacher.password,
+        confirmPassword: this.teacher.confirmPassword
+      };
+
+      this.teacherBusiness.activate(activateDto).subscribe({
+        next: () => this.router.navigate(['/']),
+        error: (err: any) => this.handleServerError('activate', err)
+      });
+    } else {
+      // Edit profile path: all fields required
+      if (this.teacher.subjectId === 0) {
+        return;
+      }
+
+      const createDto: CreateTeacherDto = {
+        idPassportNo: this.teacher.idPassportNo,
+        firstName: this.teacher.firstName,
+        lastName: this.teacher.lastName,
+        email: this.teacher.email,
+        phone: this.teacher.phone,
+        subjectId: this.teacher.subjectId
+      };
+
+      this.teacherBusiness.register(createDto).subscribe({
+        next: () => this.router.navigate(['/']),
+        error: (err: any) => this.handleServerError('update', err)
+      });
     }
-
-    const createDto: CreateTeacherDto = {
-      idPassportNo: this.teacher.idPassportNo,
-      firstName: this.teacher.firstName,
-      lastName: this.teacher.lastName,
-      email: this.teacher.email,
-      phone: this.teacher.phone,
-      subjectId: this.teacher.subjectId,
-      password: this.teacher.password
-    };
-
-    this.teacherBusiness.register(createDto).subscribe({
-      next: () => {
-        this.router.navigate(['/']);
-      },
-      error: (err: any) => this.handleServerError('register', err)
-    });
   }
 }

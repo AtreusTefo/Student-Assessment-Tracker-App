@@ -166,6 +166,7 @@ export interface StudentActivateDto {
   studentUniqueId: string;
   email: string;
   password: string;
+  confirmPassword: string;
 }
 
 /** DTO sent to POST /api/students/login */
