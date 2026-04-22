@@ -4,6 +4,7 @@ using Microsoft.IdentityModel.Tokens;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using System.Text.Json;
 using StudentAssessmentTracker.Application.DTOs;
 using StudentAssessmentTracker.Domain.Entities;
 using StudentAssessmentTracker.Domain.Interfaces;
@@ -54,6 +55,12 @@ namespace StudentAssessmentTracker.Application.Services
         /// Throws <see cref="InvalidOperationException"/> when the account is already active.
         /// </summary>
         Task<TeacherLoginResponseDto?> ActivateTeacherAsync(TeacherActivateDto dto);
+
+        /// <summary>
+        /// Resets a teacher's password by nulling it so they must re-activate.
+        /// Throws <see cref="KeyNotFoundException"/> when no teacher with that email exists.
+        /// </summary>
+        Task ForgotPasswordAsync(TeacherForgotPasswordDto dto);
     }
 
     /// <summary>
@@ -64,6 +71,7 @@ namespace StudentAssessmentTracker.Application.Services
         private readonly ITeacherRepository _repository;
         private readonly IRepository<Subject> _subjectRepository;
         private readonly ApplicationDbContext _db;
+        private readonly IAuditLogService _auditLog;
         private readonly IMapper _mapper;
         private readonly ILogger<TeacherService> _logger;
         private readonly IConfiguration _configuration;
@@ -73,6 +81,7 @@ namespace StudentAssessmentTracker.Application.Services
             ITeacherRepository repository,
             IRepository<Subject> subjectRepository,
             ApplicationDbContext db,
+            IAuditLogService auditLog,
             IMapper mapper,
             ILogger<TeacherService> logger,
             IConfiguration configuration)
@@ -80,6 +89,7 @@ namespace StudentAssessmentTracker.Application.Services
             _repository = repository;
             _subjectRepository = subjectRepository;
             _db = db;
+            _auditLog = auditLog;
             _mapper = mapper;
             _logger = logger;
             _configuration = configuration;
@@ -134,6 +144,12 @@ namespace StudentAssessmentTracker.Application.Services
             teacher.CreatedDate = DateTime.UtcNow;
             // Issue 5: AddAsync already calls SaveChangesAsync internally — do not call it again.
             await _repository.AddAsync(teacher);
+
+            await _auditLog.LogAsync("Teacher", teacher.Id, "Create",
+                oldValues: null,
+                newValues: JsonSerializer.Serialize(new { teacher.Email, teacher.SubjectId, teacher.FirstName, teacher.LastName }),
+                changedBy: teacher.Email, changedByRole: "Teacher");
+
             return _mapper.Map<TeacherResponseDto>(teacher);
         }
 
@@ -180,6 +196,12 @@ namespace StudentAssessmentTracker.Application.Services
             teacher.Email = dto.Email.Trim().ToLower();
             teacher.UpdatedAt = DateTime.UtcNow; // Issue #8: stamp UpdatedAt on every update
             await _repository.UpdateAsync(teacher);
+
+            await _auditLog.LogAsync("Teacher", id, "Update",
+                oldValues: null,
+                newValues: JsonSerializer.Serialize(new { teacher.Email, teacher.SubjectId, teacher.FirstName, teacher.LastName }),
+                changedBy: teacher.Email, changedByRole: "Teacher");
+
             return true;
         }
 
@@ -208,6 +230,12 @@ namespace StudentAssessmentTracker.Application.Services
 
             // DeleteAsync already calls SaveChangesAsync internally — no second call needed.
             await _repository.DeleteAsync(id);
+
+            await _auditLog.LogAsync("Teacher", id, "Delete",
+                oldValues: JsonSerializer.Serialize(new { teacher.Email, teacher.SubjectId }),
+                newValues: null,
+                changedBy: teacher.Email, changedByRole: "Teacher");
+
             return true;
         }
 
@@ -264,6 +292,11 @@ namespace StudentAssessmentTracker.Application.Services
             teacher.UpdatedAt = DateTime.UtcNow;
             await _repository.UpdateAsync(teacher);
 
+            await _auditLog.LogAsync("Teacher", teacher.Id, "Update",
+                oldValues: JsonSerializer.Serialize(new { Activated = false }),
+                newValues: JsonSerializer.Serialize(new { Activated = true }),
+                changedBy: teacher.Email, changedByRole: "Teacher");
+
             _logger.LogInformation("Teacher {TeacherId} account activated", teacher.Id);
             return new TeacherLoginResponseDto
             {
@@ -272,7 +305,28 @@ namespace StudentAssessmentTracker.Application.Services
             };
         }
 
+        /// <inheritdoc />
+        public async Task ForgotPasswordAsync(TeacherForgotPasswordDto dto)
+        {
+            var emailLower = dto.Email.Trim().ToLower();
+            var teacher = await _repository.FindByEmailAsync(emailLower);
+            if (teacher is null)
+                throw new KeyNotFoundException($"No teacher account found with email '{dto.Email}'.");
+
+            teacher.Password = null;
+            teacher.UpdatedAt = DateTime.UtcNow;
+            await _repository.UpdateAsync(teacher);
+
+            await _auditLog.LogAsync("Teacher", teacher.Id, "ForgotPassword",
+                oldValues: JsonSerializer.Serialize(new { PasswordCleared = true }),
+                newValues: null,
+                changedBy: teacher.Email, changedByRole: "Teacher");
+
+            _logger.LogInformation("Teacher {TeacherId} password reset via forgot-password", teacher.Id);
+        }
+
         // ── Private helpers ───────────────────────────────────────────────────
+
         private string GenerateJwtToken(Teacher teacher)
         {
             var keyBytes = Encoding.UTF8.GetBytes(_configuration["Jwt:Key"]!);

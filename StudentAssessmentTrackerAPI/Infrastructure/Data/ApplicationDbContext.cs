@@ -107,6 +107,17 @@ namespace StudentAssessmentTracker.Infrastructure.Data
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
 
+                // DB-level guards for data integrity
+                entity.ToTable(t =>
+                {
+                    // Enforce 8-digit numeric phone numbers at DB level
+                    t.HasCheckConstraint("CK_Students_Phone_Format",
+                        "[Phone] NOT LIKE '%[^0-9]%' AND LEN([Phone]) = 8");
+                    // Enforce lowercase storage — prevents duplicate accounts via case variation
+                    t.HasCheckConstraint("CK_Students_Email_Lowercase",
+                        "[Email] = LOWER([Email])");
+                });
+
                 // FK → Grades (RESTRICT: cannot delete a grade that has students)
                 entity.HasOne(e => e.GradeNavigation)
                     .WithMany()
@@ -220,10 +231,22 @@ namespace StudentAssessmentTracker.Infrastructure.Data
                 entity.Property(e => e.Email).IsRequired().HasMaxLength(255);
                 entity.HasIndex(e => e.Email).IsUnique();
                 entity.Property(e => e.Phone).IsRequired().HasMaxLength(8);
-                entity.Property(e => e.Password).IsRequired().HasMaxLength(255);
+                // Password is nullable — teachers start without one and activate via POST /api/teachers/activate
+                entity.Property(e => e.Password).IsRequired(false).HasMaxLength(255);
                 entity.Property(e => e.EnrollmentDate).HasDefaultValueSql("GETUTCDATE()");
                 entity.Property(e => e.CreatedDate).HasDefaultValueSql("GETUTCDATE()");
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+                // DB-level guards for data integrity
+                entity.ToTable(t =>
+                {
+                    // Enforce 8-digit numeric phone numbers at DB level
+                    t.HasCheckConstraint("CK_Teachers_Phone_Format",
+                        "[Phone] NOT LIKE '%[^0-9]%' AND LEN([Phone]) = 8");
+                    // Enforce lowercase storage — prevents duplicate accounts via case variation
+                    t.HasCheckConstraint("CK_Teachers_Email_Lowercase",
+                        "[Email] = LOWER([Email])");
+                });
 
                 // FK → Subjects (RESTRICT: cannot delete a subject that has teachers)
                 entity.HasOne(e => e.SubjectNavigation)
@@ -243,6 +266,10 @@ namespace StudentAssessmentTracker.Infrastructure.Data
                 entity.Property(e => e.Password).IsRequired().HasMaxLength(255);
                 entity.Property(e => e.CreatedAt).HasDefaultValueSql("GETUTCDATE()");
                 entity.Property(e => e.UpdatedAt).HasDefaultValueSql("GETUTCDATE()");
+
+                // Enforce lowercase email storage for admins
+                entity.ToTable(t => t.HasCheckConstraint("CK_Admins_Email_Lowercase",
+                    "[Email] = LOWER([Email])"));
 
                 // ── Default admin seed ────────────────────────────────────────
                 // Solves the bootstrap problem: POST /api/admins requires an Admin JWT,
@@ -272,9 +299,14 @@ namespace StudentAssessmentTracker.Infrastructure.Data
                 entity.Property(e => e.Action).IsRequired().HasMaxLength(20);
                 // DB guard: only well-known action values are allowed — prevents typos and
                 // raw-SQL writes from polluting the audit trail with arbitrary strings.
-                entity.ToTable(t => t.HasCheckConstraint(
-                    "CK_AuditLogs_Action",
-                    "[Action] IN ('Create', 'Update', 'Delete')"));
+                entity.ToTable(t =>
+                {
+                    t.HasCheckConstraint("CK_AuditLogs_Action",
+                        "[Action] IN ('Create', 'Update', 'Delete')");
+                    // Prevent arbitrary role strings from polluting the audit trail
+                    t.HasCheckConstraint("CK_AuditLogs_ChangedByRole",
+                        "[ChangedByRole] IS NULL OR [ChangedByRole] IN ('Teacher', 'Student', 'Admin')");
+                });
                 entity.Property(e => e.OldValues).IsRequired(false);
                 entity.Property(e => e.NewValues).IsRequired(false);
                 entity.Property(e => e.ChangedBy).IsRequired(false).HasMaxLength(100);
@@ -311,11 +343,12 @@ namespace StudentAssessmentTracker.Infrastructure.Data
                     .HasForeignKey(e => e.GradeId)
                     .OnDelete(DeleteBehavior.Restrict);
 
-                // FK → Teachers (CASCADE: deleting a teacher removes their class groups)
+                // FK → Teachers (RESTRICT: prevents silent cascade-delete of class groups and enrollments.
+                // AdminService.DeleteTeacherAsync enforces this via a pre-check guard.
                 entity.HasOne(e => e.Teacher)
                     .WithMany()
                     .HasForeignKey(e => e.TeacherId)
-                    .OnDelete(DeleteBehavior.Cascade);
+                    .OnDelete(DeleteBehavior.Restrict);
             });
 
             // ── ClassGroupStudents (many-to-many join) ────────────────────────

@@ -71,6 +71,14 @@ export class TeacherApiService {
   }
 
   /**
+   * Request a password reset — clears the teacher's password so they can re-activate.
+   * POST /api/teachers/forgot-password
+   */
+  forgotPassword(email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/forgot-password`, { email });
+  }
+
+  /**
    * Authenticate a teacher
    * @param credentials - Login credentials
    * @returns Observable of authenticated Teacher

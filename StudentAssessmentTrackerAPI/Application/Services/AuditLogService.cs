@@ -30,17 +30,23 @@ namespace StudentAssessmentTracker.Application.Services
 
     /// <summary>
     /// Writes and retrieves immutable audit records.
-    /// Uses the DbContext directly (no generic repository) so audit writes bypass
-    /// the normal repository layer and can never be accidentally suppressed.
+    /// Uses <see cref="IDbContextFactory{TContext}"/> so each write creates an independent
+    /// DbContext that commits outside any ambient transaction on the caller's context.
+    /// This ensures audit entries survive even when the caller's transaction is rolled back.
     /// </summary>
     public class AuditLogService : IAuditLogService
     {
+        private readonly IDbContextFactory<ApplicationDbContext> _factory;
         private readonly ApplicationDbContext _db;
         private readonly ILogger<AuditLogService> _logger;
 
         /// <summary>Initialises the service.</summary>
-        public AuditLogService(ApplicationDbContext db, ILogger<AuditLogService> logger)
+        public AuditLogService(
+            IDbContextFactory<ApplicationDbContext> factory,
+            ApplicationDbContext db,
+            ILogger<AuditLogService> logger)
         {
+            _factory = factory;
             _db = db;
             _logger = logger;
         }
@@ -57,7 +63,11 @@ namespace StudentAssessmentTracker.Application.Services
         {
             try
             {
-                _db.AuditLogs.Add(new AuditLog
+                // Use a fresh, independent DbContext so the audit write is committed
+                // outside any ambient transaction the caller may have open.  This guarantees
+                // audit records are never silently lost when a caller transaction rolls back.
+                await using var auditDb = await _factory.CreateDbContextAsync();
+                auditDb.AuditLogs.Add(new AuditLog
                 {
                     EntityName = entityName,
                     EntityId = entityId,
@@ -68,7 +78,7 @@ namespace StudentAssessmentTracker.Application.Services
                     ChangedByRole = changedByRole,
                     ChangedAt = DateTime.UtcNow
                 });
-                await _db.SaveChangesAsync();
+                await auditDb.SaveChangesAsync();
             }
             catch (Exception ex)
             {

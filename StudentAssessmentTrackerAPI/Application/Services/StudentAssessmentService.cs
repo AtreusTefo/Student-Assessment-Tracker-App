@@ -1,4 +1,5 @@
 using AutoMapper;
+using System.Text.Json;
 using StudentAssessmentTracker.Application.DTOs;
 using StudentAssessmentTracker.Domain.Entities;
 using StudentAssessmentTracker.Domain.Interfaces;
@@ -48,6 +49,7 @@ namespace StudentAssessmentTracker.Application.Services
     {
         private readonly IStudentAssessmentRepository _assessmentRepository;
         private readonly IStudentRepository _studentRepository;
+        private readonly IAuditLogService _auditLog;
         private readonly IMapper _mapper;
         private readonly ILogger<StudentAssessmentService> _logger;
 
@@ -55,11 +57,13 @@ namespace StudentAssessmentTracker.Application.Services
         public StudentAssessmentService(
             IStudentAssessmentRepository assessmentRepository,
             IStudentRepository studentRepository,
+            IAuditLogService auditLog,
             IMapper mapper,
             ILogger<StudentAssessmentService> logger)
         {
             _assessmentRepository = assessmentRepository;
             _studentRepository = studentRepository;
+            _auditLog = auditLog;
             _mapper = mapper;
             _logger = logger;
         }
@@ -99,6 +103,12 @@ namespace StudentAssessmentTracker.Application.Services
             assessment.UpdatedAt = DateTime.UtcNow;
             await _assessmentRepository.AddAsync(assessment);
             _logger.LogInformation("Assessment '{Name}' added to student {StudentId}", dto.Name, studentId);
+
+            await _auditLog.LogAsync("StudentAssessment", assessment.Id, "Create",
+                oldValues: null,
+                newValues: JsonSerializer.Serialize(new { assessment.Name, assessment.MaxScore, assessment.Score, assessment.StudentId }),
+                changedBy: teacherId.ToString(), changedByRole: "Teacher");
+
             return _mapper.Map<StudentAssessmentDto>(assessment);
         }
 
@@ -120,6 +130,12 @@ namespace StudentAssessmentTracker.Application.Services
             assessment.UpdatedAt = DateTime.UtcNow;
             await _assessmentRepository.UpdateAsync(assessment);
             _logger.LogInformation("Assessment {AssessmentId} for student {StudentId} updated", assessmentId, studentId);
+
+            await _auditLog.LogAsync("StudentAssessment", assessmentId, "Update",
+                oldValues: JsonSerializer.Serialize(new { assessment.Name, assessment.MaxScore, assessment.Score }),
+                newValues: JsonSerializer.Serialize(new { dto.Name, dto.MaxScore, dto.Score }),
+                changedBy: teacherId.ToString(), changedByRole: "Teacher");
+
             return _mapper.Map<StudentAssessmentDto>(assessment);
         }
 
@@ -130,6 +146,11 @@ namespace StudentAssessmentTracker.Application.Services
             var assessment = await FindAssessmentAsync(studentId, assessmentId);
             await _assessmentRepository.DeleteAsync(assessment.Id);
             _logger.LogInformation("Assessment {AssessmentId} for student {StudentId} deleted", assessmentId, studentId);
+
+            await _auditLog.LogAsync("StudentAssessment", assessmentId, "Delete",
+                oldValues: JsonSerializer.Serialize(new { assessment.Name, assessment.StudentId }),
+                newValues: null,
+                changedBy: teacherId.ToString(), changedByRole: "Teacher");
         }
 
         // Verifies the student exists AND is assigned to the calling teacher — prevents cross-teacher data access

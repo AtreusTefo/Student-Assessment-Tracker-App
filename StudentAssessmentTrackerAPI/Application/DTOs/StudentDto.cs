@@ -117,6 +117,18 @@
         public DateTime UpdatedAt { get; set; }
     }
 
+    /// <summary>
+    /// DTO for the student self-service forgot-password request.
+    /// Both StudentUniqueId and Email must match the record to prevent identity spoofing.
+    /// </summary>
+    public class StudentForgotPasswordDto
+    {
+        /// <summary>The system-generated student unique identifier.</summary>
+        public string StudentUniqueId { get; set; } = string.Empty;
+        /// <summary>The email address registered on the student's account.</summary>
+        public string Email { get; set; } = string.Empty;
+    }
+
     /// <summary>DTO for student account activation — links StudentUniqueId + Email to a new password</summary>
     public class StudentActivateDto
     {

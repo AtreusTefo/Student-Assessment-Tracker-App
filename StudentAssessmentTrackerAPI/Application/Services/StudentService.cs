@@ -40,6 +40,13 @@ namespace StudentAssessmentTracker.Application.Services
         /// Throws <see cref="InvalidOperationException"/> when the account has not been activated.
         /// </summary>
         Task<StudentLoginResponseDto?> LoginStudentAsync(StudentLoginDto dto);
+
+        /// <summary>
+        /// Resets a student's password by nulling it so they must re-activate.
+        /// Both <paramref name="dto"/>.StudentUniqueId and <paramref name="dto"/>.Email must match the record.
+        /// Throws <see cref="KeyNotFoundException"/> when no matching student is found.
+        /// </summary>
+        Task ForgotPasswordAsync(StudentForgotPasswordDto dto);
     }
 
     /// <summary>
@@ -133,6 +140,21 @@ namespace StudentAssessmentTracker.Application.Services
                 Token = GenerateStudentJwtToken(student),
                 Student = _mapper.Map<StudentProfileDto>(fullStudent)
             };
+        }
+
+        /// <inheritdoc />
+        public async Task ForgotPasswordAsync(StudentForgotPasswordDto dto)
+        {
+            var student = await _repository.FindByUniqueIdAsync(dto.StudentUniqueId);
+            if (student is null ||
+                !student.Email.Equals(dto.Email.Trim(), StringComparison.OrdinalIgnoreCase))
+                throw new KeyNotFoundException("No student found with that Student ID and email combination.");
+
+            student.Password = null;
+            student.UpdatedAt = DateTime.UtcNow;
+            await _repository.UpdateAsync(student);
+
+            _logger.LogInformation("Student {StudentId} password reset via forgot-password", student.Id);
         }
 
         private string GenerateStudentJwtToken(Student student)

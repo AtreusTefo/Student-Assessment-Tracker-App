@@ -29,8 +29,8 @@ namespace StudentAssessmentTracker.Domain.Entities
         /// <summary>Navigation property to the Subject lookup</summary>
         public Subject? SubjectNavigation { get; set; }
 
-        /// <summary>Gets or sets the hashed or stored password</summary>
-        public string Password { get; set; } = string.Empty;
+        /// <summary>Gets or sets the hashed password. Null until the teacher activates their account.</summary>
+        public string? Password { get; set; }
 
         /// <summary>Gets or sets the enrollment date</summary>
         public DateTime EnrollmentDate { get; set; } = DateTime.UtcNow;

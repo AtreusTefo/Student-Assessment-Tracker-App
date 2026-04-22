@@ -87,6 +87,14 @@ export class StudentApiService {
   }
 
   /**
+   * Request a password reset — clears the student's password so they can re-activate.
+   * POST /api/students/forgot-password
+   */
+  forgotPassword(studentUniqueId: string, email: string): Observable<{ message: string }> {
+    return this.http.post<{ message: string }>(`${this.apiUrl}/forgot-password`, { studentUniqueId, email });
+  }
+
+  /**
    * Assign a teacher to a student (admin operation)
    * POST /api/students/{studentId}/teachers/{teacherId}
    * @param studentId - The student's primary key

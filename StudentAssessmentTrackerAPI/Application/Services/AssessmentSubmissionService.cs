@@ -102,14 +102,19 @@ namespace StudentAssessmentTracker.Application.Services
             var fullPath = Path.Combine(submissionsRoot, storedFileName);
 
             // ── Write file then persist DB row atomically ─────────────────────
+            // Write to a temp path first so that if the process crashes after writing
+            // but before the DB row is committed, the orphan-cleanup on startup can
+            // identify the file as a temp file and delete it safely.
+            var tempFileName = $"tmp_{Guid.NewGuid()}{extension}";
+            var tempPath = Path.Combine(submissionsRoot, tempFileName);
             try
             {
-                await using var stream = new FileStream(fullPath, FileMode.Create, FileAccess.Write, FileShare.None);
+                await using var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None);
                 await file.CopyToAsync(stream);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to write submission file for student {StudentId}", studentId);
+                _logger.LogError(ex, "Failed to write submission temp file for student {StudentId}", studentId);
                 throw;
             }
 
@@ -128,13 +133,15 @@ namespace StudentAssessmentTracker.Application.Services
             try
             {
                 await _submissionRepo.AddAsync(submission);
+                // DB row committed — move temp file to final path atomically.
+                File.Move(tempPath, fullPath, overwrite: false);
             }
             catch (Exception ex)
             {
-                // Rollback: remove the file that was written if the DB persist fails
-                if (File.Exists(fullPath))
-                    File.Delete(fullPath);
-                _logger.LogError(ex, "DB persist failed for submission of student {StudentId}; file rolled back", studentId);
+                // Rollback: remove the temp file if DB persist or file move fails.
+                if (File.Exists(tempPath))
+                    File.Delete(tempPath);
+                _logger.LogError(ex, "DB persist or file move failed for submission of student {StudentId}; temp file rolled back", studentId);
                 throw;
             }
 

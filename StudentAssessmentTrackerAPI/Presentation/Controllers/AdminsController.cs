@@ -135,6 +135,25 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
         }
 
+        /// <summary>
+        /// Resets a teacher's password (clears it). The teacher must re-activate via /activate.
+        /// </summary>
+        [Authorize(Roles = "Admin")]
+        [HttpPost("teachers/{teacherId:int}/reset-password")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> ResetTeacherPassword(int teacherId)
+        {
+            try
+            {
+                await _adminService.ResetTeacherPasswordAsync(teacherId);
+                await _auditLog.LogAsync("Teacher", teacherId, "Update",
+                    null, "{\"passwordReset\":true}", GetCallerId(), "Admin");
+                return Ok(new { message = $"Teacher {teacherId} password reset. They must re-activate their account." });
+            }
+            catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+        }
+
         // ── Student oversight ────────────────────────────────────────────────
 
         /// <summary>Returns all students across all teachers (admin view).</summary>
@@ -160,6 +179,25 @@ namespace StudentAssessmentTracker.Presentation.Controllers
                 await _auditLog.LogAsync("Student", studentId, "Delete",
                     $"{{\"id\":{studentId}}}", null, GetCallerId(), "Admin");
                 return Ok(new { message = $"Student {studentId} deleted by admin." });
+            }
+            catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+        }
+
+        /// <summary>
+        /// Resets a student's password (clears it). The student must re-activate via /student/activate.
+        /// </summary>
+        [Authorize(Roles = "Admin")]
+        [HttpPost("students/{studentId:int}/reset-password")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> ResetStudentPassword(int studentId)
+        {
+            try
+            {
+                await _adminService.ResetStudentPasswordAsync(studentId);
+                await _auditLog.LogAsync("Student", studentId, "Update",
+                    null, "{\"passwordReset\":true}", GetCallerId(), "Admin");
+                return Ok(new { message = $"Student {studentId} password reset. They must re-activate their account." });
             }
             catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
         }

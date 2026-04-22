@@ -299,6 +299,45 @@ namespace StudentAssessmentTracker.Presentation.Controllers
 
         // ── Helpers ───────────────────────────────────────────────────────────
 
+        // ====================================================================
+        // POST /api/teachers/forgot-password
+        // ====================================================================
+
+        /// <summary>
+        /// Clears a teacher's password so they can re-activate via POST /api/teachers/activate.
+        /// No authentication required — the teacher provides their registered email as identity proof.
+        /// Always returns 200 to avoid email-enumeration attacks.
+        /// </summary>
+        /// <param name="dto">Email address on record for the teacher.</param>
+        /// <response code="200">Password cleared — teacher must re-activate.</response>
+        /// <response code="400">Validation failed.</response>
+        [HttpPost("forgot-password")]
+        [ProducesResponseType(StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> ForgotPassword([FromBody] TeacherForgotPasswordDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (string.IsNullOrWhiteSpace(dto.Email))
+                return BadRequest(new { message = "Email is required." });
+
+            _logger.LogInformation("POST /api/teachers/forgot-password for {Email}", dto.Email);
+            try
+            {
+                await _teacherService.ForgotPasswordAsync(dto);
+                return Ok(new { message = "Your password has been reset. Please go to the Activate Account page to set a new password." });
+            }
+            catch (KeyNotFoundException)
+            {
+                // Return 200 to avoid email-enumeration — caller gets the same message either way.
+                return Ok(new { message = "Your password has been reset. Please go to the Activate Account page to set a new password." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing forgot-password for teacher {Email}", dto.Email);
+                return StatusCode(500, new { message = "Internal server error during password reset." });
+            }
+        }
+
         /// <summary>Extracts the teacherId claim from the validated JWT. Returns false when missing or non-numeric.</summary>
         private bool TryGetTeacherId(out int teacherId)
         {
