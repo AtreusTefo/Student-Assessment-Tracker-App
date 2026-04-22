@@ -35,6 +35,8 @@
         public decimal Percentage { get; set; }
         /// <summary>Performance level label (e.g. "Excellent", "Pass", "Fail").</summary>
         public string? PerformanceLevel { get; set; }
+        /// <summary>Whether the student has activated their account (i.e. set a password).</summary>
+        public bool IsActive { get; set; }
         /// <summary>UTC timestamp when the record was created.</summary>
         public DateTime CreatedAt { get; set; }
         /// <summary>UTC timestamp when the record was last updated.</summary>

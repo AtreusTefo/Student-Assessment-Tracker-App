@@ -63,6 +63,7 @@ StudentAssessmentTracker/                  ← Solution Root
 - **Mapping**: AutoMapper 12.0
 - **Logging**: Serilog 8.0
 - **API Docs**: Swashbuckle (Swagger)
+- **CSV Parsing**: CsvHelper 33.0.1
 
 ### Frontend (StudentApp/)
 - **Framework**: Angular 21
@@ -119,6 +120,7 @@ The connection string is configured in `appsettings.Development.json`:
 **Assessment Tracking (Teacher Role)**
 - Add named assessments with custom `MaxScore`, optional `DueDate`, `Instructions`, and `IsAssigned` flag
 - Edit and delete individual assessments inline on the student detail page
+- **Bulk create** multiple assessments for a student in a single request (`POST /api/assessments/bulk`)
 - Performance summary: Total Score, Average Score, Percentage, and Performance Level auto-calculated server-side
   - **Needs Support**: < 50%
   - **Satisfactory**: 50–55%
@@ -141,12 +143,15 @@ The connection string is configured in `appsettings.Development.json`:
 
 **Admin Panel**
 - Dedicated admin account (BCrypt-hashed password, separate `Admin` JWT role)
-- Admin login page at `/admin/login` with its own authentication guard
+- Admin login page at `/admin/login` with its own authentication guard (accessible via `/admin` redirect)
 - Admin dashboard with tabs: manage Teachers, manage Students, view Audit Log
 - Admins create teacher accounts (without a password) and student records
+- Admins **edit** teacher and student records via inline edit modals on the dashboard
 - Admins assign teachers to students and manage teacher–student relationships
 - Admins can delete any teacher or student system-wide with confirmation modal
 - Admin can create additional admin accounts (requires existing Admin JWT)
+- **Bulk Import**: Admin can import up to 500 students or teachers in a single operation via CSV file upload, paste-in CSV text, or direct JSON; per-row validation with a result table showing which rows succeeded or failed
+- `IsActive` badge displayed on each teacher card — derived from whether the teacher has activated their account
 
 **Audit Logging**
 - Every Create, Update, and Delete across Students, Teachers, and Assessments emits an immutable audit entry
@@ -243,15 +248,16 @@ StudentAssessmentTracker/                       ← Solution Root
 │
 ├── StudentApp/                                 ← Angular 21 Frontend
 │   └── src/app/
-│       ├── components/               (10 standalone components)
-│       │   ├── login-form.component.ts
-│       │   ├── signup-form.component.ts
-│       │   ├── student-list.component.ts
-│       │   ├── student-detail.component.ts
-│       │   ├── student-form.component.ts
-│       │   ├── student-login.component.ts       (login + activation dual-mode)
-│       │   ├── student-activate.component.ts
-│       │   ├── student-dashboard.component.ts
+      ├── components/               (11 standalone components)
+      │   ├── login-form.component.ts
+      │   ├── signup-form.component.ts
+      │   ├── student-list.component.ts
+      │   ├── student-detail.component.ts
+      │   ├── student-form.component.ts
+      │   ├── student-login.component.ts       (login + activation dual-mode)
+      │   ├── student-activate.component.ts
+      │   ├── student-dashboard.component.ts
+      │   ├── teacher-dashboard.component.ts
 │       │   ├── admin-login.component.ts
 │       │   └── admin-dashboard.component.ts
 │       ├── core/
@@ -378,6 +384,7 @@ All endpoints requiring authentication use **JWT Bearer** (`Authorization: Beare
 | `POST` | `/api/teachers` | Admin JWT | Create a new teacher account (admin only) |
 | `POST` | `/api/teachers/activate` | Public | Activate teacher account and set password |
 | `POST` | `/api/teachers/login` | Public | Login and receive JWT |
+| `POST` | `/api/teachers/forgot-password` | Public | Reset password (nulls password, teacher re-activates) |
 | `GET` | `/api/teachers` | Teacher JWT | List all teachers |
 | `GET` | `/api/teachers/{id}` | Teacher JWT | Get teacher by ID |
 | `PUT` | `/api/teachers/{id}` | Teacher JWT | Update own profile |
@@ -395,6 +402,7 @@ All endpoints requiring authentication use **JWT Bearer** (`Authorization: Beare
 | `DELETE` | `/api/students/{sid}/teachers/{tid}` | Admin JWT | Remove a teacher from a student |
 | `POST` | `/api/students/activate` | Public | Activate student account |
 | `POST` | `/api/students/login` | Public | Student login and receive JWT |
+| `POST` | `/api/students/forgot-password` | Public | Reset password (nulls password, student re-activates) |
 
 ### Assessments
 | Method | Endpoint | Auth | Description |
@@ -404,6 +412,7 @@ All endpoints requiring authentication use **JWT Bearer** (`Authorization: Beare
 | `POST` | `/api/students/{id}/assessments` | Teacher JWT | Add assessment |
 | `PUT` | `/api/students/{id}/assessments/{aid}` | Teacher JWT | Update assessment |
 | `DELETE` | `/api/students/{id}/assessments/{aid}` | Teacher JWT | Delete assessment |
+| `POST` | `/api/assessments/bulk` | Teacher JWT | Bulk-create multiple assessments for a student |
 
 ### File Submissions
 | Method | Endpoint | Auth | Description |
@@ -444,6 +453,12 @@ All endpoints requiring authentication use **JWT Bearer** (`Authorization: Beare
 | `DELETE` | `/api/admins/students/{id}` | Admin JWT | Delete a student (override) |
 | `GET` | `/api/admins/audit-logs` | Admin JWT | Get paginated audit log |
 | `GET` | `/api/admins/audit-logs/{entity}/{id}` | Admin JWT | Get audit log for an entity |
+| `PUT` | `/api/admins/teachers/{id}` | Admin JWT | Update a teacher (admin override) |
+| `PUT` | `/api/admins/students/{id}` | Admin JWT | Update a student (admin override) |
+| `POST` | `/api/admins/students/bulk` | Admin JWT | Bulk-import up to 500 students (JSON body) |
+| `POST` | `/api/admins/students/bulk-csv` | Admin JWT | Bulk-import students from CSV file (multipart) |
+| `POST` | `/api/admins/teachers/bulk` | Admin JWT | Bulk-import up to 500 teachers (JSON body) |
+| `POST` | `/api/admins/teachers/bulk-csv` | Admin JWT | Bulk-import teachers from CSV file (multipart) |
 
 ### Lookups
 | Method | Endpoint | Auth | Description |
@@ -456,8 +471,9 @@ All endpoints requiring authentication use **JWT Bearer** (`Authorization: Beare
 **Admin Workflow**
 1. Navigate to `/admin/login` and log in with your admin credentials
 2. From the **Teachers** tab: create teacher accounts (ID/Passport No., name, email, phone, subject — no password; the teacher sets it on first login)
-3. From the **Students** tab: create student records (ID/Passport No., name, email, phone, grade); assign teachers to students
-4. From the **Audit Log** tab: browse all create/update/delete events system-wide
+3. From the **Students** tab: create student records (ID/Passport No., name, email, phone, grade); assign teachers to students; edit records via the edit modal
+4. Use the **⬆ Bulk Import** button on either the Teachers or Students tab to import many records at once — paste CSV text, upload a `.csv` file, or download the provided template
+5. From the **Audit Log** tab: browse all create/update/delete events system-wide
 
 **Teacher Workflow**
 1. Contact your admin to have an account created for you
@@ -521,7 +537,8 @@ Validation occurs both on the frontend (real-time, template-driven forms) and ba
 - Role-based access control with granular permissions per subject
 - Real-time notifications via SignalR
 - Mobile-responsive PWA support
-- Bulk import of students via CSV upload
+- External blob/file storage for assessment submissions (currently stored as byte arrays in the database)
+- International phone number format support (currently 8-digit local format only)
 
 ## Development Notes
 

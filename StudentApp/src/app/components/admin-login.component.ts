@@ -30,17 +30,20 @@ import { AdminApiService } from '../core/services/http/admin-api.service';
               *ngIf="(form.submitted || emailField.touched) && emailField.hasError('required')">
               Email is required
             </span>
+            <span class="error-msg"
+              *ngIf="(form.submitted || emailField.touched) && emailField.hasError('email')">
+              Enter a valid email address
+            </span>
           </div>
 
           <div class="form-group">
           <label for="password">Password:</label>
           <div class="input-wrapper">
-            <input [type]="showPassword ? 'text' : 'password'" id="password" [(ngModel)]="credentials.password" name="password" #password="ngModel" autocomplete="current-password" required minlength="6" maxlength="20" [disabled]="loading" (input)="clearError()" />
+            <input [type]="showPassword ? 'text' : 'password'" id="password" [(ngModel)]="credentials.password" name="password" #password="ngModel" autocomplete="current-password" required minlength="8" [disabled]="loading" (input)="clearError()" />
             <button type="button" class="toggle-password" (click)="showPassword = !showPassword" tabindex="-1">{{ showPassword ? 'Hide' : 'Show' }}</button>
           </div>
           <span class="error" *ngIf="(form.submitted || password.touched) && password.hasError('required')">Password is required</span>
-          <span class="error" *ngIf="(form.submitted || password.touched) && password.hasError('minlength')">Password must be at least 6 characters</span>
-          <span class="error" *ngIf="(form.submitted || password.touched) && password.hasError('maxlength')">Password cannot exceed 20 characters</span>
+          <span class="error" *ngIf="(form.submitted || password.touched) && password.hasError('minlength')">Password must be at least 8 characters</span>
           </div>
 
           <button type="submit" class="btn-login" [disabled]="loading">

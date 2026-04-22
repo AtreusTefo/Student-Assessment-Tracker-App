@@ -30,9 +30,9 @@ import { takeUntil } from 'rxjs/operators';
         <ng-container *ngIf="isEdit">
           <div class="form-group">
             <label for="idPassportNo">ID / Passport No.:</label>
-            <input type="text" id="idPassportNo" [(ngModel)]="teacher.idPassportNo" name="idPassportNo" #idPassportNo="ngModel" placeholder="e.g., 123416789 or PA1234567" autocomplete="off" required minlength="9" maxlength="9" pattern="^[a-zA-Z0-9]+$" [disabled]="loading" (keypress)="allowOnlyAlphanumeric($event)" (input)="clearError()" />
+            <input type="text" id="idPassportNo" [(ngModel)]="teacher.idPassportNo" name="idPassportNo" #idPassportNo="ngModel" placeholder="e.g., 123416789 or PA1234567" autocomplete="off" required minlength="9" maxlength="9" pattern="^[a-zA-Z0-9\-]+$" [disabled]="loading" (keypress)="allowOnlyAlphanumericHyphen($event)" (input)="clearError()" />
             <span class="error" *ngIf="(form.submitted || idPassportNo.touched || idPassportNo.dirty) && idPassportNo.hasError('required')">ID/Passport No. is required</span>
-            <span class="error" *ngIf="(form.submitted || idPassportNo.touched || idPassportNo.dirty) && idPassportNo.hasError('pattern')">ID/Passport No. can only contain letters and numbers</span>
+            <span class="error" *ngIf="(form.submitted || idPassportNo.touched || idPassportNo.dirty) && idPassportNo.hasError('pattern')">ID/Passport No. can only contain letters, numbers, and hyphens</span>
             <span class="error" *ngIf="(form.submitted || idPassportNo.touched || idPassportNo.dirty) && (idPassportNo.hasError('minlength') || idPassportNo.hasError('maxlength'))">ID/Passport No. must be exactly 9 characters</span>
           </div>
 
@@ -85,18 +85,18 @@ import { takeUntil } from 'rxjs/operators';
         <div class="form-group" *ngIf="!isEdit">
           <label for="password">Password:</label>
           <div class="input-wrapper">
-            <input [type]="showPassword ? 'text' : 'password'" id="password" [(ngModel)]="teacher.password" name="password" #password="ngModel" autocomplete="new-password" required minlength="6" maxlength="20" [disabled]="loading" (input)="clearError()" />
+            <input [type]="showPassword ? 'text' : 'password'" id="password" [(ngModel)]="teacher.password" name="password" #password="ngModel" autocomplete="new-password" required minlength="8" maxlength="255" [disabled]="loading" (input)="clearError()" />
             <button type="button" class="toggle-password" (click)="showPassword = !showPassword" tabindex="-1">{{ showPassword ? 'Hide' : 'Show' }}</button>
           </div>
           <span class="error" *ngIf="(form.submitted || password.touched || password.dirty) && password.hasError('required')">Password is required</span>
-          <span class="error" *ngIf="(form.submitted || password.touched || password.dirty) && password.hasError('minlength')">Password must be at least 6 characters</span>
-          <span class="error" *ngIf="(form.submitted || password.touched || password.dirty) && password.hasError('maxlength')">Password cannot exceed 20 characters</span>
+          <span class="error" *ngIf="(form.submitted || password.touched || password.dirty) && password.hasError('minlength')">Password must be at least 8 characters</span>
+          <span class="error" *ngIf="(form.submitted || password.touched || password.dirty) && !password.hasError('required') && !password.hasError('minlength') && !isPasswordComplex(teacher.password)">Password must contain an uppercase letter, a number, and a special character</span>
         </div>
 
         <div class="form-group" *ngIf="!isEdit">
           <label for="confirmPassword">Confirm Password:</label>
           <div class="input-wrapper">
-            <input [type]="showConfirmPassword ? 'text' : 'password'" id="confirmPassword" [(ngModel)]="teacher.confirmPassword" name="confirmPassword" #confirmPassword="ngModel" autocomplete="new-password" required  minlength="6" maxlength="20" [disabled]="loading" (input)="clearError()" />
+            <input [type]="showConfirmPassword ? 'text' : 'password'" id="confirmPassword" [(ngModel)]="teacher.confirmPassword" name="confirmPassword" #confirmPassword="ngModel" autocomplete="new-password" required minlength="8" maxlength="255" [disabled]="loading" (input)="clearError()" />
             <button type="button" class="toggle-password" (click)="showConfirmPassword = !showConfirmPassword" tabindex="-1">{{ showConfirmPassword ? 'Hide' : 'Show' }}</button>
           </div>
           <span class="error" *ngIf="(form.submitted || confirmPassword.touched) && confirmPassword.hasError('required')">Please confirm your password</span>
@@ -410,6 +410,17 @@ export class SignUpFormComponent implements OnInit, OnDestroy {
     }
   }
 
+  allowOnlyAlphanumericHyphen(event: KeyboardEvent): void {
+    const char = String.fromCharCode(event.which);
+    if (!/[a-zA-Z0-9\-]/.test(char)) {
+      event.preventDefault();
+    }
+  }
+
+  isPasswordComplex(password: string): boolean {
+    return /[A-Z]/.test(password) && /[0-9]/.test(password) && /[^a-zA-Z0-9]/.test(password);
+  }
+
   private isValidationErrorResponse(err: any): boolean {
     // Check if this is a validation error response from the server
     // ProblemDetails format will have status 400 and an errors object with field names as keys
@@ -454,6 +465,10 @@ export class SignUpFormComponent implements OnInit, OnDestroy {
     this.clearError();
 
     if (form.invalid) {
+      return;
+    }
+
+    if (!this.isEdit && !this.isPasswordComplex(this.teacher.password)) {
       return;
     }
 

@@ -133,9 +133,11 @@ namespace StudentAssessmentTracker.Application.Services
             if (await _db.Admins.AnyAsync(a => a.Email == emailLower))
                 throw new InvalidOperationException($"Email '{dto.Email}' is already in use by an admin account.");
 
-            // Issue 4: detect duplicate ID/Passport number.
+            // Detect duplicate ID/Passport number — checked across Teachers and Students.
             if (await _repository.ExistsByIdPassportNoAsync(dto.IdPassportNo))
                 throw new InvalidOperationException($"A teacher with ID/Passport No. '{dto.IdPassportNo}' is already registered.");
+            if (await _db.Students.AnyAsync(s => s.IdPassportNo != null && s.IdPassportNo.ToUpper() == dto.IdPassportNo.ToUpperInvariant()))
+                throw new InvalidOperationException($"ID/Passport No. '{dto.IdPassportNo}' is already in use by a student account.");
 
             var teacher = _mapper.Map<Teacher>(dto);
             // SECURITY: password is NOT set here — teacher activates their own account via POST /api/teachers/activate.
@@ -187,9 +189,11 @@ namespace StudentAssessmentTracker.Application.Services
             if (await _db.Admins.AnyAsync(a => a.Email == updateEmailLower))
                 throw new InvalidOperationException($"Email '{dto.Email}' is already in use by an admin account.");
 
-            // Detect duplicate ID/Passport number, excluding the record being updated.
+            // Detect duplicate ID/Passport number (excluding self) — checked across Teachers and Students.
             if (await _repository.ExistsByIdPassportNoAsync(dto.IdPassportNo, excludeTeacherId: id))
                 throw new InvalidOperationException($"A teacher with ID/Passport No. '{dto.IdPassportNo}' is already registered.");
+            if (await _db.Students.AnyAsync(s => s.IdPassportNo != null && s.IdPassportNo.ToUpper() == dto.IdPassportNo.ToUpperInvariant()))
+                throw new InvalidOperationException($"ID/Passport No. '{dto.IdPassportNo}' is already in use by a student account.");
 
             _mapper.Map(dto, teacher);
             // Issue #4: normalise email to lowercase before storage on update.

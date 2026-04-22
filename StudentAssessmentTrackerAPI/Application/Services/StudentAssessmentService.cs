@@ -38,6 +38,13 @@ namespace StudentAssessmentTracker.Application.Services
         /// Throws <see cref="KeyNotFoundException"/> when the student or assessment is not found.
         /// </summary>
         Task DeleteAsync(int studentId, int assessmentId, int teacherId);
+
+        /// <summary>
+        /// Creates the same assessment for multiple students at once.
+        /// Each student in <paramref name="dto.StudentIds"/> must be assigned to <paramref name="teacherId"/>.
+        /// Returns the list of created assessment DTOs.
+        /// </summary>
+        Task<IEnumerable<StudentAssessmentDto>> BulkAddAsync(BulkCreateStudentAssessmentDto dto, int teacherId);
     }
 
     /// <summary>
@@ -167,6 +174,54 @@ namespace StudentAssessmentTracker.Application.Services
             if (assessment == null)
                 throw new KeyNotFoundException($"Assessment {assessmentId} for student {studentId} not found");
             return assessment;
+        }
+
+        /// <inheritdoc />
+        public async Task<IEnumerable<StudentAssessmentDto>> BulkAddAsync(BulkCreateStudentAssessmentDto dto, int teacherId)
+        {
+            if (dto.StudentIds == null || dto.StudentIds.Count == 0)
+                throw new ArgumentException("At least one student ID must be provided.");
+
+            var results = new List<StudentAssessmentDto>();
+
+            foreach (var studentId in dto.StudentIds.Distinct())
+            {
+                // Validate teacher owns this student — prevents cross-teacher data modification.
+                var owned = await _studentRepository.IsAssignedToTeacherAsync(studentId, teacherId);
+                if (!owned)
+                    throw new KeyNotFoundException($"Student {studentId} not found or not assigned to you.");
+
+                // Skip if same assessment name already exists for this student to avoid duplicates.
+                if (await _assessmentRepository.ExistsByNameForStudentAsync(studentId, dto.Name!))
+                    continue;
+
+                var single = new CreateStudentAssessmentDto
+                {
+                    Name = dto.Name,
+                    MaxScore = dto.MaxScore,
+                    Score = dto.Score,
+                    DueDate = dto.DueDate,
+                    IsAssigned = dto.IsAssigned,
+                    Instructions = dto.Instructions
+                };
+
+                var assessment = _mapper.Map<StudentAssessment>(single);
+                assessment.StudentId = studentId;
+                assessment.CreatedAt = DateTime.UtcNow;
+                assessment.UpdatedAt = DateTime.UtcNow;
+                await _assessmentRepository.AddAsync(assessment);
+
+                await _auditLog.LogAsync("StudentAssessment", assessment.Id, "Create",
+                    oldValues: null,
+                    newValues: JsonSerializer.Serialize(new { assessment.Name, assessment.MaxScore, assessment.StudentId }),
+                    changedBy: teacherId.ToString(), changedByRole: "Teacher");
+
+                results.Add(_mapper.Map<StudentAssessmentDto>(assessment));
+            }
+
+            _logger.LogInformation("Bulk assessment '{Name}' added to {Count} students by teacher {TeacherId}",
+                dto.Name, results.Count, teacherId);
+            return results;
         }
     }
 }

@@ -28,7 +28,7 @@ import 'datatables.net-buttons/js/buttons.html5.mjs';
     <div class="container">
       <h2>Student List</h2>
       <div class="list-header-actions">
-        <a routerLink="/create" class="btn btn-primary">Add New Student</a>
+        <a routerLink="/teacher/dashboard" class="btn btn-secondary">My Dashboard</a>
       </div>
       
       <div *ngIf="loading" class="loading">Loading students...</div>
@@ -68,7 +68,6 @@ import 'datatables.net-buttons/js/buttons.html5.mjs';
               <td style="display:none">{{ student.percentage }}</td>
               <td class="action-cell">
                 <button data-action="view" [attr.data-id]="student.id" class="btn btn-info btn-sm">View</button>
-                <button data-action="edit" [attr.data-id]="student.id" class="btn btn-warning btn-sm">Edit</button>
                 <button data-action="delete" [attr.data-id]="student.id" class="btn btn-danger btn-sm">Delete</button>
               </td>
             </tr>
@@ -77,7 +76,7 @@ import 'datatables.net-buttons/js/buttons.html5.mjs';
       </div>
       
       <div *ngIf="students.length === 0 && !loading && !error" class="no-data">
-        No students found. <a routerLink="/create">Create one</a>
+        No students found.
       </div>
 
       <!-- Confirmation Modal -->

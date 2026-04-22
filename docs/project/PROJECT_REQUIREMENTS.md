@@ -1,4 +1,4 @@
-# Project Requirements Document (PRD)
+﻿# Project Requirements Document (PRD)
 
 ## Project Name
 Student Assessment Tracker
@@ -14,7 +14,7 @@ A full-stack, multi-role web application for managing student assessments. Admin
 
 ## Scope
 ### In Scope
-- Three-role system: Admin, Teacher, Student — each with a separate JWT
+- Three-role system: Admin, Teacher, Student  each with a separate JWT
 - Admin panel: create/delete teachers and students, assign teachers to students, audit log browser
 - Teacher account activation workflow (admin creates account, teacher sets password on first login)
 - Student account activation workflow (admin creates record, student sets password using their `StudentUniqueId`)
@@ -39,7 +39,7 @@ A full-stack, multi-role web application for managing student assessments. Admin
 ### Admin Management
 1. A seed admin account exists in the database (BCrypt-hashed password).
 2. Admin authenticates via `POST /api/admins/login`; receives a JWT with the `Admin` role.
-3. An authenticated admin can create additional admin accounts (`POST /api/admins` — Admin JWT required).
+3. An authenticated admin can create additional admin accounts (`POST /api/admins`  Admin JWT required).
 4. Admin can change their own password (`PUT /api/admins/{id}/password`).
 
 ### Teacher Account Lifecycle
@@ -64,19 +64,19 @@ A full-stack, multi-role web application for managing student assessments. Admin
 3. Each student row displays a colour-coded performance level badge.
 
 ### Assessment Management (Teacher Role)
-1. Teachers add named assessments to any of their assigned students: name (required, max 100 chars), `MaxScore` (required, > 0), `Score` (0 ≤ Score ≤ MaxScore), optional `DueDate`, `Instructions`, and `IsAssigned` flag.
+1. Teachers add named assessments to any of their assigned students: name (required, max 100 chars), `MaxScore` (required, > 0), `Score` (0  Score  MaxScore), optional `DueDate`, `Instructions`, and `IsAssigned` flag.
 2. Teachers can edit and delete individual assessments.
 3. Performance summary (Total Score, Average Score, Percentage, Performance Level) is calculated server-side after every change.
 
 ### Performance Calculations
 1. **Total Score** = sum of all `Score` values for the student.
 2. **Max Possible** = sum of all `MaxScore` values for the student.
-3. **Percentage** = `(Total Score / Max Possible) × 100` — returns 0 when no assessments exist.
-4. **Average Score** = `Total Score / number of assessments` — returns 0 when no assessments exist.
+3. **Percentage** = `(Total Score / Max Possible) × 100`  returns 0 when no assessments exist.
+4. **Average Score** = `Total Score / number of assessments`  returns 0 when no assessments exist.
 5. **Performance Level**:
    - **Needs Support**: < 50%
-   - **Satisfactory**: 50–55%
-   - **Good**: 56–75%
+   - **Satisfactory**: 5055%
+   - **Good**: 5675%
    - **Excellent**: > 75%
 
 ### File Submissions
@@ -113,7 +113,7 @@ A full-stack, multi-role web application for managing student assessments. Admin
 
 ## Validation Rules
 
-### Teacher Account (Admin creates — no password)
+### Teacher Account (Admin creates  no password)
 - **ID/Passport No.**: Required, exactly 9 alphanumeric characters (letters and digits only)
 - **First / Last Name**: Required, max 50 characters
 - **Email**: Required, valid email format, unique
@@ -127,7 +127,7 @@ A full-stack, multi-role web application for managing student assessments. Admin
 
 ### Student Form (Admin creates)
 - **ID/Passport No.**: Required, exactly 9 characters (letters, digits, hyphens)
-- **First / Last Name**: Required, 2–50 characters, letters/spaces/hyphens only
+- **First / Last Name**: Required, 250 characters, letters/spaces/hyphens only
 - **Email**: Required, valid email format, unique
 - **Phone**: Required, exactly 8 digits
 - **Grade**: Required, must be a valid grade from the seeded dropdown
@@ -141,7 +141,7 @@ A full-stack, multi-role web application for managing student assessments. Admin
 ### Assessment Form
 - **Name**: Required, max 100 characters
 - **MaxScore**: Required, must be > 0
-- **Score**: Required, must be ≥ 0 and ≤ MaxScore
+- **Score**: Required, must be  0 and  MaxScore
 
 ## Non-Functional Requirements
 
@@ -198,12 +198,12 @@ A full-stack, multi-role web application for managing student assessments. Admin
 - **Tests**: Vitest 4
 - **Tables**: DataTables.net v2 + Buttons plugin (CSV export)
 - Routes:
-  - `/` — Student list (Teacher)
-  - `/create`, `/edit/:id`, `/detail/:id` — Student management (Teacher)
-  - `/login`, `/activate` — Teacher auth
-  - `/student/login` — Student login + activation (dual-mode)
-  - `/student/dashboard` — Student dashboard
-  - `/admin/login`, `/admin/dashboard` — Admin panel
+  - `/`  Student list (Teacher)
+  - `/create`, `/edit/:id`, `/detail/:id`  Student management (Teacher)
+  - `/login`, `/activate`  Teacher auth
+  - `/student/login`  Student login + activation (dual-mode)
+  - `/student/dashboard`  Student dashboard
+  - `/admin/login`, `/admin/dashboard`  Admin panel
 - Build output served by ASP.NET Core from `StudentApp/dist/StudentApp/browser`
 
 ## User Flows
@@ -237,7 +237,7 @@ A full-stack, multi-role web application for managing student assessments. Admin
 ### Student: Submit Work
 1. Student logs in and opens their dashboard.
 2. Student clicks the upload icon next to an assessment.
-3. Student selects an allowed file type (PDF, DOC, DOCX, JPG, JPEG, PNG ≤ 10 MB) and submits.
+3. Student selects an allowed file type (PDF, DOC, DOCX, JPG, JPEG, PNG  10 MB) and submits.
 
 ## Acceptance Criteria
 - Admin can create teacher and student accounts; those accounts cannot be created from public-facing routes.

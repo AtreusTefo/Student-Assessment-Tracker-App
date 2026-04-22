@@ -33,6 +33,14 @@ namespace StudentAssessmentTracker.Application.Services
         /// <summary>Deletes a teacher account regardless of student assignments.</summary>
         Task DeleteTeacherAsync(int teacherId);
 
+        /// <summary>
+        /// Updates a teacher's profile data (admin-scoped, no ownership restriction).
+        /// Throws <see cref="KeyNotFoundException"/> when the teacher is not found.
+        /// Throws <see cref="ArgumentException"/> when SubjectId is invalid.
+        /// Throws <see cref="InvalidOperationException"/> on duplicate email or ID/Passport number.
+        /// </summary>
+        Task<TeacherResponseDto> UpdateTeacherAsync(int teacherId, TeacherUpdateDto dto);
+
         /// <summary>Returns all students across all teachers.</summary>
         Task<IEnumerable<StudentDto>> GetAllStudentsAsync();
 
@@ -88,6 +96,22 @@ namespace StudentAssessmentTracker.Application.Services
         /// </summary>
         /// <exception cref="KeyNotFoundException">Student not found.</exception>
         Task ResetStudentPasswordAsync(int studentId);
+
+        /// <summary>
+        /// Bulk-imports students from a list of rows. Each row is validated and processed
+        /// independently — failures do not roll back rows that already succeeded.
+        /// GradeName is resolved against the Grades lookup (accepts "Grade 10" or "10").
+        /// </summary>
+        /// <param name="rows">Up to 500 rows.</param>
+        Task<BulkImportResultDto> BulkImportStudentsAsync(IEnumerable<BulkImportStudentRowDto> rows);
+
+        /// <summary>
+        /// Bulk-imports teachers from a list of rows. Each row is validated and processed
+        /// independently — failures do not roll back rows that already succeeded.
+        /// SubjectName is resolved against the Subjects lookup (case-insensitive).
+        /// </summary>
+        /// <param name="rows">Up to 500 rows.</param>
+        Task<BulkImportResultDto> BulkImportTeachersAsync(IEnumerable<BulkImportTeacherRowDto> rows);
     }
 
     /// <summary>Implements admin account management and cross-entity oversight operations.</summary>
@@ -191,10 +215,13 @@ namespace StudentAssessmentTracker.Application.Services
             if (await _db.Admins.AnyAsync(a => a.Email == emailLower))
                 throw new InvalidOperationException($"Email '{dto.Email}' is already in use by an admin account.");
 
-            // ID/Passport uniqueness.
+            // ID/Passport uniqueness — checked across Teachers and Students to prevent the same
+            // national ID from being registered under two different roles.
             var idNormalized = dto.IdPassportNo.ToUpperInvariant();
             if (await _db.Teachers.AnyAsync(t => t.IdPassportNo != null && t.IdPassportNo.ToUpper() == idNormalized))
                 throw new InvalidOperationException($"A teacher with ID/Passport No. '{dto.IdPassportNo}' is already registered.");
+            if (await _db.Students.AnyAsync(s => s.IdPassportNo != null && s.IdPassportNo.ToUpper() == idNormalized))
+                throw new InvalidOperationException($"ID/Passport No. '{dto.IdPassportNo}' is already in use by a student account.");
 
             var teacher = new Teacher
             {
@@ -248,6 +275,48 @@ namespace StudentAssessmentTracker.Application.Services
             _db.Teachers.Remove(teacher);
             await _db.SaveChangesAsync();
             _logger.LogInformation("Admin deleted teacher {TeacherId}", teacherId);
+        }
+
+        /// <inheritdoc />
+        public async Task<TeacherResponseDto> UpdateTeacherAsync(int teacherId, TeacherUpdateDto dto)
+        {
+            var teacher = await _db.Teachers
+                .Include(t => t.SubjectNavigation)
+                .FirstOrDefaultAsync(t => t.Id == teacherId)
+                ?? throw new KeyNotFoundException($"Teacher {teacherId} not found.");
+
+            if (!await _db.Subjects.AnyAsync(s => s.Id == dto.SubjectId))
+                throw new ArgumentException($"Subject with ID {dto.SubjectId} does not exist.");
+
+            var emailLower = dto.Email.Trim().ToLower();
+            if (await _db.Teachers.AnyAsync(t => t.Email == emailLower && t.Id != teacherId))
+                throw new InvalidOperationException($"A teacher with email '{dto.Email}' is already registered.");
+            if (await _db.Students.AnyAsync(s => s.Email == emailLower))
+                throw new InvalidOperationException($"Email '{dto.Email}' is already in use by a student account.");
+            if (await _db.Admins.AnyAsync(a => a.Email == emailLower))
+                throw new InvalidOperationException($"Email '{dto.Email}' is already in use by an admin account.");
+
+            var idNormalized = dto.IdPassportNo.ToUpperInvariant();
+            if (await _db.Teachers.AnyAsync(t => t.IdPassportNo != null && t.IdPassportNo.ToUpper() == idNormalized && t.Id != teacherId))
+                throw new InvalidOperationException($"A teacher with ID/Passport No. '{dto.IdPassportNo}' is already registered.");
+            if (await _db.Students.AnyAsync(s => s.IdPassportNo != null && s.IdPassportNo.ToUpper() == idNormalized))
+                throw new InvalidOperationException($"ID/Passport No. '{dto.IdPassportNo}' is already in use by a student account.");
+
+            teacher.IdPassportNo = dto.IdPassportNo.Trim();
+            teacher.FirstName = dto.FirstName.Trim();
+            teacher.LastName = dto.LastName.Trim();
+            teacher.Email = emailLower;
+            teacher.Phone = dto.Phone.Trim();
+            teacher.SubjectId = dto.SubjectId;
+            teacher.UpdatedAt = DateTime.UtcNow;
+
+            await _db.SaveChangesAsync();
+
+            // Reload navigation properties for the response DTO.
+            await _db.Entry(teacher).Reference(t => t.SubjectNavigation).LoadAsync();
+
+            _logger.LogInformation("Admin updated teacher {TeacherId}", teacherId);
+            return _mapper.Map<TeacherResponseDto>(teacher);
         }
 
         /// <inheritdoc />
@@ -306,10 +375,13 @@ namespace StudentAssessmentTracker.Application.Services
             if (await _db.Admins.AnyAsync(a => a.Email == emailLower))
                 throw new InvalidOperationException($"Email '{dto.Email}' is already in use by an admin account.");
 
-            // ID/Passport uniqueness.
+            // ID/Passport uniqueness — checked across Students and Teachers to prevent the same
+            // national ID from being registered under two different roles.
             var idNormalized = dto.IdPassportNo!.ToUpperInvariant();
             if (await _db.Students.AnyAsync(s => s.IdPassportNo != null && s.IdPassportNo.ToUpper() == idNormalized))
                 throw new InvalidOperationException($"A student with ID/Passport No. '{dto.IdPassportNo}' is already registered.");
+            if (await _db.Teachers.AnyAsync(t => t.IdPassportNo != null && t.IdPassportNo.ToUpper() == idNormalized))
+                throw new InvalidOperationException($"ID/Passport No. '{dto.IdPassportNo}' is already in use by a teacher account.");
 
             var student = new Student
             {
@@ -394,10 +466,12 @@ namespace StudentAssessmentTracker.Application.Services
             if (await _db.Admins.AnyAsync(a => a.Email == emailLower))
                 throw new InvalidOperationException($"Email '{dto.Email}' is already in use by an admin account.");
 
-            // ID/Passport uniqueness (excluding self).
+            // ID/Passport uniqueness (excluding self) — checked across Students and Teachers.
             var idNormalized = dto.IdPassportNo!.ToUpperInvariant();
             if (await _db.Students.AnyAsync(s => s.IdPassportNo != null && s.IdPassportNo.ToUpper() == idNormalized && s.Id != studentId))
                 throw new InvalidOperationException($"A student with ID/Passport No. '{dto.IdPassportNo}' is already registered.");
+            if (await _db.Teachers.AnyAsync(t => t.IdPassportNo != null && t.IdPassportNo.ToUpper() == idNormalized))
+                throw new InvalidOperationException($"ID/Passport No. '{dto.IdPassportNo}' is already in use by a teacher account.");
 
             student.IdPassportNo = dto.IdPassportNo!.Trim();
             student.FirstName = dto.FirstName!.Trim();
@@ -458,6 +532,17 @@ namespace StudentAssessmentTracker.Application.Services
             }
 
             _logger.LogInformation("Admin assigned teacher {TeacherId} to student {StudentId}", teacherId, studentId);
+            await _db.AuditLogs.AddAsync(new Domain.Entities.AuditLog
+            {
+                EntityName = "TeacherStudent",
+                EntityId = studentId,
+                Action = "Create",
+                NewValues = System.Text.Json.JsonSerializer.Serialize(new { teacherId, studentId, teacher.SubjectId }),
+                ChangedBy = "Admin",
+                ChangedByRole = "Admin",
+                ChangedAt = DateTime.UtcNow
+            });
+            await _db.SaveChangesAsync();
         }
 
         /// <inheritdoc />
@@ -470,6 +555,17 @@ namespace StudentAssessmentTracker.Application.Services
             _db.TeacherStudents.Remove(assignment);
             await _db.SaveChangesAsync();
             _logger.LogInformation("Admin unassigned teacher {TeacherId} from student {StudentId}", teacherId, studentId);
+            await _db.AuditLogs.AddAsync(new Domain.Entities.AuditLog
+            {
+                EntityName = "TeacherStudent",
+                EntityId = studentId,
+                Action = "Delete",
+                OldValues = System.Text.Json.JsonSerializer.Serialize(new { teacherId, studentId }),
+                ChangedBy = "Admin",
+                ChangedByRole = "Admin",
+                ChangedAt = DateTime.UtcNow
+            });
+            await _db.SaveChangesAsync();
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────
@@ -477,8 +573,12 @@ namespace StudentAssessmentTracker.Application.Services
         /// <inheritdoc />
         public async Task ChangePasswordAsync(int adminId, ChangeAdminPasswordDto dto)
         {
-            if (string.IsNullOrWhiteSpace(dto.NewPassword) || dto.NewPassword.Length < 6)
-                throw new ArgumentException("New password must be at least 6 characters.");
+            if (string.IsNullOrWhiteSpace(dto.NewPassword) || dto.NewPassword.Length < 8)
+                throw new ArgumentException("New password must be at least 8 characters.");
+
+            if (!System.Text.RegularExpressions.Regex.IsMatch(dto.NewPassword,
+                    @"^(?=.*[A-Z])(?=.*[0-9])(?=.*[^a-zA-Z0-9]).{8,}$"))
+                throw new ArgumentException("New password must contain at least one uppercase letter, one digit, and one special character.");
 
             if (dto.NewPassword != dto.ConfirmNewPassword)
                 throw new ArgumentException("New password and confirmation do not match.");
@@ -517,6 +617,254 @@ namespace StudentAssessmentTracker.Application.Services
             student.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
             _logger.LogInformation("Admin reset password for student {StudentId}", studentId);
+        }
+
+        // ── Bulk Import ───────────────────────────────────────────────────────
+
+        private static readonly System.Text.RegularExpressions.Regex _idRegex =
+            new(@"^[a-zA-Z0-9\-]{9}$", System.Text.RegularExpressions.RegexOptions.Compiled);
+        private static readonly System.Text.RegularExpressions.Regex _nameRegex =
+            new(@"^[a-zA-Z\s\-]{2,50}$", System.Text.RegularExpressions.RegexOptions.Compiled);
+        private static readonly System.Text.RegularExpressions.Regex _phoneRegex =
+            new(@"^\d{8}$", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+        /// <inheritdoc />
+        public async Task<BulkImportResultDto> BulkImportStudentsAsync(IEnumerable<BulkImportStudentRowDto> rows)
+        {
+            var rowList = rows.ToList();
+            var result = new BulkImportResultDto { TotalRows = rowList.Count };
+
+            // Pre-load grade lookup to avoid N+1 queries across rows
+            var grades = await _db.Grades.AsNoTracking().ToListAsync();
+
+            // Track emails/IDs successfully committed in this batch to catch within-batch duplicates
+            var committedEmails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var committedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            for (var i = 0; i < rowList.Count; i++)
+            {
+                var row = rowList[i];
+                var rowNum = i + 1;
+                try
+                {
+                    // Required fields
+                    if (string.IsNullOrWhiteSpace(row.IdPassportNo)) throw new ArgumentException("IdPassportNo is required.");
+                    if (string.IsNullOrWhiteSpace(row.FirstName)) throw new ArgumentException("FirstName is required.");
+                    if (string.IsNullOrWhiteSpace(row.LastName)) throw new ArgumentException("LastName is required.");
+                    if (string.IsNullOrWhiteSpace(row.Email)) throw new ArgumentException("Email is required.");
+                    if (string.IsNullOrWhiteSpace(row.Phone)) throw new ArgumentException("Phone is required.");
+                    if (string.IsNullOrWhiteSpace(row.GradeName)) throw new ArgumentException("GradeName is required.");
+
+                    // Format validation (mirrors CreateStudentValidator)
+                    if (!_idRegex.IsMatch(row.IdPassportNo.Trim()))
+                        throw new ArgumentException("IdPassportNo must be exactly 9 characters (letters, numbers, hyphens).");
+                    if (!_nameRegex.IsMatch(row.FirstName.Trim()))
+                        throw new ArgumentException("FirstName must be 2–50 letters, spaces, or hyphens.");
+                    if (!_nameRegex.IsMatch(row.LastName.Trim()))
+                        throw new ArgumentException("LastName must be 2–50 letters, spaces, or hyphens.");
+                    if (!_phoneRegex.IsMatch(row.Phone.Trim()))
+                        throw new ArgumentException("Phone must be exactly 8 digits.");
+
+                    // Email format
+                    try { _ = new System.Net.Mail.MailAddress(row.Email.Trim()); }
+                    catch { throw new ArgumentException($"'{row.Email}' is not a valid email address."); }
+
+                    // Resolve grade by name or level number
+                    var gradeName = row.GradeName.Trim();
+                    var grade = grades.FirstOrDefault(g =>
+                        g.Name.Equals(gradeName, StringComparison.OrdinalIgnoreCase) ||
+                        g.Level.ToString() == gradeName ||
+                        ("Grade " + g.Level).Equals(gradeName, StringComparison.OrdinalIgnoreCase));
+                    if (grade == null)
+                        throw new ArgumentException(
+                            $"Grade '{gradeName}' not found. Valid values: {string.Join(", ", grades.Select(g => g.Name))}");
+
+                    var emailLower = row.Email.Trim().ToLower();
+                    var idNorm = row.IdPassportNo.Trim().ToUpperInvariant();
+
+                    // Within-batch duplicate detection (against successfully committed rows only)
+                    if (committedEmails.Contains(emailLower))
+                        throw new InvalidOperationException($"Email '{emailLower}' appears more than once in this batch.");
+                    if (committedIds.Contains(idNorm))
+                        throw new InvalidOperationException($"ID/Passport No. '{idNorm}' appears more than once in this batch.");
+
+                    // Cross-entity DB uniqueness
+                    if (await _db.Students.AnyAsync(s => s.Email == emailLower))
+                        throw new InvalidOperationException($"Email '{emailLower}' is already registered to an existing student.");
+                    if (await _db.Teachers.AnyAsync(t => t.Email == emailLower))
+                        throw new InvalidOperationException($"Email '{emailLower}' is already registered to a teacher.");
+                    if (await _db.Admins.AnyAsync(a => a.Email == emailLower))
+                        throw new InvalidOperationException($"Email '{emailLower}' is already registered to an admin.");
+                    if (await _db.Students.AnyAsync(s => s.IdPassportNo != null && s.IdPassportNo.ToUpper() == idNorm))
+                        throw new InvalidOperationException($"ID/Passport No. '{idNorm}' is already registered to an existing student.");
+                    if (await _db.Teachers.AnyAsync(t => t.IdPassportNo != null && t.IdPassportNo.ToUpper() == idNorm))
+                        throw new InvalidOperationException($"ID/Passport No. '{idNorm}' is already registered to a teacher.");
+
+                    // Generate unique StudentUniqueId
+                    string uniqueId = string.Empty;
+                    for (var attempt = 1; attempt <= 5; attempt++)
+                    {
+                        uniqueId = GenerateStudentUniqueId();
+                        if (!await _db.Students.AnyAsync(s => s.StudentUniqueId == uniqueId)) break;
+                        if (attempt == 5)
+                            throw new InvalidOperationException("Could not generate a unique student ID. Please retry.");
+                    }
+
+                    var student = new Student
+                    {
+                        StudentUniqueId = uniqueId,
+                        IdPassportNo = row.IdPassportNo.Trim(),
+                        FirstName = row.FirstName.Trim(),
+                        LastName = row.LastName.Trim(),
+                        Email = emailLower,
+                        Phone = row.Phone.Trim(),
+                        GradeId = grade.Id,
+                        CreatedAt = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+
+                    _db.Students.Add(student);
+                    await _db.SaveChangesAsync();
+
+                    committedEmails.Add(emailLower);
+                    committedIds.Add(idNorm);
+
+                    _logger.LogInformation("Bulk import: created student {UniqueId} (row {Row})", uniqueId, rowNum);
+                    result.Results.Add(new BulkImportRowResultDto
+                    {
+                        Row = rowNum,
+                        Success = true,
+                        Identifier = $"{uniqueId} ({emailLower})"
+                    });
+                    result.SuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    result.Results.Add(new BulkImportRowResultDto
+                    {
+                        Row = rowNum,
+                        Success = false,
+                        Identifier = row.Email?.Trim() ?? row.IdPassportNo?.Trim(),
+                        Error = ex.Message
+                    });
+                    result.FailureCount++;
+                }
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc />
+        public async Task<BulkImportResultDto> BulkImportTeachersAsync(IEnumerable<BulkImportTeacherRowDto> rows)
+        {
+            var rowList = rows.ToList();
+            var result = new BulkImportResultDto { TotalRows = rowList.Count };
+
+            // Pre-load subject lookup
+            var subjects = await _db.Subjects.AsNoTracking().ToListAsync();
+
+            var committedEmails = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var committedIds = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+
+            for (var i = 0; i < rowList.Count; i++)
+            {
+                var row = rowList[i];
+                var rowNum = i + 1;
+                try
+                {
+                    // Required fields
+                    if (string.IsNullOrWhiteSpace(row.IdPassportNo)) throw new ArgumentException("IdPassportNo is required.");
+                    if (string.IsNullOrWhiteSpace(row.FirstName)) throw new ArgumentException("FirstName is required.");
+                    if (string.IsNullOrWhiteSpace(row.LastName)) throw new ArgumentException("LastName is required.");
+                    if (string.IsNullOrWhiteSpace(row.Email)) throw new ArgumentException("Email is required.");
+                    if (string.IsNullOrWhiteSpace(row.Phone)) throw new ArgumentException("Phone is required.");
+                    if (string.IsNullOrWhiteSpace(row.SubjectName)) throw new ArgumentException("SubjectName is required.");
+
+                    // Format validation
+                    if (!_idRegex.IsMatch(row.IdPassportNo.Trim()))
+                        throw new ArgumentException("IdPassportNo must be exactly 9 characters (letters, numbers, hyphens).");
+                    if (!_nameRegex.IsMatch(row.FirstName.Trim()))
+                        throw new ArgumentException("FirstName must be 2–50 letters, spaces, or hyphens.");
+                    if (!_nameRegex.IsMatch(row.LastName.Trim()))
+                        throw new ArgumentException("LastName must be 2–50 letters, spaces, or hyphens.");
+                    if (!_phoneRegex.IsMatch(row.Phone.Trim()))
+                        throw new ArgumentException("Phone must be exactly 8 digits.");
+
+                    // Email format
+                    try { _ = new System.Net.Mail.MailAddress(row.Email.Trim()); }
+                    catch { throw new ArgumentException($"'{row.Email}' is not a valid email address."); }
+
+                    // Resolve subject by name (case-insensitive)
+                    var subjectName = row.SubjectName.Trim();
+                    var subject = subjects.FirstOrDefault(s =>
+                        s.Name.Equals(subjectName, StringComparison.OrdinalIgnoreCase));
+                    if (subject == null)
+                        throw new ArgumentException(
+                            $"Subject '{subjectName}' not found. Valid values: {string.Join(", ", subjects.Select(s => s.Name))}");
+
+                    var emailLower = row.Email.Trim().ToLower();
+                    var idNorm = row.IdPassportNo.Trim().ToUpperInvariant();
+
+                    // Within-batch duplicate detection
+                    if (committedEmails.Contains(emailLower))
+                        throw new InvalidOperationException($"Email '{emailLower}' appears more than once in this batch.");
+                    if (committedIds.Contains(idNorm))
+                        throw new InvalidOperationException($"ID/Passport No. '{idNorm}' appears more than once in this batch.");
+
+                    // Cross-entity DB uniqueness
+                    if (await _db.Teachers.AnyAsync(t => t.Email == emailLower))
+                        throw new InvalidOperationException($"Email '{emailLower}' is already registered to an existing teacher.");
+                    if (await _db.Students.AnyAsync(s => s.Email == emailLower))
+                        throw new InvalidOperationException($"Email '{emailLower}' is already registered to a student.");
+                    if (await _db.Admins.AnyAsync(a => a.Email == emailLower))
+                        throw new InvalidOperationException($"Email '{emailLower}' is already registered to an admin.");
+                    if (await _db.Teachers.AnyAsync(t => t.IdPassportNo != null && t.IdPassportNo.ToUpper() == idNorm))
+                        throw new InvalidOperationException($"ID/Passport No. '{idNorm}' is already registered to an existing teacher.");
+                    if (await _db.Students.AnyAsync(s => s.IdPassportNo != null && s.IdPassportNo.ToUpper() == idNorm))
+                        throw new InvalidOperationException($"ID/Passport No. '{idNorm}' is already registered to a student.");
+
+                    var teacher = new Teacher
+                    {
+                        IdPassportNo = row.IdPassportNo.Trim(),
+                        FirstName = row.FirstName.Trim(),
+                        LastName = row.LastName.Trim(),
+                        Email = emailLower,
+                        Phone = row.Phone.Trim(),
+                        SubjectId = subject.Id,
+                        EnrollmentDate = DateTime.UtcNow,
+                        CreatedDate = DateTime.UtcNow,
+                        UpdatedAt = DateTime.UtcNow
+                    };
+
+                    _db.Teachers.Add(teacher);
+                    await _db.SaveChangesAsync();
+
+                    committedEmails.Add(emailLower);
+                    committedIds.Add(idNorm);
+
+                    _logger.LogInformation("Bulk import: created teacher {Email} (row {Row})", emailLower, rowNum);
+                    result.Results.Add(new BulkImportRowResultDto
+                    {
+                        Row = rowNum,
+                        Success = true,
+                        Identifier = emailLower
+                    });
+                    result.SuccessCount++;
+                }
+                catch (Exception ex)
+                {
+                    result.Results.Add(new BulkImportRowResultDto
+                    {
+                        Row = rowNum,
+                        Success = false,
+                        Identifier = row.Email?.Trim() ?? row.IdPassportNo?.Trim(),
+                        Error = ex.Message
+                    });
+                    result.FailureCount++;
+                }
+            }
+
+            return result;
         }
 
         private string GenerateJwt(Admin admin)

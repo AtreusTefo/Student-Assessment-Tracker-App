@@ -24,6 +24,10 @@ namespace StudentAssessmentTracker.Application.Validators
                 .GreaterThanOrEqualTo(0).WithMessage("Score cannot be negative")
                 .Must((dto, score) => score <= dto.MaxScore)
                 .WithMessage("Score cannot exceed the max score for this assessment");
+
+            RuleFor(x => x.Instructions)
+                .MaximumLength(2000).WithMessage("Instructions cannot exceed 2000 characters")
+                .When(x => x.Instructions != null);
         }
     }
 
@@ -46,6 +50,10 @@ namespace StudentAssessmentTracker.Application.Validators
                 .GreaterThanOrEqualTo(0).WithMessage("Score cannot be negative")
                 .Must((dto, score) => score <= dto.MaxScore)
                 .WithMessage("Score cannot exceed the max score for this assessment");
+
+            RuleFor(x => x.Instructions)
+                .MaximumLength(2000).WithMessage("Instructions cannot exceed 2000 characters")
+                .When(x => x.Instructions != null);
         }
     }
 }

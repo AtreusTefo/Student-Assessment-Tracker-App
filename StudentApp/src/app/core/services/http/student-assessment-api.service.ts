@@ -41,4 +41,12 @@ export class StudentAssessmentApiService {
   delete(studentId: number, assessmentId: number): Observable<void> {
     return this.http.delete<void>(`${this.baseUrl(studentId)}/${assessmentId}`);
   }
+
+  bulkCreate(dto: {
+    name: string; maxScore: number; score: number;
+    dueDate: string | null; isAssigned: boolean; instructions: string | null;
+    studentIds: number[];
+  }): Observable<StudentAssessmentDto[]> {
+    return this.http.post<StudentAssessmentDto[]>('/api/assessments/bulk', dto);
+  }
 }

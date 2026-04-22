@@ -1,13 +1,201 @@
-# Postman Setup & Testing Guide
+# Postman Setup and Testing Guide
 
-## ✅ API Status
-- **Server**: Running on `http://localhost:5000`
-- **API Base**: `http://localhost:5000/api`
-- **Status**: Ready for testing
+## API Status
+- **Server**: `http://localhost:5000`
+- **Swagger UI**: `http://localhost:5000/swagger`
+- **Database**: SQL Server LocalDB (`StudentAssessmentTrackerDev`)
 
 ---
 
-## 📥 Step 1: Import the Postman Collection
+## Step 1: Import the Collection and Environment
+
+1. Open Postman
+2. Click **Import**
+3. Select `StudentAssessmentTracker.postman_collection.json` (project root)
+4. Click **Import** again
+5. Select `StudentAssessmentTracker.postman_environment.json` (project root)
+6. Select **StudentAssessmentTracker** from the environment dropdown (top right)
+
+The collection includes all Admin, Teacher, Student, Assessment, Report, and ClassGroup endpoints. Tokens are saved automatically to environment variables when you run any login request.
+
+---
+
+## Step 2: Get the Admin Token
+
+1. Expand the **Admins** folder in the collection
+2. Run **POST Login** with:
+   ```json
+   { "email": "admin@tracker.local", "password": "Admin@1234" }
+   ```
+3. The token is automatically saved to `adminToken`
+4. All Admin-protected requests will now work
+
+---
+
+## Recommended Test Order (Full Flow)
+
+Run requests in this order to set up all roles and verify end-to-end functionality:
+
+| # | Request | Folder | Notes |
+|---|---|---|---|
+| 1 | POST /api/admins/login | Admins | Saves adminToken |
+| 2 | POST /api/admins/teachers | Admins | Create teacher (no password) |
+| 3 | POST /api/teachers/activate | Teachers | Teacher sets own password |
+| 4 | POST /api/teachers/login | Teachers | Saves teacherToken |
+| 5 | POST /api/admins/students | Admins | Create student record |
+| 6 | POST /api/students/{sid}/teachers/{tid} | Students | Assign teacher to student |
+| 7 | POST /api/students/activate | Students | Student sets own password |
+| 8 | POST /api/students/login | Students | Saves studentToken |
+| 9 | GET /api/students | Students | Teacher sees their student |
+| 10 | POST /api/students/{id}/assessments | StudentAssessments | Add assessment |
+| 11 | GET /api/students/{id} | Students | Verify assessment on student detail |
+| 12 | GET /api/reports/students/{id}/pdf | Reports | Download PDF report |
+
+---
+
+## Test Scenarios
+
+### Test 1: Create a Teacher (Admin JWT)
+
+```json
+POST /api/admins/teachers
+Authorization: Bearer {{adminToken}}
+
+{
+  "idPassportNo": "T001",
+  "firstName": "Jane",
+  "lastName": "Smith",
+  "email": "jane.smith@school.com",
+  "phone": "12345678",
+  "subjectName": "Mathematics"
+}
+```
+Expected: `201 Created` with teacher ID and `isActive: false`
+
+---
+
+### Test 2: Activate a Teacher (public)
+
+```json
+POST /api/teachers/activate
+
+{
+  "email": "jane.smith@school.com",
+  "password": "Teacher@123",
+  "confirmPassword": "Teacher@123"
+}
+```
+Expected: `200 OK` with a teacher JWT token
+
+---
+
+### Test 3: Create a Student (Admin JWT)
+
+```json
+POST /api/admins/students
+Authorization: Bearer {{adminToken}}
+
+{
+  "idPassportNo": "S001",
+  "firstName": "John",
+  "lastName": "Doe",
+  "email": "john.doe@school.com",
+  "phone": "87654321",
+  "gradeName": "Grade 10"
+}
+```
+Expected: `201 Created` with `studentUniqueId` (e.g. `STU-XXXXXXXX`) and `isActive: false`
+
+---
+
+### Test 4: Add an Assessment (Teacher JWT)
+
+```json
+POST /api/students/{studentId}/assessments
+Authorization: Bearer {{teacherToken}}
+
+{
+  "name": "Term 1 Test",
+  "score": 42,
+  "maxScore": 50,
+  "dueDate": "2026-05-01T00:00:00",
+  "instructions": "Complete all sections",
+  "isAssigned": true
+}
+```
+Expected: `201 Created` with the assessment object
+
+---
+
+### Test 5: Bulk Import Students (Admin JWT)
+
+```json
+POST /api/admins/students/bulk
+Authorization: Bearer {{adminToken}}
+
+[
+  {
+    "idPassportNo": "ID001",
+    "firstName": "Alice",
+    "lastName": "Brown",
+    "email": "alice.brown@school.com",
+    "phone": "11111111",
+    "gradeName": "Grade 9"
+  },
+  {
+    "idPassportNo": "ID002",
+    "firstName": "Bob",
+    "lastName": "Jones",
+    "email": "bob.jones@school.com",
+    "phone": "22222222",
+    "gradeName": "Grade 10"
+  }
+]
+```
+Expected: `200 OK` with `{ totalRows, successCount, failureCount, results: [...] }`
+
+---
+
+### Test 6: Forgot Password — Teacher (public)
+
+```json
+POST /api/teachers/forgot-password
+
+{ "email": "jane.smith@school.com" }
+```
+Expected: `200 OK` (always, regardless of whether email exists — anti-enumeration)
+
+Effect: Teacher's password is nulled. Teacher must re-activate via `POST /api/teachers/activate`.
+
+---
+
+### Test 7: Forgot Password — Student (public, dual-factor)
+
+```json
+POST /api/students/forgot-password
+
+{
+  "studentUniqueId": "STU-XXXXXXXX",
+  "email": "john.doe@school.com"
+}
+```
+Expected: `200 OK`. Both StudentUniqueId and email must match — if email is wrong, the reset is silently rejected.
+
+---
+
+## Troubleshooting
+
+| Problem | Solution |
+|---|---|
+| 401 Unauthorized | Run the login request for your role; check the environment variable is set |
+| 403 Forbidden | You are using the wrong role token for this endpoint |
+| 400 Bad Request | Check Swagger UI for required field formats. Phone must be exactly 8 digits |
+| 500 Internal Server Error | Check the dotnet console. Logs are in `StudentAssessmentTrackerAPI/Logs/` |
+
+
+---
+
+## Step 1: Import the Postman Collection
 
 ### Option A: Using Postman UI (Recommended)
 
@@ -34,7 +222,7 @@
 
 ---
 
-## 🔧 Step 2: Configure Environment (Optional)
+## Step 2: Configure Environment (Optional)
 
 The collection comes pre-configured with:
 - **Variable**: `base_url` = `http://localhost:5000`
@@ -51,7 +239,7 @@ If your API runs on a different port:
 
 ---
 
-## 🚀 Step 3: Test the Endpoints
+## Step 3: Test the Endpoints
 
 ### Test 1: Get All Students
 

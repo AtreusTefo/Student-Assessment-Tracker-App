@@ -16,7 +16,7 @@ namespace StudentAssessmentTracker.Application.Validators
             RuleFor(x => x.IdPassportNo)
                 .NotEmpty().WithMessage("ID/Passport No. is required.")
                 .Length(9).WithMessage("ID/Passport No. must be exactly 9 characters.")
-                .Matches("^[a-zA-Z0-9]+$").WithMessage("ID/Passport No. can only contain letters and numbers.");
+                .Matches("^[a-zA-Z0-9\\-]+$").WithMessage("ID/Passport No. can only contain letters, numbers, and hyphens.");
 
             RuleFor(x => x.FirstName)
                 .NotEmpty().WithMessage("First name is required.")
@@ -55,7 +55,10 @@ namespace StudentAssessmentTracker.Application.Validators
 
             RuleFor(x => x.Password)
                 .NotEmpty().WithMessage("Password is required.")
-                .MinimumLength(6).WithMessage("Password must be at least 6 characters.");
+                .MinimumLength(8).WithMessage("Password must be at least 8 characters.")
+                .Matches(@"[A-Z]").WithMessage("Password must contain at least one uppercase letter.")
+                .Matches(@"[0-9]").WithMessage("Password must contain at least one digit.")
+                .Matches(@"[^a-zA-Z0-9]").WithMessage("Password must contain at least one special character.");
 
             RuleFor(x => x.ConfirmPassword)
                 .NotEmpty().WithMessage("Please confirm your password.")
@@ -95,7 +98,7 @@ namespace StudentAssessmentTracker.Application.Validators
             RuleFor(x => x.IdPassportNo)
                 .NotEmpty().WithMessage("ID/Passport No. is required.")
                 .Length(9).WithMessage("ID/Passport No. must be exactly 9 characters.")
-                .Matches("^[a-zA-Z0-9]+$").WithMessage("ID/Passport No. can only contain letters and numbers.");
+                .Matches("^[a-zA-Z0-9\\-]+$").WithMessage("ID/Passport No. can only contain letters, numbers, and hyphens.");
 
             RuleFor(x => x.FirstName)
                 .NotEmpty().WithMessage("First name is required.")

@@ -33,6 +33,7 @@ namespace StudentAssessmentTracker.Application.Validators
         {
             RuleFor(x => x.Name)
                 .NotEmpty().WithMessage("Class group name is required.")
+                .MinimumLength(2).WithMessage("Class group name must be at least 2 characters.")
                 .MaximumLength(100).WithMessage("Class group name must not exceed 100 characters.");
         }
     }

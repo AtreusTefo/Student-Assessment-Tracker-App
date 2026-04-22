@@ -36,12 +36,6 @@ StudentAssessmentTracker/                  ← Solution Root
 │   │   └── Controllers/
 │   │       └── StudentsController.cs      (REST API endpoints)
 │   │
-│   ├── Controllers/                       ← Legacy Controllers (For reference)
-│   ├── Models/                            ← Legacy Models (For reference)
-│   ├── Data/                              ← Legacy Data layer (For reference)
-│   ├── Validators/                        ← Legacy Validators (For reference)
-│   ├── Mappings/                          ← Legacy Mappings (For reference)
-│   │
 │   ├── Properties/
 │   │   └── launchSettings.json           
 │   ├── Program.cs                         ← Application entry point
@@ -51,7 +45,7 @@ StudentAssessmentTracker/                  ← Solution Root
 ├── StudentApp/                            ← Frontend Angular 21 Project
 │   ├── src/
 │   │   ├── app/
-│   │   │   ├── components/               (10 standalone components)
+│   │   │   ├── components/               (11 standalone components)
 │   │   │   ├── core/
 │   │   │   │   ├── guards/               (auth, guest, student-auth, student-guest, admin)
 │   │   │   │   ├── interceptors/         (auth.interceptor.ts)

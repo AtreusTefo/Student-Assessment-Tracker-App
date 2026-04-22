@@ -64,6 +64,10 @@ export class AdminApiService {
     return this.http.post<any>(`${this.apiUrl}/teachers/${teacherId}/reset-password`, {});
   }
 
+  updateTeacher(teacherId: number, dto: any): Observable<any> {
+    return this.http.put<any>(`${this.apiUrl}/teachers/${teacherId}`, dto);
+  }
+
   // ─── Student management ───────────────────────────────────────────────────
 
   getAllStudents(): Observable<any[]> {
@@ -84,6 +88,48 @@ export class AdminApiService {
 
   resetStudentPassword(studentId: number): Observable<any> {
     return this.http.post<any>(`${this.apiUrl}/students/${studentId}/reset-password`, {});
+  }
+
+  updateStudent(studentId: number, dto: any): Observable<any> {
+    return this.http.put<any>(`/api/students/${studentId}`, dto);
+  }
+
+  // ─── Bulk import ──────────────────────────────────────────────────────────
+
+  /**
+   * Bulk-import students from a parsed JSON row array.
+   * POST /api/admins/students/bulk
+   */
+  bulkImportStudents(rows: any[]): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/students/bulk`, rows);
+  }
+
+  /**
+   * Bulk-import teachers from a parsed JSON row array.
+   * POST /api/admins/teachers/bulk
+   */
+  bulkImportTeachers(rows: any[]): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/teachers/bulk`, rows);
+  }
+
+  /**
+   * Bulk-import students from a CSV file upload.
+   * POST /api/admins/students/bulk-csv  (multipart/form-data)
+   */
+  bulkImportStudentsCsv(file: File): Observable<any> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<any>(`${this.apiUrl}/students/bulk-csv`, form);
+  }
+
+  /**
+   * Bulk-import teachers from a CSV file upload.
+   * POST /api/admins/teachers/bulk-csv  (multipart/form-data)
+   */
+  bulkImportTeachersCsv(file: File): Observable<any> {
+    const form = new FormData();
+    form.append('file', file);
+    return this.http.post<any>(`${this.apiUrl}/teachers/bulk-csv`, form);
   }
 
   // ─── Teacher–Student assignment ───────────────────────────────────────────

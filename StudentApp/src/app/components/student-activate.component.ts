@@ -88,8 +88,8 @@ import { takeUntil } from 'rxjs/operators';
                 #password="ngModel"
                 autocomplete="new-password"
                 required
-                minlength="6"
-                maxlength="50"
+                minlength="8"
+                maxlength="255"
                 [disabled]="loading"
                 (input)="clearError()"
               />
@@ -101,7 +101,10 @@ import { takeUntil } from 'rxjs/operators';
               Password is required
             </span>
             <span class="field-error" *ngIf="(form.submitted || password.touched) && password.hasError('minlength')">
-              Password must be at least 6 characters
+              Password must be at least 8 characters
+            </span>
+            <span class="field-error" *ngIf="(form.submitted || password.touched) && !password.hasError('required') && !password.hasError('minlength') && !isPasswordComplex(formData.password)">
+              Password must contain an uppercase letter, a number, and a special character
             </span>
           </div>
 
@@ -116,8 +119,8 @@ import { takeUntil } from 'rxjs/operators';
                 #confirmPwd="ngModel"
                 autocomplete="new-password"
                 required
-                minlength="6"
-                maxlength="50"
+                minlength="8"
+                maxlength="255"
                 [disabled]="loading"
                 (input)="clearError()"
               />
@@ -264,8 +267,13 @@ export class StudentActivateComponent implements OnInit, OnDestroy {
     this.studentAuthBusiness.clearError();
   }
 
+  isPasswordComplex(password: string): boolean {
+    return /[A-Z]/.test(password) && /[0-9]/.test(password) && /[^a-zA-Z0-9]/.test(password);
+  }
+
   onSubmit(form: NgForm): void {
     if (form.invalid || this.passwordMismatch) return;
+    if (!this.isPasswordComplex(this.formData.password)) return;
 
     // Normalise StudentUniqueId to uppercase before sending
     this.formData.studentUniqueId = this.formData.studentUniqueId.toUpperCase().trim();

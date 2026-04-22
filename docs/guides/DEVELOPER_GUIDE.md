@@ -1,4 +1,4 @@
-# Developer Guide: Multi-Layered Architecture
+﻿# Developer Guide: Multi-Layered Architecture
 
 ## Quick Start for Developers
 
@@ -6,7 +6,7 @@ This guide helps you understand, navigate, and extend the Student Assessment Tra
 
 ---
 
-## 🗺️ Where to Find Things
+##  Where to Find Things
 
 ### Adding a New API Feature
 
@@ -18,7 +18,8 @@ Let's say you want to add a "GetStudentsByGrade" endpoint.
 public class Student
 {
     // ... existing code ...
-    public string Grade { get; set; }
+    public int GradeId { get; set; }          // FK to Grades table
+    public Grade? GradeNavigation { get; set; } // navigation property
 }
 
 // Add this to Domain/Interfaces/IRepository.cs if needed new interface
@@ -27,10 +28,11 @@ public class Student
 **Step 2: Infrastructure Layer** - Add data access
 ```csharp
 // Infrastructure/Repositories/StudentRepository.cs
-public async Task<IEnumerable<Student>> GetByGradeAsync(string grade)
+public async Task<IEnumerable<Student>> GetByGradeAsync(int gradeId)
 {
     return await _context.Students
-        .Where(s => s.Grade == grade)
+        .Include(s => s.GradeNavigation)
+        .Where(s => s.GradeId == gradeId)
         .ToListAsync();
 }
 ```
@@ -40,15 +42,15 @@ public async Task<IEnumerable<Student>> GetByGradeAsync(string grade)
 // Application/Services/StudentService.cs
 public interface IStudentService
 {
-    Task<IEnumerable<StudentDto>> GetStudentsByGradeAsync(string grade);
+    Task<IEnumerable<StudentDto>> GetStudentsByGradeAsync(int gradeId);
 }
 
 public class StudentService : IStudentService
 {
-    public async Task<IEnumerable<StudentDto>> GetStudentsByGradeAsync(string grade)
+    public async Task<IEnumerable<StudentDto>> GetStudentsByGradeAsync(int gradeId)
     {
-        _logger.LogInformation("Fetching students with grade: {Grade}", grade);
-        var students = await _repository.GetByGradeAsync(grade);
+        _logger.LogInformation("Fetching students with gradeId: {GradeId}", gradeId);
+        var students = await _repository.GetByGradeAsync(gradeId);
         return _mapper.Map<IEnumerable<StudentDto>>(students);
     }
 }
@@ -57,12 +59,12 @@ public class StudentService : IStudentService
 **Step 4: Presentation Layer** - Add API endpoint
 ```csharp
 // Presentation/Controllers/StudentsController.cs
-[HttpGet("by-grade/{grade}")]
-public async Task<ActionResult<IEnumerable<StudentDto>>> GetByGrade(string grade)
+[HttpGet("by-grade/{gradeId}")]
+public async Task<ActionResult<IEnumerable<StudentDto>>> GetByGrade(int gradeId)
 {
     try
     {
-        var students = await _studentService.GetStudentsByGradeAsync(grade);
+        var students = await _studentService.GetStudentsByGradeAsync(gradeId);
         return Ok(students);
     }
     catch (Exception ex)
@@ -77,7 +79,7 @@ public async Task<ActionResult<IEnumerable<StudentDto>>> GetByGrade(string grade
 
 ---
 
-## 📋 Key Files Map
+##  Key Files Map
 
 | Task | File Location | What to Edit |
 |------|---------------|--------------|
@@ -90,48 +92,48 @@ public async Task<ActionResult<IEnumerable<StudentDto>>> GetByGrade(string grade
 
 ---
 
-## 📦 Layer Responsibilities Quick Reference
+##  Layer Responsibilities Quick Reference
 
 ### Domain Layer
-- ✅ Pure C# classes
-- ✅ Business logic methods
-- ✅ No database access
-- ✅ No HTTP concerns
-- ❌ No framework dependencies
+-  Pure C# classes
+-  Business logic methods
+-  No database access
+-  No HTTP concerns
+-  No framework dependencies
 
 ### Infrastructure Layer
-- ✅ Database operations
-- ✅ Repository implementations
-- ✅ DbContext configuration
-- ✅ Data persistence
-- ❌ Business logic
+-  Database operations
+-  Repository implementations
+-  DbContext configuration
+-  Data persistence
+-  Business logic
 
 ### Application Layer
-- ✅ Service orchestration
-- ✅ Validation rules
-- ✅ DTO definitions
-- ✅ Object mapping
-- ❌ HTTP details
-- ❌ Database specifics
+-  Service orchestration
+-  Validation rules
+-  DTO definitions
+-  Object mapping
+-  HTTP details
+-  Database specifics
 
 ### Presentation Layer
-- ✅ HTTP endpoints
-- ✅ Request handling
-- ✅ Response formatting
-- ❌ Business logic
-- ❌ Data access
+-  HTTP endpoints
+-  Request handling
+-  Response formatting
+-  Business logic
+-  Data access
 
 ---
 
-## 🔗 Dependency Flow (One Direction Only!)
+##  Dependency Flow (One Direction Only!)
 
 ```
 Presentation Controller
-    ↓
+    
 Application Service (via IStudentService)
-    ↓
+    
 Infrastructure Repository (via IRepository<T>)
-    ↓
+    
 Domain Entity
 ```
 
@@ -139,7 +141,7 @@ Domain Entity
 
 ---
 
-## 🧪 Testing Strategy
+##  Testing Strategy
 
 ### Unit Testing Example
 
@@ -213,7 +215,7 @@ public class StudentsControllerTests
 
 ---
 
-## 🚀 Running the Application
+##  Running the Application
 
 ### Start the Backend API
 ```bash
@@ -238,7 +240,7 @@ dotnet test StudentAssessmentTracker.Tests
 
 ---
 
-## 🛠️ Common Tasks
+##  Common Tasks
 
 ### Task 1: Add a New Database Field to Student
 
@@ -296,27 +298,27 @@ dotnet test StudentAssessmentTracker.Tests
 
 ---
 
-## 🔒 Architecture Rules to Remember
+##  Architecture Rules to Remember
 
-### ✅ DO:
-- ✅ Use dependency injection for all dependencies
-- ✅ Keep each layer focused on its responsibility
-- ✅ Use interfaces for abstraction
-- ✅ Log important operations
-- ✅ Handle exceptions gracefully
-- ✅ Validate data at both frontend and backend
+###  DO:
+-  Use dependency injection for all dependencies
+-  Keep each layer focused on its responsibility
+-  Use interfaces for abstraction
+-  Log important operations
+-  Handle exceptions gracefully
+-  Validate data at both frontend and backend
 
-### ❌ DON'T:
-- ❌ Have Presentation layer call Repository directly
-- ❌ Put database logic in Domain layer
-- ❌ Mix concerns in a single class
-- ❌ Create circular dependencies
-- ❌ Skip error handling
-- ❌ Hardcode configuration values
+###  DON'T:
+-  Have Presentation layer call Repository directly
+-  Put database logic in Domain layer
+-  Mix concerns in a single class
+-  Create circular dependencies
+-  Skip error handling
+-  Hardcode configuration values
 
 ---
 
-## 🐛 Debugging Tips
+##  Debugging Tips
 
 ### 1. Check Dependency Injection
 Use breakpoints in `Program.cs` to verify services are registered correctly.
@@ -356,15 +358,15 @@ CreateMap<Student, StudentDto>()
 
 ---
 
-## 📈 Performance Considerations
+##  Performance Considerations
 
 ### Repository Queries
 ```csharp
-// ❌ Inefficient: Returns all then filters
+//  Inefficient: Returns all then filters
 var allStudents = await _context.Students.ToListAsync();
 var filtered = allStudents.Where(s => s.Grade == "10A").ToList();
 
-// ✅ Efficient: Filters in database
+//  Efficient: Filters in database
 var filtered = await _context.Students
     .Where(s => s.Grade == "10A")
     .ToListAsync();
@@ -380,7 +382,7 @@ var students = await _context.Students
 
 ---
 
-## 🎓 Learning Resources
+##  Learning Resources
 
 - **Clean Architecture**: Read "Clean Architecture" by Robert C. Martin
 - **SOLID Principles**: https://en.wikipedia.org/wiki/SOLID
@@ -389,10 +391,10 @@ var students = await _context.Students
 
 ---
 
-## ❓ FAQ
+##  FAQ
 
 **Q: Where should I put a new method?**  
-A: If it's business logic → Domain, if it's data access → Repository, if it's orchestration → Service
+A: If it's business logic  Domain, if it's data access  Repository, if it's orchestration  Service
 
 **Q: Why separate DTOs?**  
 A: Decouples API contract from domain model. You can change the API without changing the database schema.
@@ -405,8 +407,8 @@ A: Mock the dependencies below each layer and test in isolation.
 
 ---
 
-## 📞 Support
+##  Support
 
 For questions about the architecture, refer to [ARCHITECTURE_IMPLEMENTATION.md](ARCHITECTURE_IMPLEMENTATION.md)
 
-Happy coding! 🚀
+Happy coding! 
