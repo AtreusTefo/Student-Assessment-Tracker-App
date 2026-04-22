@@ -1,4 +1,4 @@
-# Technology Stack and Architecture Overview
+﻿# Technology Stack and Architecture Overview
 
 This presentation provides a brief overview of the key technologies and architectural patterns used in the Student Assessment Tracker application.
 
@@ -13,14 +13,14 @@ Our application is built using a multilayered architecture, which separates conc
 -   **Domain Layer:** Represents the core business entities and rules.
 -   **Infrastructure Layer:** Manages data access and external services.
 
-### 2. ASP.NET Core=
-The backend is powered by ASP.NET Core, a high-performance, cross-platform framework for building modern, cloud-based, internet-connected applications. It serves as the foundation for our RESTful API.
+### 2. ASP.NET Core
+The backend is powered by ASP.NET Core 8, a high-performance, cross-platform framework for building modern, cloud-based, internet-connected applications. It serves as the foundation for our RESTful API.
 
 ### 3. Entity Framework Core
 We use Entity Framework Core as our Object-Relational Mapper (ORM) to interact with a SQL Server LocalDB database. It simplifies data access by allowing us to work with .NET objects instead of writing raw SQL queries.
 
-### 4. Angular
-The front-end is a single-page application (SPA) built with Angular. Angular allows us to create a dynamic, responsive and modern user interface for a seamless user experience.
+### 4. Angular 21
+The front-end is a single-page application (SPA) built with Angular 21. Angular allows us to create a dynamic, responsive and modern user interface for a seamless user experience.
 
 ## Key Libraries & Tools
 
@@ -50,34 +50,15 @@ Our API is documented and can be tested interactively using Swagger UI. It autom
 
 Postman is used for more in-depth API testing. We have created a Postman collection with a set of pre-configured requests to test all API functionalities and ensure everything is working as expected.
 
-### 11. ELMAH
+### 11. Serilog
 
-ELMAH (Error Logging Modules and Handlers) is used for application-wide error logging for ASP.NET Core. It provides a pluggable solution for logging unhandled exceptions, complete with a web page to view the logged exceptions remotely.
-
-
-        .ReadFrom.Configuration(context.Configuration)
-        .ReadFrom.Services(services)
-        .Enrich.FromLogContext();
-});
-```
-
-**Used Throughout Controllers**
-```csharp
-_logger.LogInformation("Fetching all students with sort order: {SortOrder}", sortOrder);
-_logger.LogError("Error creating student: {Error}", ex.Message);
-```
-
-**Logs Destination**: `~/Logs/` folder (created automatically)
+Serilog is used for structured application-wide logging. Logs are written to the `StudentAssessmentTrackerAPI/Logs/` folder and support JSON-structured output for easy diagnostics.
 
 **Benefits:**
 - Structured logging (JSON format)
 - Automatic file rotation
 - Easy debugging and monitoring
 - Production diagnostics
-
----
-
-## 4. Datatables
 
 ### What It Is
 A JavaScript library that adds interactive features to HTML tables: sorting, filtering, pagination and search.
@@ -106,7 +87,7 @@ A JavaScript library that adds interactive features to HTML tables: sorting, fil
 
 ---
 
-## 5. Angular Frontend Tool
+## 5. Angular 21 Frontend Tool
 
 ### What It Is
 A modern JavaScript framework for building interactive web applications. It handles the user interface and communication with the backend API.
@@ -117,13 +98,13 @@ A modern JavaScript framework for building interactive web applications. It hand
 **Project Structure:**
 ```
 StudentApp/
-├── src/
-│   ├── main.ts          (Application entry point)
-│   ├── index.html       (Main page)
-│   └── app/             (Components, services, etc.)
-├── package.json         (Dependencies)
-├── angular.json         (Configuration)
-└── tsconfig.json        (TypeScript settings)
+ src/
+    main.ts          (Application entry point)
+    index.html       (Main page)
+    app/             (Components, services, etc.)
+ package.json         (Dependencies)
+ angular.json         (Configuration)
+ tsconfig.json        (TypeScript settings)
 ```
 
 **Key Technologies:**
@@ -134,7 +115,7 @@ StudentApp/
 
 **Frontend to Backend Communication:**
 ```
-Angular App → HTTP Requests → ASP.NET Core API → Database
+Angular App  HTTP Requests  ASP.NET Core API  Database
 (StudentApp)                  (Port 5000)
 ```
 
@@ -179,19 +160,19 @@ Handles data access and external services
 
 ```
 REQUEST FLOW:
-───────────────────────────────────────────────
+
 Angular App
-    ↓ HTTP
+     HTTP
 Presentation Layer (StudentsController)
-    ↓
+    
 Application Layer (StudentService, StudentValidator)
-    ↓
+    
 Domain Layer (Student Entity, IRepository)
-    ↓
+    
 Infrastructure Layer (StudentRepository, DbContext)
-    ↓
+    
 Database
-───────────────────────────────────────────────
+
 ```
 
 **Benefits:**
@@ -283,51 +264,51 @@ A tool for testing APIs. Instead of writing code, you click buttons to send requ
 ## Architecture Diagram
 
 ```
-┌─────────────────────────────────────────────────────────┐
-│                   ANGULAR FRONTEND                      │
-│              (StudentApp - TypeScript)                   │
-│                                                          │
-│  Components → Services → Datatables (Display)          │
-└────────────────────┬────────────────────────────────────┘
-                     │ HTTP Requests/Responses
-                     ↓
-┌─────────────────────────────────────────────────────────┐
-│           PRESENTATION LAYER (Controllers)              │
-│     StudentsController.cs, TeacherController.cs         │
-└────────────────────┬────────────────────────────────────┘
-                     │
-                     ↓
-┌─────────────────────────────────────────────────────────┐
-│           APPLICATION LAYER (Services)                  │
-│  Validators (FluentValidation)                          │
-│  Mappings (AutoMapper)                                  │
-│  Services (Business Logic)                              │
-│  DTOs (Data Transfer Objects)                           │
-└────────────────────┬────────────────────────────────────┘
-                     │
-                     ↓
-┌─────────────────────────────────────────────────────────┐
-│            DOMAIN LAYER (Entities)                      │
-│  Student.cs, Teacher.cs                                 │
-│  IRepository (Interface)                                │
-└────────────────────┬────────────────────────────────────┘
-                     │
-                     ↓
-┌─────────────────────────────────────────────────────────┐
-│        INFRASTRUCTURE LAYER (Data Access)               │
-│  StudentRepository.cs                                   │
-│  ApplicationDbContext.cs (Entity Framework)             │
-└────────────────────┬────────────────────────────────────┘
-                     │
-                     ↓
-                ┌─────────┐
-                │ DATABASE│
-                └─────────┘
+
+                   ANGULAR FRONTEND                      
+              (StudentApp - TypeScript)                   
+                                                          
+  Components  Services  Datatables (Display)          
+
+                      HTTP Requests/Responses
+                     
+
+           PRESENTATION LAYER (Controllers)              
+     StudentsController.cs, TeacherController.cs         
+
+                     
+                     
+
+           APPLICATION LAYER (Services)                  
+  Validators (FluentValidation)                          
+  Mappings (AutoMapper)                                  
+  Services (Business Logic)                              
+  DTOs (Data Transfer Objects)                           
+
+                     
+                     
+
+            DOMAIN LAYER (Entities)                      
+  Student.cs, Teacher.cs                                 
+  IRepository (Interface)                                
+
+                     
+                     
+
+        INFRASTRUCTURE LAYER (Data Access)               
+  StudentRepository.cs                                   
+  ApplicationDbContext.cs (Entity Framework)             
+
+                     
+                     
+                
+                 DATABASE
+                
 
 TOOLS & FEATURES:
-├─ Serilog: Logs all operations to ~/Logs/
-├─ Swagger UI: http://localhost:5000/swagger/ui
-└─ Postman: Test API endpoints before frontend
+ Serilog: Logs all operations to ~/Logs/
+ Swagger UI: http://localhost:5000/swagger/ui
+ Postman: Test API endpoints before frontend
 ```
 
 ---
@@ -339,11 +320,11 @@ TOOLS & FEATURES:
 | **FluentValidation** | Validate user input | `Application/Validators/` |
 | **AutoMapper** | Map entities to DTOs | `Application/Mappings/` |
 | **DTOs** | Transfer data between layers | `Application/DTOs/` |
-| **Serilog** | Log application events | `Program.cs` → `Logs/` |
+| **Serilog** | Log application events | `Program.cs`  `Logs/` |
 | **Datatables** | Interactive table UI | `StudentApp/package.json` |
 | **Angular** | Frontend web app | `StudentApp/src/` |
-| **Multilayered Architecture** | Organize code by responsibility | Presentation → Application → Domain → Infrastructure |
-| **Swagger** | API documentation & testing | `Program.cs` → `/swagger/ui` |
+| **Multilayered Architecture** | Organize code by responsibility | Presentation  Application  Domain  Infrastructure |
+| **Swagger** | API documentation & testing | `Program.cs`  `/swagger/ui` |
 | **Postman** | Manual API testing | `StudentAssessmentTracker.postman_collection.json` |
 
 ---

@@ -1,4 +1,4 @@
-# DataTables Integration
+﻿# DataTables Integration
 
 ## Overview
 DataTables.net v2 is integrated into the Angular frontend to provide paginated, sortable, and searchable tables. The **Buttons** plugin is also included to power the CSV export feature on the Student List page.
@@ -20,7 +20,7 @@ npm install datatables.net datatables.net-dt datatables.net-buttons datatables.n
 
 ## Architecture
 
-DataTables is used **imperatively** via `ViewChild` and `AfterViewInit` — no Angular wrapper library. This is compatible with standalone components and zoneless change detection (Angular 21).
+DataTables is used **imperatively** via `ViewChild` and `AfterViewInit`  no Angular wrapper library. This is compatible with standalone components and zoneless change detection (Angular 21).
 
 ## CSS
 
@@ -68,7 +68,7 @@ ngAfterViewInit(): void {
 }
 ```
 
-**DataTable lifecycle — destroy before re-init:**
+**DataTable lifecycle  destroy before re-init:**
 The DataTable instance is destroyed before re-initialising whenever the student list data changes. This prevents duplicate table instances and DOM conflicts.
 
 ## Student Detail (`student-detail.component.ts`)

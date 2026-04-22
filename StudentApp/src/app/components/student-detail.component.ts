@@ -5,7 +5,7 @@ import { FormsModule } from '@angular/forms';
 import { StudentDetailDto, StudentAssessmentDto, CreateStudentAssessmentDto, UpdateStudentAssessmentDto, AssessmentSubmissionDto } from '../core/models';
 import { StudentStateService } from '../core/services/state';
 import { StudentBusinessService } from '../features/students/services/student-business.service';
-import { StudentAssessmentApiService, AssessmentSubmissionApiService, ReportApiService } from '../core/services/http';
+import { StudentAssessmentApiService, AssessmentSubmissionApiService, ReportApiService, ClassGroupApiService, ClassGroupDto } from '../core/services/http';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -177,6 +177,7 @@ import { takeUntil } from 'rxjs/operators';
                 <input type="checkbox" [(ngModel)]="newAssessment.isAssigned" [disabled]="assessmentLoading" /> Assign to student
               </label>
               <button class="btn btn-primary btn-sm" (click)="addAssessment()" [disabled]="assessmentLoading">Add</button>
+              <button class="btn btn-bulk btn-sm" (click)="openBulkModal()" [disabled]="assessmentLoading">Bulk Assign to Class Group</button>
             </div>
             <div *ngIf="newAssessment.isAssigned" class="instructions-block">
               <textarea [(ngModel)]="newAssessment.instructions" placeholder="Instructions (optional)" maxlength="2000"
@@ -208,13 +209,33 @@ import { takeUntil } from 'rxjs/operators';
         </div>
         
         <div class="actions">
-          <a [routerLink]="['/edit', student.id]" class="btn btn-warning">Edit</a>
           <button class="btn btn-export-csv" (click)="exportCsv()">&#x2193; Export CSV</button>
           <button class="btn btn-export-pdf" (click)="exportPdf()">&#x2193; Export PDF</button>
           <a routerLink="/" class="btn btn-secondary">Back to List</a>
         </div>
       </div>
-    </div>
+
+      <!-- Bulk Assign Modal -->
+      <div *ngIf="showBulkModal" class="modal-overlay" (click)="closeBulkModal()">
+        <div class="modal" (click)="$event.stopPropagation()">
+          <h3>Bulk Assign Assessment to Class Group</h3>
+          <p class="modal-hint">Assigns the current assessment form to <strong>all students</strong> in the selected class group.</p>
+          <div *ngIf="bulkError" class="error small-msg">{{ bulkError }}</div>
+          <div *ngIf="bulkSuccess" class="success small-msg">{{ bulkSuccess }}</div>
+          <div class="form-group">
+            <label>Select Class Group</label>
+            <div *ngIf="classGroupsLoading" style="color:#1976d2;font-style:italic">Loading class groups…</div>
+            <select *ngIf="!classGroupsLoading" [(ngModel)]="selectedClassGroupId">
+              <option [ngValue]="0" disabled>-- Select class group --</option>
+              <option *ngFor="let g of classGroups" [ngValue]="g.id">{{ g.name }} ({{ g.subjectName }}, {{ g.gradeName }}, {{ g.studentCount }} students)</option>
+            </select>
+          </div>
+          <div class="modal-actions">
+            <button class="btn btn-primary" (click)="executeBulkAssign()" [disabled]="bulkLoading || selectedClassGroupId === 0">{{ bulkLoading ? 'Assigning…' : 'Assign to All' }}</button>
+            <button class="btn btn-secondary" (click)="closeBulkModal()">Cancel</button>
+          </div>
+        </div>
+      </div>
   `,
   styles: [`
     .container {
@@ -583,6 +604,17 @@ import { takeUntil } from 'rxjs/operators';
       font-weight: bold;
     }
 
+    .btn-bulk { background-color: #6200ea; color: white; }
+    .btn-bulk:hover { background-color: #4a00b0; }
+    .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 9999; }
+    .modal { background: #fff; border-radius: 10px; padding: 28px; max-width: 500px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.2); }
+    .modal h3 { margin: 0 0 8px; color: #1a237e; }
+    .modal-hint { font-size: 0.85rem; color: #555; margin-bottom: 16px; }
+    .modal .form-group { margin-bottom: 16px; }
+    .modal .form-group label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 6px; }
+    .modal .form-group select { width: 100%; padding: 8px 10px; border: 1.5px solid #ddd; border-radius: 5px; font-size: 0.9rem; }
+    .modal-actions { display: flex; gap: 10px; margin-top: 8px; }
+
     .performance-no-assessments {
       background-color: #9e9e9e;
       color: white;
@@ -604,14 +636,23 @@ export class StudentDetailComponent implements OnInit, OnDestroy {
     name: '', maxScore: 20, score: 0, dueDate: null, isAssigned: false, instructions: null
   };
   deletingId: number | null = null;
-  newAssessment: { name: string; maxScore: number | null; score: number | null; dueDate: string | null; isAssigned: boolean; instructions: string | null } = {
+  newAssessment: { name: string; maxScore: number | null; score: number; dueDate: string | null; isAssigned: boolean; instructions: string | null } = {
     name: '',
     maxScore: null,
-    score: null,
+    score: 0,
     dueDate: null,
     isAssigned: false,
     instructions: null
   };
+
+  // Bulk assign state
+  showBulkModal = false;
+  classGroups: ClassGroupDto[] = [];
+  classGroupsLoading = false;
+  selectedClassGroupId = 0;
+  bulkLoading = false;
+  bulkError: string | null = null;
+  bulkSuccess: string | null = null;
 
   // Submissions panel
   expandedSubmissionsId: number | null = null;
@@ -629,6 +670,7 @@ export class StudentDetailComponent implements OnInit, OnDestroy {
     private assessmentApi: StudentAssessmentApiService,
     private submissionApi: AssessmentSubmissionApiService,
     private reportApi: ReportApiService,
+    private classGroupApi: ClassGroupApiService,
     private cdr: ChangeDetectorRef
   ) { }
 
@@ -733,7 +775,7 @@ export class StudentDetailComponent implements OnInit, OnDestroy {
       this.assessmentError = 'Name and Max Score are required (Max Score must be > 0)';
       return;
     }
-    if (this.newAssessment.score === null || this.newAssessment.score < 0 || this.newAssessment.score > this.newAssessment.maxScore!) {
+    if (this.newAssessment.score < 0 || this.newAssessment.score > this.newAssessment.maxScore!) {
       this.assessmentError = 'Score must be between 0 and Max Score';
       return;
     }
@@ -742,7 +784,7 @@ export class StudentDetailComponent implements OnInit, OnDestroy {
     this.assessmentApi.create(this.currentStudentId, this.newAssessment as CreateStudentAssessmentDto).subscribe({
       next: () => {
         this.assessmentLoading = false;
-        this.newAssessment = { name: '', maxScore: null, score: null, dueDate: null, isAssigned: false, instructions: null };
+        this.newAssessment = { name: '', maxScore: null, score: 0, dueDate: null, isAssigned: false, instructions: null };
         this.showSuccess('Assessment added.');
         this.studentBusiness.loadStudentById(this.currentStudentId).subscribe();
         this.cdr.markForCheck();
@@ -854,5 +896,62 @@ export class StudentDetailComponent implements OnInit, OnDestroy {
       this.assessmentSuccess = null;
       this.cdr.markForCheck();
     }, 3000);
+  }
+
+  openBulkModal(): void {
+    if (!this.newAssessment.name.trim() || !this.newAssessment.maxScore || this.newAssessment.maxScore <= 0) {
+      this.assessmentError = 'Fill in Name and Max Score before bulk assigning.';
+      return;
+    }
+    this.showBulkModal = true;
+    this.bulkError = null;
+    this.bulkSuccess = null;
+    this.selectedClassGroupId = 0;
+    if (this.classGroups.length === 0) {
+      this.classGroupsLoading = true;
+      this.classGroupApi.getAll().pipe(takeUntil(this.destroy$)).subscribe({
+        next: groups => { this.classGroups = groups; this.classGroupsLoading = false; this.cdr.markForCheck(); },
+        error: () => { this.bulkError = 'Failed to load class groups.'; this.classGroupsLoading = false; this.cdr.markForCheck(); }
+      });
+    }
+  }
+
+  closeBulkModal(): void {
+    this.showBulkModal = false;
+    this.bulkError = null;
+    this.bulkSuccess = null;
+  }
+
+  executeBulkAssign(): void {
+    if (this.bulkLoading || this.selectedClassGroupId === 0) return;
+    const group = this.classGroups.find(g => g.id === this.selectedClassGroupId);
+    if (!group || group.students.length === 0) {
+      this.bulkError = 'Selected class group has no students.';
+      return;
+    }
+    this.bulkLoading = true; this.bulkError = null;
+    const dto = {
+      name: this.newAssessment.name,
+      maxScore: this.newAssessment.maxScore!,
+      score: this.newAssessment.score,
+      dueDate: this.newAssessment.dueDate,
+      isAssigned: this.newAssessment.isAssigned,
+      instructions: this.newAssessment.instructions,
+      studentIds: group.students.map(s => s.studentId)
+    };
+    this.assessmentApi.bulkCreate(dto).pipe(takeUntil(this.destroy$)).subscribe({
+      next: results => {
+        this.bulkLoading = false;
+        this.bulkSuccess = `Assessment assigned to ${results.length} student(s) in ${group.name}.`;
+        this.newAssessment = { name: '', maxScore: null, score: 0, dueDate: null, isAssigned: false, instructions: null };
+        this.cdr.markForCheck();
+        setTimeout(() => this.closeBulkModal(), 2000);
+      },
+      error: err => {
+        this.bulkLoading = false;
+        this.bulkError = err?.error?.message || 'Bulk assign failed.';
+        this.cdr.markForCheck();
+      }
+    });
   }
 }

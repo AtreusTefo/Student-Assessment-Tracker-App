@@ -206,4 +206,63 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             return value != null && int.TryParse(value, out teacherId);
         }
     }
+
+    /// <summary>
+    /// Bulk assessment endpoints — not scoped to a single student.
+    /// </summary>
+    [ApiController]
+    [Authorize(Roles = "Teacher")]
+    [Route("api/assessments")]
+    public class AssessmentsBulkController : ControllerBase
+    {
+        private readonly IStudentAssessmentService _service;
+        private readonly ILogger<AssessmentsBulkController> _logger;
+
+        /// <summary>Initialises the bulk assessment controller.</summary>
+        public AssessmentsBulkController(
+            IStudentAssessmentService service,
+            ILogger<AssessmentsBulkController> logger)
+        {
+            _service = service;
+            _logger = logger;
+        }
+
+        /// <summary>
+        /// Assigns the same assessment to multiple students at once.
+        /// All students must be assigned to the calling teacher.
+        /// </summary>
+        [HttpPost("bulk")]
+        [ProducesResponseType(typeof(IEnumerable<StudentAssessmentDto>), StatusCodes.Status201Created)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        public async Task<IActionResult> BulkCreate([FromBody] BulkCreateStudentAssessmentDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+
+            var teacherIdValue = User.FindFirstValue("teacherId");
+            if (teacherIdValue is null || !int.TryParse(teacherIdValue, out var teacherId))
+                return Unauthorized(new { message = "Invalid or missing token." });
+
+            if (dto.StudentIds == null || dto.StudentIds.Count == 0)
+                return BadRequest(new { message = "At least one student ID must be provided." });
+
+            try
+            {
+                var results = await _service.BulkAddAsync(dto, teacherId);
+                return StatusCode(StatusCodes.Status201Created, results);
+            }
+            catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+            catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error bulk-creating assessments");
+                return StatusCode(500, new { message = "Internal server error" });
+            }
+        }
+
+        private string? GetCallerId() =>
+            User?.FindFirst(System.Security.Claims.ClaimTypes.NameIdentifier)?.Value
+            ?? User?.FindFirst(System.IdentityModel.Tokens.Jwt.JwtRegisteredClaimNames.Sub)?.Value;
+    }
 }

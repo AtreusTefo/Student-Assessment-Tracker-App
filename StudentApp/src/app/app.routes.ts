@@ -8,6 +8,7 @@ import { StudentLoginComponent } from './components/student-login.component';
 import { StudentDashboardComponent } from './components/student-dashboard.component';
 import { AdminLoginComponent } from './components/admin-login.component';
 import { AdminDashboardComponent } from './components/admin-dashboard.component';
+import { TeacherDashboardComponent } from './components/teacher-dashboard.component';
 import { authGuard } from './core/guards/auth.guard';
 import { guestGuard } from './core/guards/guest.guard';
 import { studentAuthGuard } from './core/guards/student-auth.guard';
@@ -17,9 +18,12 @@ import { adminAuthGuard, adminGuestGuard } from './core/guards/admin.guard';
 export const routes: Routes = [
   // Teacher protected routes — require teacher authentication
   { path: '', component: StudentListComponent, canActivate: [authGuard] },
-  { path: 'create', component: StudentFormComponent, canActivate: [authGuard] },
-  { path: 'edit/:id', component: StudentFormComponent, canActivate: [authGuard] },
+  { path: 'teacher/dashboard', component: TeacherDashboardComponent, canActivate: [authGuard] },
   { path: 'detail/:id', component: StudentDetailComponent, canActivate: [authGuard] },
+
+  // Admin-only student management routes
+  { path: 'create', component: StudentFormComponent, canActivate: [adminAuthGuard] },
+  { path: 'edit/:id', component: StudentFormComponent, canActivate: [adminAuthGuard] },
 
   // Teacher guest-only routes — redirect to home if already logged in
   { path: 'login', component: LoginFormComponent, canActivate: [guestGuard] },

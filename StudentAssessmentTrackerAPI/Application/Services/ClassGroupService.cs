@@ -88,6 +88,12 @@ namespace StudentAssessmentTracker.Application.Services
                 throw new ArgumentException(
                     $"Class group subject (ID {dto.SubjectId}) must match the teacher's registered subject (ID {teacher.SubjectId}).");
 
+            // Pre-check for duplicate name per teacher to return a clean 409 instead of an
+            // unhandled DbUpdateException from the UX_ClassGroups_TeacherId_Name unique index.
+            if (await _db.ClassGroups.AnyAsync(cg => cg.TeacherId == teacherId && cg.Name == dto.Name!.Trim()))
+                throw new InvalidOperationException(
+                    $"You already have a class group named '{dto.Name!.Trim()}'. Each class group must have a unique name.");
+
             var group = new ClassGroup
             {
                 Name = dto.Name!.Trim(),

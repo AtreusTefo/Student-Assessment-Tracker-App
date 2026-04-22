@@ -1540,6 +1540,90 @@ app.UseSwaggerUI(options =>
 
 ---
 
-**Last Updated**: April 17, 2026  
-**Total Issues Documented**: 50 (13 frontend + 6 architecture + 6 infrastructure/tooling + 8 auth/UX/DataTables + 8 security/integrity/architecture Apr-1 + 7 auth/interceptor/feature Apr-2 + 2 routing/swagger Apr-17)  
+## 🚨 CRITICAL ISSUES (April 22, 2026)
+
+### 51. Dropped Private Method Signature After Code Insertion — CS1519 Build Failure ⚙️
+**Problem**: `dotnet build` fails with 6 errors all in `AdminService.cs`:
+```
+CS1519  Invalid token '{' in a member declaration          (line 866)
+CS1519  Invalid token 'return' in a member declaration     (line 887)
+CS1002  ';' expected                                       (line 887)
+CS1519  Invalid token '.' in a member declaration          (line 887)
+CS1001  Identifier expected                                (line 887)
+CS1519  Invalid token '}' in a member declaration          (line 888)
+```
+**Root Cause**: When the `BulkImportTeachersAsync` implementation was inserted into `AdminService.cs`, the closing brace of the new method accidentally replaced the `private string GenerateJwt(Admin admin)` method signature. The method body (starting with `{`) was left orphaned at class scope, which is invalid C#. Errors on tokens like `{`, `return`, and `}` at class scope always indicate a missing or malformed method signature immediately before the offending block.  
+**How to diagnose**:
+```
+# Find the offending file from the error output, then look at the line BEFORE the
+# first error (here line 866-1 = 865). You will see a lone '{' with no method
+# signature above it.
+```
+**Fix**: Restore the missing method signature:
+```csharp
+// BROKEN — method body floating at class scope:
+        return result;
+    }
+
+
+        {
+            var jwtKey = _configuration["Jwt:Key"]
+
+// CORRECT — signature added back:
+        return result;
+    }
+
+    private string GenerateJwt(Admin admin)
+    {
+            var jwtKey = _configuration["Jwt:Key"]
+```
+**File**: `StudentAssessmentTrackerAPI/Application/Services/AdminService.cs`  
+**Prevention**:
+- After inserting a large code block into a service file, always check that the private helper methods immediately below the insertion point still have their signatures intact.
+- Run `dotnet build` immediately after each insertion — don't wait until all insertions are complete.
+- When CS1519 appears on `{`, `return`, or `}`, scroll up one method above the first error line; the method signature is almost certainly missing or truncated.
+
+---
+
+### 52. Bulk Import Method Body Placed Outside Valid Class Scope — CS0103 Follow-on Error ⚙️
+**Problem**: After the missing brace was re-added in fix #51, the build still failed with:
+```
+CS0103  The name 'GenerateJwt' does not exist in the current context  (line 186)
+```
+**Root Cause**: The restored method signature was given an incorrect name (`GenerateAdminToken`) instead of the original name used at the call site (`GenerateJwt`). The call `return GenerateJwt(admin)` on line 186 could no longer resolve the method.  
+**How to diagnose**:
+- CS0103 (`name does not exist`) after fixing a structural error almost always means the identifier you restored has a different spelling than what callers expect.
+- Search the file for all usages of the method name: `grep -n "GenerateJwt" AdminService.cs`
+**Fix**:
+```csharp
+// WRONG — incorrect name:
+private string GenerateAdminToken(Admin admin)
+
+// CORRECT — matches the call site on line 186:
+private string GenerateJwt(Admin admin)
+```
+**File**: `StudentAssessmentTrackerAPI/Application/Services/AdminService.cs`  
+**Prevention**:
+- When restoring a dropped method signature, always search the file for existing callers (`grep` or VS Code Find) to confirm the exact method name before writing the signature.
+- CS0103 following a CS1519 fix is a strong signal that the restored name doesn't match its call site.
+
+---
+
+## Diagnostic Checklist — Updated April 22, 2026
+
+**⚙️ CS1519 on `{`, `return`, or `}` tokens inside a service file?**
+1. ✅ The error line is the *start* of a method body that has no signature above it
+2. ✅ Go to the line immediately before the first error — look for the missing `private/public/protected` method declaration
+3. ✅ Restore the signature; confirm the method name matches callers with a project-wide search
+4. ✅ Run `dotnet build` immediately — a CS0103 follow-on means the restored name differs from the call site
+
+**⚙️ CS0103 (`name does not exist`) right after fixing CS1519?**
+1. ✅ The method signature you just restored has the wrong name
+2. ✅ Search the file for the original call site: `grep -n "MethodName" File.cs`
+3. ✅ Rename the restored signature to match the call site exactly (case-sensitive)
+
+---
+
+**Last Updated**: April 22, 2026  
+**Total Issues Documented**: 52 (13 frontend + 6 architecture + 6 infrastructure/tooling + 8 auth/UX/DataTables + 8 security/integrity/architecture Apr-1 + 7 auth/interceptor/feature Apr-2 + 2 routing/swagger Apr-17 + 2 build/code-insertion Apr-22)  
 **Keep this guide nearby when developing!** 🚀

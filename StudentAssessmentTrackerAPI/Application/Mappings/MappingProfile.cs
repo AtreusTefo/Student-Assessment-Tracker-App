@@ -74,7 +74,9 @@ namespace StudentAssessmentTracker.Application.Mappings
                 .ForMember(dest => dest.Percentage,
                     opt => opt.MapFrom(src => src.GetPercentage()))
                 .ForMember(dest => dest.PerformanceLevel,
-                    opt => opt.MapFrom(src => src.GetPerformanceLevel()));
+                    opt => opt.MapFrom(src => src.GetPerformanceLevel()))
+                .ForMember(dest => dest.IsActive,
+                    opt => opt.MapFrom(src => !string.IsNullOrEmpty(src.Password)));
 
             // CreateStudentDto → Student (StudentUniqueId generated in service; teacher assigned via join table)
             CreateMap<CreateStudentDto, Student>()

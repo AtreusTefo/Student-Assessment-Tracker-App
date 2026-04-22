@@ -135,6 +135,29 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
         }
 
+        /// <summary>Updates a teacher's profile (admin override — no ownership restriction).</summary>
+        [Authorize(Roles = "Admin")]
+        [HttpPut("teachers/{teacherId:int}")]
+        [ProducesResponseType(typeof(TeacherResponseDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(StatusCodes.Status404NotFound)]
+        [ProducesResponseType(StatusCodes.Status409Conflict)]
+        public async Task<IActionResult> UpdateTeacher(int teacherId, [FromBody] TeacherUpdateDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            try
+            {
+                var updated = await _adminService.UpdateTeacherAsync(teacherId, dto);
+                await _auditLog.LogAsync("Teacher", teacherId, "Update",
+                    null, System.Text.Json.JsonSerializer.Serialize(new { dto.FirstName, dto.LastName, dto.Email }),
+                    GetCallerId(), "Admin");
+                return Ok(updated);
+            }
+            catch (KeyNotFoundException ex) { return NotFound(new { message = ex.Message }); }
+            catch (ArgumentException ex) { return BadRequest(new { message = ex.Message }); }
+            catch (InvalidOperationException ex) { return Conflict(new { message = ex.Message }); }
+        }
+
         /// <summary>
         /// Resets a teacher's password (clears it). The teacher must re-activate via /activate.
         /// </summary>
@@ -223,6 +246,177 @@ namespace StudentAssessmentTracker.Presentation.Controllers
         {
             var logs = await _auditLog.GetByEntityAsync(entityName, entityId);
             return Ok(logs);
+        }
+
+        // ── Bulk student import ───────────────────────────────────────────────
+
+        /// <summary>
+        /// Bulk-imports students from a JSON array (max 500 rows).
+        /// Each row is processed independently — failures are reported per-row without
+        /// rolling back previously committed rows.
+        /// CSV column order: IdPassportNo, FirstName, LastName, Email, Phone, GradeName
+        /// </summary>
+        [Authorize(Roles = "Admin")]
+        [HttpPost("students/bulk")]
+        [ProducesResponseType(typeof(BulkImportResultDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> BulkImportStudents([FromBody] List<BulkImportStudentRowDto> rows)
+        {
+            if (rows == null || rows.Count == 0)
+                return BadRequest(new { message = "No rows provided." });
+            if (rows.Count > 500)
+                return BadRequest(new { message = "Bulk import is limited to 500 rows per request." });
+
+            var result = await _adminService.BulkImportStudentsAsync(rows);
+            await _auditLog.LogAsync("Student", 0, "BulkCreate", null,
+                $"{{\"submitted\":{result.TotalRows},\"succeeded\":{result.SuccessCount},\"failed\":{result.FailureCount}}}",
+                GetCallerId(), "Admin");
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Bulk-imports students from a CSV file (max 500 rows, multipart/form-data).
+        /// Required CSV header: IdPassportNo,FirstName,LastName,Email,Phone,GradeName
+        /// </summary>
+        [Authorize(Roles = "Admin")]
+        [HttpPost("students/bulk-csv")]
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(typeof(BulkImportResultDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> BulkImportStudentsCsv(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest(new { message = "No file provided." });
+            if (!file.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase)
+                && !file.ContentType.Contains("text", StringComparison.OrdinalIgnoreCase))
+                return BadRequest(new { message = "Only CSV files are accepted." });
+
+            List<BulkImportStudentRowDto> rows;
+            try { rows = await ParseStudentCsvAsync(file); }
+            catch (Exception ex) { return BadRequest(new { message = $"CSV parsing error: {ex.Message}" }); }
+
+            if (rows.Count == 0) return BadRequest(new { message = "The CSV file contains no data rows." });
+            if (rows.Count > 500) return BadRequest(new { message = "Bulk import is limited to 500 rows per request." });
+
+            var result = await _adminService.BulkImportStudentsAsync(rows);
+            await _auditLog.LogAsync("Student", 0, "BulkCreate", null,
+                $"{{\"submitted\":{result.TotalRows},\"succeeded\":{result.SuccessCount},\"failed\":{result.FailureCount}}}",
+                GetCallerId(), "Admin");
+            return Ok(result);
+        }
+
+        // ── Bulk teacher import ───────────────────────────────────────────────
+
+        /// <summary>
+        /// Bulk-imports teachers from a JSON array (max 500 rows).
+        /// Each row is processed independently — failures are reported per-row without
+        /// rolling back previously committed rows.
+        /// </summary>
+        [Authorize(Roles = "Admin")]
+        [HttpPost("teachers/bulk")]
+        [ProducesResponseType(typeof(BulkImportResultDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> BulkImportTeachers([FromBody] List<BulkImportTeacherRowDto> rows)
+        {
+            if (rows == null || rows.Count == 0)
+                return BadRequest(new { message = "No rows provided." });
+            if (rows.Count > 500)
+                return BadRequest(new { message = "Bulk import is limited to 500 rows per request." });
+
+            var result = await _adminService.BulkImportTeachersAsync(rows);
+            await _auditLog.LogAsync("Teacher", 0, "BulkCreate", null,
+                $"{{\"submitted\":{result.TotalRows},\"succeeded\":{result.SuccessCount},\"failed\":{result.FailureCount}}}",
+                GetCallerId(), "Admin");
+            return Ok(result);
+        }
+
+        /// <summary>
+        /// Bulk-imports teachers from a CSV file (max 500 rows, multipart/form-data).
+        /// Required CSV header: IdPassportNo,FirstName,LastName,Email,Phone,SubjectName
+        /// </summary>
+        [Authorize(Roles = "Admin")]
+        [HttpPost("teachers/bulk-csv")]
+        [Consumes("multipart/form-data")]
+        [ProducesResponseType(typeof(BulkImportResultDto), StatusCodes.Status200OK)]
+        [ProducesResponseType(StatusCodes.Status400BadRequest)]
+        public async Task<IActionResult> BulkImportTeachersCsv(IFormFile file)
+        {
+            if (file == null || file.Length == 0)
+                return BadRequest(new { message = "No file provided." });
+            if (!file.FileName.EndsWith(".csv", StringComparison.OrdinalIgnoreCase)
+                && !file.ContentType.Contains("text", StringComparison.OrdinalIgnoreCase))
+                return BadRequest(new { message = "Only CSV files are accepted." });
+
+            List<BulkImportTeacherRowDto> rows;
+            try { rows = await ParseTeacherCsvAsync(file); }
+            catch (Exception ex) { return BadRequest(new { message = $"CSV parsing error: {ex.Message}" }); }
+
+            if (rows.Count == 0) return BadRequest(new { message = "The CSV file contains no data rows." });
+            if (rows.Count > 500) return BadRequest(new { message = "Bulk import is limited to 500 rows per request." });
+
+            var result = await _adminService.BulkImportTeachersAsync(rows);
+            await _auditLog.LogAsync("Teacher", 0, "BulkCreate", null,
+                $"{{\"submitted\":{result.TotalRows},\"succeeded\":{result.SuccessCount},\"failed\":{result.FailureCount}}}",
+                GetCallerId(), "Admin");
+            return Ok(result);
+        }
+
+        // ── CSV parsing helpers ───────────────────────────────────────────────
+
+        private static async Task<List<BulkImportStudentRowDto>> ParseStudentCsvAsync(IFormFile file)
+        {
+            using var reader = new StreamReader(file.OpenReadStream());
+            using var csv = new CsvHelper.CsvReader(reader,
+                new CsvHelper.Configuration.CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture)
+                {
+                    HasHeaderRecord = true,
+                    TrimOptions = CsvHelper.Configuration.TrimOptions.Trim,
+                    MissingFieldFound = null
+                });
+            var records = new List<BulkImportStudentRowDto>();
+            await csv.ReadAsync();
+            csv.ReadHeader();
+            while (await csv.ReadAsync())
+            {
+                records.Add(new BulkImportStudentRowDto
+                {
+                    IdPassportNo = csv.GetField("IdPassportNo"),
+                    FirstName = csv.GetField("FirstName"),
+                    LastName = csv.GetField("LastName"),
+                    Email = csv.GetField("Email"),
+                    Phone = csv.GetField("Phone"),
+                    GradeName = csv.GetField("GradeName")
+                });
+            }
+            return records;
+        }
+
+        private static async Task<List<BulkImportTeacherRowDto>> ParseTeacherCsvAsync(IFormFile file)
+        {
+            using var reader = new StreamReader(file.OpenReadStream());
+            using var csv = new CsvHelper.CsvReader(reader,
+                new CsvHelper.Configuration.CsvConfiguration(System.Globalization.CultureInfo.InvariantCulture)
+                {
+                    HasHeaderRecord = true,
+                    TrimOptions = CsvHelper.Configuration.TrimOptions.Trim,
+                    MissingFieldFound = null
+                });
+            var records = new List<BulkImportTeacherRowDto>();
+            await csv.ReadAsync();
+            csv.ReadHeader();
+            while (await csv.ReadAsync())
+            {
+                records.Add(new BulkImportTeacherRowDto
+                {
+                    IdPassportNo = csv.GetField("IdPassportNo"),
+                    FirstName = csv.GetField("FirstName"),
+                    LastName = csv.GetField("LastName"),
+                    Email = csv.GetField("Email"),
+                    Phone = csv.GetField("Phone"),
+                    SubjectName = csv.GetField("SubjectName")
+                });
+            }
+            return records;
         }
 
         // ── Helpers ───────────────────────────────────────────────────────────

@@ -1,15 +1,87 @@
-# Documentation Index
+﻿# Documentation Index
 
 ## Available Documentation Files
 
-### 1. **QUICK_FIX_REFERENCE.md** START HERE
+### 1. **error-fixes/QUICK_FIX_REFERENCE.md** START HERE
 - **Best for**: Quick lookups when something breaks
-- **Contains**: 48 major issues + quick fixes + diagnostic checklist
+- **Contains**: 52 major issues + quick fixes + diagnostic checklist
 - **Read time**: 5 minutes
 - **Use when**: You need a fast answer
-- **Updated**: April 2, 2026
+- **Updated**: April 22, 2026
 
-### 2. **DAILY_REPORT_2026-04-02.md** LATEST SESSION
+### 2. **daily-reports/DAILY_REPORT_2026-04-22.md** LATEST SESSION
+- **Best for**: Understanding the April 22, 2026 session (issues #49–#52)
+- **Contains**:
+  - `ForgotPasswordAsync` for teachers (email-only, nulls password, anti-enumeration)
+  - `ForgotPasswordAsync` for students (dual-factor: `StudentUniqueId` + email required)
+  - `IsActive` added to `TeacherResponseDto` (derived from whether password is non-null)
+  - `TeacherForgotPasswordDto` and `StudentForgotPasswordDto` classes added
+  - Teacher login two-panel restructure with forgot-password flow and `/activate` link
+  - Student login two-panel restructure with dual-factor forgot-password flow
+  - Build fix: dropped `GenerateJwt` method signature (CS1519 cascade) and wrong restored name (CS0103)
+- **Read time**: 10 minutes
+- **Use when**: Debugging forgot-password flows, `IsActive` badge, or April 22 build errors
+
+### 3. **daily-reports/DAILY_REPORT_2026-04-20.md**
+- **Best for**: Understanding the April 20, 2026 session
+- **Contains**:
+  - Auth interceptor rework: admin JWT now attached to **all** API routes
+  - Admin login show/hide password toggle + `maxlength="20"` + `clearError()` helper
+  - Teacher login: added missing maxlength validation message
+  - Student activate: `confirmPassword` added to `StudentActivateDto` (frontend + model)
+  - Student login: inline activation DTO updated to include `confirmPassword`
+  - `ClassGroupService`: null-guard on `ClassGroup` navigation property
+  - `SwaggerAuthOperationFilter`: `/// <inheritdoc />` added (CS1591 suppression)
+- **Read time**: 8 minutes
+- **Use when**: Debugging admin token attachment, activation DTO, or ClassGroup null refs
+
+### 4. **daily-reports/DAILY_REPORT_2026-04-17.md**
+- **Best for**: Understanding the April 17, 2026 session (issues #49–#50 routing/Swagger)
+- **Contains**:
+  - Admin route redirect: `{ path: 'admin', redirectTo: 'admin/login' }` added to `app.routes.ts`
+  - Three Swagger UI bugs fixed in `Program.cs` preventing CRUD from executing
+  - Frontend activation flow aligned with Admin-only data model (teacher self-registration removed)
+  - Angular build fix: dead `password` reference removed from `teacher-business.service.ts` (TS2339)
+- **Read time**: 8 minutes
+- **Use when**: Debugging `/admin` routing, Swagger request failures, or activation model
+
+### 5. **daily-reports/DAILY_REPORT_2026-04-14.md**
+- **Best for**: Understanding the April 14, 2026 session
+- **Contains**:
+  - Audit log `ObjectDisposedException` fixed: 9 fire-and-forget `LogAsync` calls changed to `await`
+  - Default admin account seeded on startup (chicken-and-egg bootstrap fix)
+  - Change-password endpoint added for admins
+  - Postman collection and Swagger documentation rebuilt
+  - Full Angular frontend audit: component/service/guard/interceptor/model inventory produced
+  - All documentation updated to match the frontend inventory
+- **Read time**: 10 minutes
+- **Use when**: Debugging audit log disposal errors, admin bootstrap, or Postman setup
+
+### 6. **daily-reports/DAILY_REPORT_2026-04-09.md**
+- **Best for**: Understanding the April 9, 2026 session
+- **Contains**:
+  - CSV and PDF export buttons on Student Detail page (`exportCsv()`, `exportPdf()`)
+  - "Export All CSV" button on Student List page
+  - DataTables-native CSV export collection button (second export workflow)
+  - Admin account bootstrap problem documented (POST /api/admins requires existing Admin JWT)
+- **Read time**: 8 minutes
+- **Use when**: Debugging report export buttons or DataTables export integration
+
+### 7. **daily-reports/DAILY_REPORT_2026-04-08.md**
+- **Best for**: Understanding the April 8, 2026 session (17 schema + security issues)
+- **Contains**:
+  - `SubjectId` denormalisation on `TeacherStudent` join entity + unique index
+  - Teacher subject-change guard (blocks change while students are assigned)
+  - Orphan-student guard moved to repository layer
+  - Stale `teacherId` replaced with `teachers: TeacherSummaryDto[]` on student models
+  - `assignTeacher`/`unassignTeacher` added to `StudentApiService`
+  - N+1 query fix, TOCTOU race condition resolution
+  - Server-side input validation via FluentValidation
+  - API auth Swagger documentation hardened
+- **Read time**: 15 minutes
+- **Use when**: Debugging teacher-student assignment, subject validation, or N+1 queries
+
+### 8. **daily-reports/DAILY_REPORT_2026-04-02.md**
 - **Best for**: Understanding the April 2, 2026 session (issues #42–#48)
 - **Contains**:
   - 401 Unauthorized after teacher registration (auto-login via `switchMap`)
@@ -23,7 +95,7 @@
 - **Read time**: 10 minutes
 - **Use when**: Debugging student auth, file uploads, or assessment submission status
 
-### 3. **DAILY_REPORT_2026-04-01.md**
+### 9. **daily-reports/DAILY_REPORT_2026-04-01.md**
 - **Best for**: Understanding the April 1, 2026 session (issues #34–#41)
 - **Contains**:
   - Many-to-many Teacher↔Student architecture change (join table `TeacherStudents`)
@@ -38,7 +110,7 @@
 - **Read time**: 10 minutes
 - **Use when**: Debugging teacher update/delete auth, assessment service, or data integrity
 
-### 4. **ERROR_FIXES_SESSION_2026-03-05.md**
+### 10. **error-fixes/ERROR_FIXES_SESSION_2026-03-05.md**
 - **Best for**: Understanding issues #26–#33 (March 5, 2026 session)
 - **Contains**:
   - StudentUniqueId + IdPassportNo full-stack addition
@@ -52,7 +124,7 @@
 - **Read time**: 15 minutes
 - **Use when**: Debugging auth, DataTables buttons, or login response mapping
 
-### 5. **ERROR_FIXES_DOCUMENTATION.md** COMPREHENSIVE GUIDE
+### 11. **error-fixes/ERROR_FIXES_DOCUMENTATION.md** COMPREHENSIVE GUIDE
 - **Best for**: Understanding root causes and prevention for issues #1–#19
 - **Contains**: 
   - Detailed problem descriptions for all 19 original issues
@@ -65,21 +137,21 @@
 - **Use when**: You want to understand WHY something broke
 - **Updated**: March 2, 2026 (added 6 new architecture issues)
 
-### 6. **DAILY_REPORT_2026-03-31.md**
+### 12. **daily-reports/DAILY_REPORT_2026-03-31.md**
 - **Best for**: Understanding what was accomplished on March 31, 2026
 - **Contains**:
   - Agile Hierarchy User Stories update
   - StudentValidator improvements
 
-### 7. **DAILY_REPORT_2026-03-26.md**
+### 13. **daily-reports/DAILY_REPORT_2026-03-26.md**
 - **Best for**: Understanding the IdPassportNo field addition (March 26, 2026)
 - **Contains**:
   - Full-stack TeacherIdPassportNo implementation (entity → DB → DTOs → validation → Angular)
 
-### 8. **DAILY_REPORT_2026-03-25.md**
+### 14. **daily-reports/DAILY_REPORT_2026-03-25.md**
 - **Best for**: Understanding what was accomplished on March 25, 2026
 
-### 9. **DAILY_REPORT_2026-03-05.md**
+### 15. **daily-reports/DAILY_REPORT_2026-03-05.md**
 - **Best for**: Understanding what was accomplished on March 5, 2026
 - **Contains**:
   - 1 feature addition + 7 bug fixes
@@ -89,22 +161,22 @@
 - **Read time**: 5 minutes
 - **Use when**: You want a high-level summary of the March 5 session
 
-### 10. **README.md** (project root)
+### 16. **README.md** (project root)
 - **Project overview and getting started guide**
 
-### 11. **ARCHITECTURE.md** (project root)
+### 17. **ARCHITECTURE.md** (project root)
 - **Clean Architecture explanation with SoC pattern**
 - **Project structure and layer responsibilities**
 
-### 12. **TESTING_GUIDE.md**
+### 18. **guides/TESTING_GUIDE.md**
 - **How to test the application**
 
-### 13. **PROJECT_REQUIREMENTS.md**
+### 19. **project/PROJECT_REQUIREMENTS.md**
 - **Project requirements document (scope, functional/non-functional requirements, acceptance criteria)**
 
 ---
 
-## All Issues Fixed (33 Total)
+## All Issues Fixed (52 Total)
 
 ### Critical Architecture Issues (March 2, 2026)
 
@@ -298,35 +370,35 @@
 ## How to Use This Documentation
 
 ### Scenario 1: "Something is broken, fix it now!"
-1. Open **QUICK_FIX_REFERENCE.md**
+1. Open **error-fixes/QUICK_FIX_REFERENCE.md**
 2. Find your issue in "8 Major Issues" section
 3. Follow the fix (takes 2-5 minutes)
 
 ### Scenario 2: "I want to prevent these bugs in future development"
-1. Open **ERROR_FIXES_DOCUMENTATION.md**
+1. Open **error-fixes/ERROR_FIXES_DOCUMENTATION.md**
 2. Read "Prevention Tips" in each issue section
 3. Read "Testing Checklist" section
 4. Bookmark for future reference
 
 ### Scenario 3: "I'm debugging a similar issue, how was this diagnosed?"
-1. Open **ERROR_FIXES_DOCUMENTATION.md**
+1. Open **error-fixes/ERROR_FIXES_DOCUMENTATION.md**
 2. Find relevant issue
 3. Read "Root Cause" and "Debugging Process Used"
 4. Check "Files Changed" to see what was modified
 
 ### Scenario 4: "I need to understand the architecture"
 1. Read **README.md** for project overview
-2. Read **ERROR_FIXES_DOCUMENTATION.md** → "Key Learnings"
+2. Read **error-fixes/ERROR_FIXES_DOCUMENTATION.md** → "Key Learnings"
 3. Study the "Files Reference" section
 
 ### Scenario 5: "DataTables buttons are broken / navbar not updating after login"
-1. Open **QUICK_FIX_REFERENCE.md** → Issues #31, #32, #33
+1. Open **error-fixes/QUICK_FIX_REFERENCE.md** → Issues #31, #32, #33
 2. For DataTables: apply event delegation pattern (Issue #32)
 3. For navbar: subscribe to `isAuthenticated$` in `App` component (Issue #31)
 4. For wrong teacher name: check API response shape and map nested response (Issue #33)
 
 ### Scenario 6: "A new field needs to be added to Student/Teacher"
-1. Follow the checklist from Issue #26 in **ERROR_FIXES_SESSION_2026-03-05.md**
+1. Follow the checklist from Issue #26 in **error-fixes/ERROR_FIXES_SESSION_2026-03-05.md**
 2. Entity → DbContext → DTOs → Validators → Mapping → Service → Migration → Angular models → Components
 
 ---
@@ -367,7 +439,7 @@ When adding new features:
 5. **IMPORTANT**: Add `ChangeDetectorRef.markForCheck()` in ALL async data loading
 6. Apply change detection to ALL components with `subscribe()` callbacks
 7. Check browser DevTools Network tab for API responses
-8. Run testing checklist from **ERROR_FIXES_DOCUMENTATION.md**
+8. Run testing checklist from **error-fixes/ERROR_FIXES_DOCUMENTATION.md**
 
 ---
 

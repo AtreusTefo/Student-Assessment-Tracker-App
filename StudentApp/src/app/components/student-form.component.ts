@@ -38,30 +38,30 @@ import { takeUntil } from 'rxjs/operators';
         
         <div class="form-group">
           <label for="firstName">First Name:</label>
-          <input type="text" id="firstName" [(ngModel)]="student.firstName" name="firstName" #firstName="ngModel" autocomplete="given-name" required minlength="2" maxlength="50" pattern="^[a-zA-Z]+$" (keypress)="allowOnlyLetters($event)" [disabled]="loading" />
+          <input type="text" id="firstName" [(ngModel)]="student.firstName" name="firstName" #firstName="ngModel" autocomplete="given-name" required minlength="2" maxlength="50" pattern="^[a-zA-Z\s\-]+$" (keypress)="allowOnlyLetters($event)" [disabled]="loading" />
           <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('required')">First name is required</span>
           <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('minlength')">First name must be at least 2 characters</span>
           <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('maxlength')">First name cannot exceed 50 characters</span>
-          <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('pattern')">First name can only contain letters</span>
+          <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('pattern')">First name can only contain letters, spaces, and hyphens</span>
           <span class="error" *ngIf="fieldErrors['firstName'] && fieldErrors['firstName'].length">{{ fieldErrors['firstName'].join('\n') }}</span>
         </div>
         
         <div class="form-group">
           <label for="lastName">Last Name:</label>
-          <input type="text" id="lastName" [(ngModel)]="student.lastName" name="lastName" #lastName="ngModel" autocomplete="family-name" required minlength="2" maxlength="50" pattern="^[a-zA-Z]+$" (keypress)="allowOnlyLetters($event)" [disabled]="loading" />
+          <input type="text" id="lastName" [(ngModel)]="student.lastName" name="lastName" #lastName="ngModel" autocomplete="family-name" required minlength="2" maxlength="50" pattern="^[a-zA-Z\s\-]+$" (keypress)="allowOnlyLetters($event)" [disabled]="loading" />
           <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('required')">Last name is required</span>
           <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('minlength')">Last name must be at least 2 characters</span>
           <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('maxlength')">Last name cannot exceed 50 characters</span>
-          <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('pattern')">Last name can only contain letters</span>
+          <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('pattern')">Last name can only contain letters, spaces, and hyphens</span>
           <span class="error" *ngIf="fieldErrors['lastName'] && fieldErrors['lastName'].length">{{ fieldErrors['lastName'].join('\n') }}</span>
         </div>
         
         <div class="form-group">
           <label for="email">Email:</label>
-          <input type="email" id="email" [(ngModel)]="student.email" name="email" #email="ngModel" autocomplete="email" required maxlength="100" [disabled]="loading" />
+          <input type="email" id="email" [(ngModel)]="student.email" name="email" #email="ngModel" autocomplete="email" required maxlength="255" [disabled]="loading" />
           <span class="error" *ngIf="(form.submitted || email.touched || email.dirty) && email.hasError('required')">Email is required</span>
           <span class="error" *ngIf="(form.submitted || email.touched || email.dirty) && email.hasError('email')">Email must be a valid email address</span>
-          <span class="error" *ngIf="(form.submitted || email.touched || email.dirty) && email.hasError('maxlength')">Email cannot exceed 100 characters</span>
+          <span class="error" *ngIf="(form.submitted || email.touched || email.dirty) && email.hasError('maxlength')">Email cannot exceed 255 characters</span>
           <span class="error" *ngIf="fieldErrors['email'] && fieldErrors['email'].length">{{ fieldErrors['email'].join('\n') }}</span>
         </div>
         
@@ -76,7 +76,7 @@ import { takeUntil } from 'rxjs/operators';
         <div class="form-group">
           <label for="gradeId">Grade:</label>
           <select id="gradeId" [(ngModel)]="student.gradeId" name="gradeId" #gradeId="ngModel" required [disabled]="loading">
-            <option [value]="0">-- Select Grade --</option>
+            <option [ngValue]="0" disabled>-- Select Grade --</option>
             <option *ngFor="let g of grades" [value]="g.id">{{ g.name }}</option>
           </select>
           <span class="error" *ngIf="(form.submitted || gradeId.touched || gradeId.dirty) && gradeId.hasError('required')">Grade is required</span>
@@ -329,7 +329,7 @@ export class StudentFormComponent implements OnInit, OnDestroy {
 
   allowOnlyLetters(event: KeyboardEvent): void {
     const char = String.fromCharCode(event.which);
-    if (!/[a-zA-Z]/.test(char)) {
+    if (!/[a-zA-Z\s\-]/.test(char)) {
       event.preventDefault();
     }
   }

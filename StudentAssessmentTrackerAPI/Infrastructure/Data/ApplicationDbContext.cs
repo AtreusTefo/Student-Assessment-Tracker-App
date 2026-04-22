@@ -209,6 +209,22 @@ namespace StudentAssessmentTracker.Infrastructure.Data
                 entity.Property(e => e.FileSize).IsRequired();
                 entity.Property(e => e.SubmittedAt).HasDefaultValueSql("GETUTCDATE()");
 
+                // DB-level guards for submission data integrity
+                entity.ToTable(t =>
+                {
+                    // Prevent zero-byte (empty) file records from being stored
+                    t.HasCheckConstraint("CK_AssessmentSubmissions_FileSize_Positive",
+                        "[FileSize] > 0");
+                    // Prevent blank filenames — storage path logic depends on a real filename
+                    t.HasCheckConstraint("CK_AssessmentSubmissions_FileName_NotEmpty",
+                        "LEN(LTRIM(RTRIM([FileName]))) > 0");
+                    // Restrict to the allowed MIME types enforced by AssessmentSubmissionService
+                    t.HasCheckConstraint("CK_AssessmentSubmissions_ContentType_Allowed",
+                        "[ContentType] IN ('application/pdf','application/msword'," +
+                        "'application/vnd.openxmlformats-officedocument.wordprocessingml.document'," +
+                        "'image/jpeg','image/png')");
+                });
+
                 // FK → StudentAssessments (CASCADE: deleting an assessment removes all its submissions)
                 // StudentId is intentionally NOT stored as a separate FK column — it is derived from
                 // StudentAssessment.StudentId via the navigation property.  This eliminates the

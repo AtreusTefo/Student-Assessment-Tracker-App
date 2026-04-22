@@ -1,11 +1,183 @@
-# API Setup & Testing Guide
+# API Setup and Testing Guide
 
 ## Project Overview
 
 The Student Assessment Tracker is a full-stack application consisting of:
-- **Backend**: .NET 8 Web API
-- **Frontend**: Angular standalone components
-- **Database**: In-memory Entity Framework Core
+- **Backend**: ASP.NET Core 8 Web API (Clean Architecture)
+- **Frontend**: Angular 21 standalone SPA
+- **Database**: SQL Server LocalDB (`StudentAssessmentTrackerDev`)
+
+---
+
+## Verified Integrations
+
+### 1. DataTables Integration (Frontend)
+- **Status**: COMPLETE
+- **Package**: `datatables.net` v2 + Buttons plugin
+- **Location**: `StudentApp/src/app/components/student-list.component.ts`
+- **Features**:
+  - Sorting, global search, and pagination (10 records per page)
+  - CSV export via DataTables Buttons plugin
+  - Responsive layout
+
+### 2. Swagger UI (Backend)
+- **Status**: INSTALLED AND CONFIGURED
+- **Package**: `Swashbuckle.AspNetCore`
+- **Access URL**: `http://localhost:5000/swagger`
+- **Features**:
+  - Interactive API documentation with per-operation Bearer security
+  - Live testing interface for all endpoints
+  - Request and response schema examples
+
+### 3. API Controllers
+- **Status**: FULLY IMPLEMENTED
+- **Controllers**: `AdminsController`, `TeachersController`, `StudentsController`, `StudentAssessmentsController`, `AssessmentSubmissionsController`, `ReportsController`, `GradesController`, `SubjectsController`, `ClassGroupsController`
+- **Auth**: Three JWT roles — Admin, Teacher, Student
+
+---
+
+## Getting Started
+
+### Prerequisites
+- .NET 8 SDK
+- Node.js 20+
+- SQL Server LocalDB (bundled with Visual Studio or installable separately)
+- Postman (optional, for API testing)
+
+### Step 1: Start the Backend API
+
+```powershell
+# Navigate to the API project folder
+cd C:\Users\Developer.03\Desktop\Student-Assessment-Tracker\StudentAssessmentTrackerAPI
+
+# Restore dependencies
+dotnet restore
+
+# Build the project
+dotnet build
+
+# Run the application
+dotnet run
+```
+
+Expected output:
+```
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5000
+```
+
+The application will automatically apply all pending EF Core migrations and seed the default admin account on first run.
+
+### Step 2: Verify the API
+
+Open a browser and navigate to:
+```
+http://localhost:5000/swagger
+```
+
+Swagger UI should load and show all endpoint groups: Admins, Teachers, Students, StudentAssessments, AssessmentSubmissions, Reports, Grades, Subjects, ClassGroups.
+
+### Step 3: Start the Angular Frontend
+
+```powershell
+cd C:\Users\Developer.03\Desktop\Student-Assessment-Tracker\StudentApp
+npm install
+npm start
+```
+
+Frontend runs on `http://localhost:4200`. The proxy configuration in `proxy.conf.json` forwards `/api` calls to the backend at port 5000.
+
+---
+
+## Authentication Flow
+
+The API uses three separate JWT roles. Each role has its own login endpoint.
+
+### Seed Admin Account
+
+A default admin is seeded automatically on first startup:
+
+| Field | Value |
+|---|---|
+| Email | admin@tracker.local |
+| Password | Admin@1234 |
+
+### Getting Tokens
+
+**Admin token:**
+```
+POST http://localhost:5000/api/admins/login
+Body: { "email": "admin@tracker.local", "password": "Admin@1234" }
+```
+
+**Teacher token** (after admin creates teacher and teacher activates):
+```
+POST http://localhost:5000/api/teachers/login
+Body: { "email": "teacher@school.com", "password": "your-password" }
+```
+
+**Student token** (after student is activated):
+```
+POST http://localhost:5000/api/students/login
+Body: { "studentUniqueId": "STU-XXXXXXXX", "password": "your-password" }
+```
+
+---
+
+## Key Endpoint Groups
+
+### Admin Endpoints (Admin JWT required)
+```
+GET    /api/admins/teachers                  List all teachers
+POST   /api/admins/teachers                  Create teacher
+PUT    /api/admins/teachers/{id}             Update teacher
+DELETE /api/admins/teachers/{id}             Delete teacher
+GET    /api/admins/students                  List all students
+POST   /api/admins/students                  Create student
+PUT    /api/admins/students/{id}             Update student
+DELETE /api/admins/students/{id}             Delete student
+POST   /api/admins/students/bulk             Bulk import students (JSON)
+POST   /api/admins/students/bulk-csv         Bulk import students (CSV file)
+POST   /api/admins/teachers/bulk             Bulk import teachers (JSON)
+POST   /api/admins/teachers/bulk-csv         Bulk import teachers (CSV file)
+GET    /api/admins/audit-logs/{entity}/{id}  View audit log
+```
+
+### Teacher Endpoints (Teacher JWT required unless noted)
+```
+POST /api/teachers/activate                  Activate teacher account (public)
+POST /api/teachers/login                     Teacher login (public)
+POST /api/teachers/forgot-password           Reset password (public)
+GET  /api/students                           List assigned students
+GET  /api/students/{id}                      Student detail
+POST /api/students/{id}/assessments          Add assessment
+PUT  /api/students/{id}/assessments/{aid}    Edit assessment
+DEL  /api/students/{id}/assessments/{aid}    Delete assessment
+POST /api/assessments/bulk                   Bulk create assessments
+GET  /api/reports/students/{id}/csv          Export student CSV
+GET  /api/reports/students/{id}/pdf          Export student PDF
+```
+
+### Student Endpoints (Student JWT required unless noted)
+```
+POST /api/students/activate                  Activate student account (public)
+POST /api/students/login                     Student login (public)
+POST /api/students/forgot-password           Reset password (public)
+GET  /api/students/profile                   View own profile
+```
+
+---
+
+## Troubleshooting
+
+| Problem | Solution |
+|---|---|
+| Cannot open database `StudentAssessmentTrackerDev` | SQL Server LocalDB is not running. Run `sqllocaldb start mssqllocaldb` in a terminal |
+| 401 Unauthorized | Run the login request for your role first and attach the returned token as `Bearer <token>` in the Authorization header |
+| 400 Bad Request | Check the Swagger UI schema for required fields. Phone must be exactly 8 digits. Email must be lowercase |
+| 500 Internal Server Error | Check the dotnet console output. Look in `StudentAssessmentTrackerAPI/Logs/` for structured log files |
+| Migration error on startup | Run `dotnet ef database update` manually in the API folder |
+
 
 ---
 
@@ -244,7 +416,7 @@ The collection uses a variable `{{base_url}}` which defaults to `http://localhos
 
 ---
 
-## 🌐 Testing with Scalar UI
+## Testing with Scalar UI
 
 ### Direct Browser Testing
 
@@ -257,16 +429,16 @@ The collection uses a variable `{{base_url}}` which defaults to `http://localhos
 
 ### Advantages of Scalar UI
 
-- ✅ No client installation required
-- ✅ Interactive documentation
-- ✅ Real-time request/response examples
-- ✅ Schema validation
-- ✅ Parameter suggestions
-- ✅ Response formatting
+- No client installation required
+- Interactive documentation
+- Real-time request/response examples
+- Schema validation
+- Parameter suggestions
+- Response formatting
 
 ---
 
-## 📦 Project Architecture
+## Project Architecture
 
 The project follows a **clean architecture** with 4 layers:
 
