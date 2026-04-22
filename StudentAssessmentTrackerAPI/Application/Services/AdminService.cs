@@ -74,6 +74,20 @@ namespace StudentAssessmentTracker.Application.Services
         /// <exception cref="UnauthorizedAccessException">Current password is incorrect.</exception>
         /// <exception cref="ArgumentException">New passwords do not match or fail length requirement.</exception>
         Task ChangePasswordAsync(int adminId, ChangeAdminPasswordDto dto);
+
+        /// <summary>
+        /// Resets a teacher's password by clearing it (sets to null).
+        /// The teacher must re-activate their account via POST /api/teachers/activate.
+        /// </summary>
+        /// <exception cref="KeyNotFoundException">Teacher not found.</exception>
+        Task ResetTeacherPasswordAsync(int teacherId);
+
+        /// <summary>
+        /// Resets a student's password by clearing it (sets to null).
+        /// The student must re-activate their account via POST /api/students/activate.
+        /// </summary>
+        /// <exception cref="KeyNotFoundException">Student not found.</exception>
+        Task ResetStudentPasswordAsync(int studentId);
     }
 
     /// <summary>Implements admin account management and cross-entity oversight operations.</summary>
@@ -214,6 +228,23 @@ namespace StudentAssessmentTracker.Application.Services
         {
             var teacher = await _db.Teachers.FindAsync(teacherId)
                 ?? throw new KeyNotFoundException($"Teacher {teacherId} not found.");
+
+            // Referential integrity: block deletion when the teacher still has student assignments.
+            // The TeacherStudents FK is RESTRICT — a raw Remove would throw DbUpdateException.
+            bool hasStudents = await _db.TeacherStudents.AnyAsync(ts => ts.TeacherId == teacherId);
+            if (hasStudents)
+                throw new InvalidOperationException(
+                    $"Teacher {teacherId} cannot be deleted because they have students assigned. " +
+                    "Unassign all students from this teacher first.");
+
+            // Referential integrity: block deletion when the teacher owns class groups.
+            // The ClassGroups.TeacherId FK is RESTRICT — prevents silent cascade of group data.
+            bool hasClassGroups = await _db.ClassGroups.AnyAsync(cg => cg.TeacherId == teacherId);
+            if (hasClassGroups)
+                throw new InvalidOperationException(
+                    $"Teacher {teacherId} cannot be deleted because they own class groups. " +
+                    "Delete all class groups belonging to this teacher first.");
+
             _db.Teachers.Remove(teacher);
             await _db.SaveChangesAsync();
             _logger.LogInformation("Admin deleted teacher {TeacherId}", teacherId);
@@ -226,7 +257,6 @@ namespace StudentAssessmentTracker.Application.Services
                 .AsNoTracking()
                 .Include(s => s.GradeNavigation)
                 .Include(s => s.Assessments)
-                    .ThenInclude(a => a.Submissions)
                 .Include(s => s.TeacherAssignments)
                     .ThenInclude(ta => ta.Teacher)
                 .Include(s => s.TeacherAssignments)
@@ -296,12 +326,19 @@ namespace StudentAssessmentTracker.Application.Services
 
             // Generate unique STU-XXXXXXXX identifier with collision retry.
             const int maxAttempts = 5;
+            var uniqueIdGenerated = false;
             for (var attempt = 1; attempt <= maxAttempts; attempt++)
             {
                 student.StudentUniqueId = GenerateStudentUniqueId();
                 if (!await _db.Students.AnyAsync(s => s.StudentUniqueId == student.StudentUniqueId))
+                {
+                    uniqueIdGenerated = true;
                     break;
+                }
             }
+            if (!uniqueIdGenerated)
+                throw new InvalidOperationException(
+                    "Unable to generate a unique student ID after multiple attempts. Please try again.");
 
             _db.Students.Add(student);
             try
@@ -456,6 +493,30 @@ namespace StudentAssessmentTracker.Application.Services
             admin.UpdatedAt = DateTime.UtcNow;
             await _db.SaveChangesAsync();
             _logger.LogInformation("Password changed for admin {AdminId}", adminId);
+        }
+
+        /// <inheritdoc />
+        public async Task ResetTeacherPasswordAsync(int teacherId)
+        {
+            var teacher = await _db.Teachers.FindAsync(teacherId)
+                ?? throw new KeyNotFoundException($"Teacher {teacherId} not found.");
+
+            teacher.Password = null;
+            teacher.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+            _logger.LogInformation("Admin reset password for teacher {TeacherId}", teacherId);
+        }
+
+        /// <inheritdoc />
+        public async Task ResetStudentPasswordAsync(int studentId)
+        {
+            var student = await _db.Students.FindAsync(studentId)
+                ?? throw new KeyNotFoundException($"Student {studentId} not found.");
+
+            student.Password = null;
+            student.UpdatedAt = DateTime.UtcNow;
+            await _db.SaveChangesAsync();
+            _logger.LogInformation("Admin reset password for student {StudentId}", studentId);
         }
 
         private string GenerateJwt(Admin admin)

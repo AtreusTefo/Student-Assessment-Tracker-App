@@ -95,7 +95,9 @@ namespace StudentAssessmentTracker.Application.Mappings
             CreateMap<Teacher, TeacherResponseDto>()
                 .ForMember(dest => dest.TeacherId, opt => opt.MapFrom(src => src.Id))
                 .ForMember(dest => dest.SubjectName,
-                    opt => opt.MapFrom(src => src.SubjectNavigation != null ? src.SubjectNavigation.Name : string.Empty));
+                    opt => opt.MapFrom(src => src.SubjectNavigation != null ? src.SubjectNavigation.Name : string.Empty))
+                .ForMember(dest => dest.IsActive,
+                    opt => opt.MapFrom(src => !string.IsNullOrEmpty(src.Password)));
 
             CreateMap<TeacherRegisterDto, Teacher>()
                 .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(_ => DateTime.UtcNow))

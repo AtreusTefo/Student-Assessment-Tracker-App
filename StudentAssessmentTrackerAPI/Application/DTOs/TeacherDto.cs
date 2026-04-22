@@ -34,6 +34,9 @@ namespace StudentAssessmentTracker.Application.DTOs
 
         /// <summary>Gets or sets the date the record was created</summary>
         public DateTime CreatedDate { get; set; }
+
+        /// <summary>Whether the teacher has activated their account (i.e. set a password).</summary>
+        public bool IsActive { get; set; }
     }
 
     /// <summary>
@@ -122,6 +125,16 @@ namespace StudentAssessmentTracker.Application.DTOs
 
         /// <summary>Gets or sets the authenticated teacher's data</summary>
         public TeacherResponseDto Teacher { get; set; } = new();
+    }
+
+    /// <summary>
+    /// DTO for the teacher self-service forgot-password request.
+    /// The teacher provides their registered email; the server nulls their password so they can re-activate.
+    /// </summary>
+    public class TeacherForgotPasswordDto
+    {
+        /// <summary>The email address registered on the teacher's account.</summary>
+        public string Email { get; set; } = string.Empty;
     }
 
     /// <summary>

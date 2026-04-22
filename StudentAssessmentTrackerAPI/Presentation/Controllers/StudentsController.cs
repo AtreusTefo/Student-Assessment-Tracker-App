@@ -260,6 +260,39 @@ namespace StudentAssessmentTracker.Presentation.Controllers
             }
         }
 
+        /// <summary>
+        /// Clears a student's password so they can re-activate via POST /api/students/activate.
+        /// No authentication required — the student provides their StudentUniqueId and email as dual-factor identity proof.
+        /// Always returns 200 to avoid enumeration attacks.
+        /// </summary>
+        /// <param name="dto">Student unique ID and registered email.</param>
+        /// <response code="200">Password cleared — student must re-activate.</response>
+        /// <response code="400">Validation failed.</response>
+        [HttpPost("forgot-password")]
+        public async Task<IActionResult> ForgotPassword([FromBody] StudentForgotPasswordDto dto)
+        {
+            if (!ModelState.IsValid) return BadRequest(ModelState);
+            if (string.IsNullOrWhiteSpace(dto.StudentUniqueId) || string.IsNullOrWhiteSpace(dto.Email))
+                return BadRequest(new { message = "Student ID and email are required." });
+
+            _logger.LogInformation("POST /api/students/forgot-password for {UniqueId}", dto.StudentUniqueId);
+            try
+            {
+                await _studentService.ForgotPasswordAsync(dto);
+                return Ok(new { message = "Your password has been reset. Please go to the Sign Up page to set a new password." });
+            }
+            catch (KeyNotFoundException)
+            {
+                // Return 200 to avoid enumeration — caller gets the same message either way.
+                return Ok(new { message = "Your password has been reset. Please go to the Sign Up page to set a new password." });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error processing forgot-password for student {UniqueId}", dto.StudentUniqueId);
+                return StatusCode(500, new { message = "Internal server error during password reset." });
+            }
+        }
+
         // ── Helpers ───────────────────────────────────────────────────────────
 
         /// <summary>

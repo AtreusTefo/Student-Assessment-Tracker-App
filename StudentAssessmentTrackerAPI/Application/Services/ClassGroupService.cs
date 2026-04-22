@@ -193,11 +193,13 @@ namespace StudentAssessmentTracker.Application.Services
             // the same subject simultaneously. This mirrors the TeacherStudent unique index
             // UX_TeacherStudents_StudentId_SubjectId and prevents the student receiving
             // duplicate broadcast assessments from two parallel groups.
+            // Use a correlated subquery to avoid fragile nullable navigation in LINQ-to-SQL.
             var subjectConflict = await _db.ClassGroupStudents
                 .AnyAsync(cgs => cgs.StudentId == studentId
                               && cgs.ClassGroupId != classGroupId
-                              && cgs.ClassGroup != null
-                              && cgs.ClassGroup.SubjectId == group.SubjectId);
+                              && _db.ClassGroups.Any(cg =>
+                                     cg.Id == cgs.ClassGroupId
+                                     && cg.SubjectId == group.SubjectId));
             if (subjectConflict)
                 throw new InvalidOperationException(
                     $"Student {studentId} is already enrolled in another class group for subject {group.SubjectId}. " +

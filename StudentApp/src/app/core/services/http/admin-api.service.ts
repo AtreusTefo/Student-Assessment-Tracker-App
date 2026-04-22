@@ -60,6 +60,10 @@ export class AdminApiService {
     return this.http.delete(`${this.apiUrl}/teachers/${teacherId}`);
   }
 
+  resetTeacherPassword(teacherId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/teachers/${teacherId}/reset-password`, {});
+  }
+
   // ─── Student management ───────────────────────────────────────────────────
 
   getAllStudents(): Observable<any[]> {
@@ -76,6 +80,10 @@ export class AdminApiService {
 
   deleteStudent(studentId: number): Observable<any> {
     return this.http.delete(`${this.apiUrl}/students/${studentId}`);
+  }
+
+  resetStudentPassword(studentId: number): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/students/${studentId}/reset-password`, {});
   }
 
   // ─── Teacher–Student assignment ───────────────────────────────────────────

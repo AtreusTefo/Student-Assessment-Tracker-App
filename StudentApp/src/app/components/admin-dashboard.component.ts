@@ -20,13 +20,13 @@ type TabType = 'teachers' | 'students' | 'audit';
           <p class="admin-name">{{ adminName }}</p>
         </div>
         <nav>
-          <button [class.active]="activeTab === 'teachers'" (click)="activeTab = 'teachers'; loadTeachers()">
+          <button [class.active]="activeTab === 'teachers'" (click)="activeTab = 'teachers'; loadTeachersIfNeeded()">
             👩‍🏫 Teachers
           </button>
-          <button [class.active]="activeTab === 'students'" (click)="activeTab = 'students'; loadStudents()">
+          <button [class.active]="activeTab === 'students'" (click)="activeTab = 'students'; loadStudentsIfNeeded()">
             🎓 Students
           </button>
-          <button [class.active]="activeTab === 'audit'" (click)="activeTab = 'audit'; loadAuditLogs()">
+          <button [class.active]="activeTab === 'audit'" (click)="activeTab = 'audit'; loadAuditLogsIfNeeded()">
             📋 Audit Log
           </button>
         </nav>
@@ -71,7 +71,7 @@ type TabType = 'teachers' | 'students' | 'audit';
               </div>
             </div>
             <div class="panel-actions">
-              <button class="btn-primary" (click)="createTeacher()" [disabled]="loading">Create Account</button>
+              <button class="btn-primary" (click)="createTeacher()" [disabled]="loading || submittingTeacher">{{ submittingTeacher ? 'Creating…' : 'Create Account' }}</button>
             </div>
           </div>
 
@@ -88,7 +88,10 @@ type TabType = 'teachers' | 'students' | 'audit';
                 <td>{{ t.subjectName }}</td>
                 <td>{{ t.enrollmentDate | date:'dd MMM yyyy' }}</td>
                 <td><span class="status-badge" [class.pending]="!t.isActive">{{ t.isActive ? 'Active' : 'Pending Activation' }}</span></td>
-                <td><button class="btn-danger-sm" (click)="confirmDeleteTeacher(t)">Delete</button></td>
+                <td>
+                  <button class="btn-warning-sm" title="Clear password — teacher must re-activate" (click)="resetTeacherPassword(t)">Reset Password</button>
+                  <button class="btn-danger-sm" (click)="confirmDeleteTeacher(t)">Delete</button>
+                </td>
               </tr>
             </tbody>
           </table>
@@ -122,7 +125,7 @@ type TabType = 'teachers' | 'students' | 'audit';
               </div>
             </div>
             <div class="panel-actions">
-              <button class="btn-primary" (click)="createStudent()" [disabled]="loading">Create Account</button>
+              <button class="btn-primary" (click)="createStudent()" [disabled]="loading || submittingStudent">{{ submittingStudent ? 'Creating…' : 'Create Account' }}</button>
             </div>
           </div>
 
@@ -154,7 +157,10 @@ type TabType = 'teachers' | 'students' | 'audit';
                     </button>
                   </td>
                   <td><span class="perf-badge" [attr.data-level]="s.performanceLevel">{{ s.performanceLevel }}</span></td>
-                  <td><button class="btn-danger-sm" (click)="confirmDeleteStudent(s)">Delete</button></td>
+                  <td>
+                    <button class="btn-warning-sm" title="Clear password — student must re-activate" (click)="resetStudentPassword(s)">Reset Password</button>
+                    <button class="btn-danger-sm" (click)="confirmDeleteStudent(s)">Delete</button>
+                  </td>
                 </tr>
                 <!-- Inline assign row -->
                 <tr *ngIf="assigningStudentId === s.id" class="assign-row">
@@ -165,7 +171,7 @@ type TabType = 'teachers' | 'students' | 'audit';
                         <option [ngValue]="0" disabled>-- Select teacher --</option>
                         <option *ngFor="let t of teachers" [ngValue]="t.teacherId">{{ t.firstName }} {{ t.lastName }} ({{ t.subjectName }})</option>
                       </select>
-                      <button class="btn-primary" (click)="assignTeacher(s.id)" [disabled]="teacherToAssignId === 0">Assign</button>
+                      <button class="btn-primary" (click)="assignTeacher(s.id)" [disabled]="teacherToAssignId === 0 || assigningInProgress">{{ assigningInProgress ? 'Assigning…' : 'Assign' }}</button>
                     </div>
                   </td>
                 </tr>
@@ -307,6 +313,8 @@ type TabType = 'teachers' | 'students' | 'audit';
     /* Buttons */
     .btn-danger-sm { padding: 4px 12px; background: #dc2626; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; }
     .btn-danger-sm:hover { background: #b91c1c; }
+    .btn-warning-sm { padding: 4px 12px; background: #d97706; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; margin-right: 4px; }
+    .btn-warning-sm:hover { background: #b45309; }
     .btn-danger { padding: 8px 20px; background: #dc2626; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
     .btn-secondary { padding: 8px 20px; background: #6b7280; color: #fff; border: none; border-radius: 6px; cursor: pointer; font-weight: 600; }
 
@@ -393,6 +401,12 @@ export class AdminDashboardComponent implements OnInit {
   assigningStudentId: number | null = null;
   teacherToAssignId = 0;
 
+  // Per-operation in-progress guards (prevents double-click race conditions)
+  submittingTeacher = false;
+  submittingStudent = false;
+  assigningInProgress = false;
+  private unassigningInProgress = false;
+
   constructor(private adminApi: AdminApiService, private router: Router) {}
 
   ngOnInit(): void {
@@ -416,6 +430,11 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
+  loadTeachersIfNeeded(): void {
+    if (this.teachers.length > 0) return;
+    this.loadTeachers();
+  }
+
   // ─── Create Teacher ───────────────────────────────────────────────────────
 
   toggleTeacherForm(): void {
@@ -429,11 +448,13 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   createTeacher(): void {
+    if (this.submittingTeacher) return;
     if (!this.newTeacher.idPassportNo || !this.newTeacher.firstName || !this.newTeacher.lastName
         || !this.newTeacher.email || !this.newTeacher.phone || this.newTeacher.subjectId === 0) {
       this.error = 'Please fill in all fields for the new teacher.';
       return;
     }
+    this.submittingTeacher = true;
     this.loading = true; this.error = '';
     this.adminApi.createTeacher(this.newTeacher).subscribe({
       next: teacher => {
@@ -441,6 +462,7 @@ export class AdminDashboardComponent implements OnInit {
         this.showTeacherForm = false;
         this.resetNewTeacher();
         this.loading = false;
+        this.submittingTeacher = false;
         this.showSuccess(`Teacher account created. Share email "${teacher.email}" so they can activate their account.`);
       },
       error: err => {
@@ -448,6 +470,7 @@ export class AdminDashboardComponent implements OnInit {
           || (err?.error?.errors ? JSON.stringify(err.error.errors) : null)
           || 'Failed to create teacher.';
         this.loading = false;
+        this.submittingTeacher = false;
       }
     });
   }
@@ -468,6 +491,11 @@ export class AdminDashboardComponent implements OnInit {
     });
   }
 
+  loadStudentsIfNeeded(): void {
+    if (this.students.length > 0) return;
+    this.loadStudents();
+  }
+
   toggleStudentForm(): void {
     this.showStudentForm = !this.showStudentForm;
     if (this.showStudentForm && this.grades.length === 0) {
@@ -479,11 +507,13 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   createStudent(): void {
+    if (this.submittingStudent) return;
     if (!this.newStudent.idPassportNo || !this.newStudent.firstName || !this.newStudent.lastName
         || !this.newStudent.email || !this.newStudent.phone || this.newStudent.gradeId === 0) {
       this.error = 'Please fill in all fields for the new student.';
       return;
     }
+    this.submittingStudent = true;
     this.loading = true; this.error = '';
     this.adminApi.createStudent(this.newStudent).subscribe({
       next: student => {
@@ -491,11 +521,13 @@ export class AdminDashboardComponent implements OnInit {
         this.showStudentForm = false;
         this.resetNewStudent();
         this.loading = false;
+        this.submittingStudent = false;
         this.showSuccess(`Student account created (ID: ${student.studentUniqueId}). Share their Unique ID and email so they can activate.`);
       },
       error: err => {
         this.error = err?.error?.message || 'Failed to create student.';
         this.loading = false;
+        this.submittingStudent = false;
       }
     });
   }
@@ -516,33 +548,60 @@ export class AdminDashboardComponent implements OnInit {
   }
 
   assignTeacher(studentId: number): void {
-    if (!this.teacherToAssignId) return;
-    this.adminApi.assignStudentToTeacher(studentId, this.teacherToAssignId).subscribe({
+    if (!this.teacherToAssignId || this.assigningInProgress) return;
+    this.assigningInProgress = true;
+    const teacherId = this.teacherToAssignId;
+    const teacher = this.teachers.find(t => t.teacherId === teacherId);
+    this.adminApi.assignStudentToTeacher(studentId, teacherId).subscribe({
       next: () => {
-        // Refresh student list to get updated teacher assignments
-        this.adminApi.getAllStudents().subscribe({ next: data => this.students = data });
+        // Update local array without a full reload
+        this.students = this.students.map(s => {
+          if (s.id !== studentId) return s;
+          const teachers = [...(s.teachers || []), {
+            teacherId: teacher?.teacherId,
+            fullName: `${teacher?.firstName ?? ''} ${teacher?.lastName ?? ''}`.trim(),
+            firstName: teacher?.firstName,
+            lastName: teacher?.lastName,
+            subjectName: teacher?.subjectName
+          }];
+          return { ...s, teachers };
+        });
         this.assigningStudentId = null;
         this.teacherToAssignId = 0;
+        this.assigningInProgress = false;
         this.showSuccess('Teacher assigned successfully.');
       },
-      error: err => this.error = err?.error?.message || 'Failed to assign teacher.'
+      error: err => {
+        this.error = err?.error?.message || 'Failed to assign teacher.';
+        this.assigningInProgress = false;
+      }
     });
   }
 
   unassignTeacher(studentId: number, teacherId: number): void {
+    if (this.unassigningInProgress) return;
+    this.unassigningInProgress = true;
     this.adminApi.unassignStudentFromTeacher(studentId, teacherId).subscribe({
       next: () => {
-        this.adminApi.getAllStudents().subscribe({ next: data => this.students = data });
+        // Update local array without a full reload
+        this.students = this.students.map(s => {
+          if (s.id !== studentId) return s;
+          return { ...s, teachers: (s.teachers || []).filter((t: any) => t.teacherId !== teacherId) };
+        });
+        this.unassigningInProgress = false;
         this.showSuccess('Teacher unassigned successfully.');
       },
-      error: err => this.error = err?.error?.message || 'Failed to unassign teacher.'
+      error: err => {
+        this.error = err?.error?.message || 'Failed to unassign teacher.';
+        this.unassigningInProgress = false;
+      }
     });
   }
 
 
   loadAuditLogs(): void {
     this.loading = true; this.error = '';
-    this.adminApi.getAuditLogs(1, 200).subscribe({
+    this.adminApi.getAuditLogs(1, 50).subscribe({
       next: data => {
         this.auditLogs = data;
         this.applyAuditFilter();
@@ -550,6 +609,11 @@ export class AdminDashboardComponent implements OnInit {
       },
       error: () => { this.error = 'Failed to load audit logs.'; this.loading = false; }
     });
+  }
+
+  loadAuditLogsIfNeeded(): void {
+    if (this.auditLogs.length > 0) return;
+    this.loadAuditLogs();
   }
 
   get filteredStudents(): any[] {
@@ -567,6 +631,29 @@ export class AdminDashboardComponent implements OnInit {
       (!this.auditEntityFilter || log.entityName === this.auditEntityFilter) &&
       (!this.auditActionFilter || log.action === this.auditActionFilter)
     );
+  }
+
+  resetTeacherPassword(teacher: any): void {
+    if (!confirm(`Reset password for ${teacher.firstName} ${teacher.lastName}? They will need to re-activate their account.`)) return;
+    this.adminApi.resetTeacherPassword(teacher.teacherId).subscribe({
+      next: () => {
+        this.teachers = this.teachers.map(t =>
+          t.teacherId === teacher.teacherId ? { ...t, isActive: false } : t
+        );
+        this.showSuccess(`Password reset for ${teacher.firstName} ${teacher.lastName}. They must re-activate their account.`);
+      },
+      error: err => this.error = err?.error?.message || 'Failed to reset password.'
+    });
+  }
+
+  resetStudentPassword(student: any): void {
+    if (!confirm(`Reset password for ${student.firstName} ${student.lastName}? They will need to re-activate their account.`)) return;
+    this.adminApi.resetStudentPassword(student.id).subscribe({
+      next: () => {
+        this.showSuccess(`Password reset for ${student.firstName} ${student.lastName}. They must re-activate their account.`);
+      },
+      error: err => this.error = err?.error?.message || 'Failed to reset password.'
+    });
   }
 
   confirmDeleteTeacher(teacher: any): void {

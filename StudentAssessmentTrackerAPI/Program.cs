@@ -181,6 +181,26 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
     }
 });
 
+// Register the DbContext factory so AuditLogService can create independent contexts
+// that commit outside the caller's ambient transaction (Issue 3.2 fix).
+builder.Services.AddDbContextFactory<ApplicationDbContext>(options =>
+{
+    options.UseSqlServer(connectionString, sqlOptions =>
+    {
+        sqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorNumbersToAdd: null);
+        sqlOptions.CommandTimeout(60);
+    });
+
+    if (builder.Environment.IsDevelopment())
+    {
+        options.EnableDetailedErrors();
+        options.EnableSensitiveDataLogging();
+    }
+}, ServiceLifetime.Scoped);
+
 // ============================================================================
 // INFRASTRUCTURE LAYER - Repositories (Data Access)
 // ============================================================================

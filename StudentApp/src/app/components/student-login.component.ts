@@ -5,6 +5,7 @@ import { FormsModule, NgForm } from '@angular/forms';
 import { StudentLoginDto, StudentActivateDto } from '../core/models';
 import { StudentAuthStateService } from '../core/services/state';
 import { StudentAuthBusinessService } from '../features/students/services/student-auth-business.service';
+import { StudentApiService } from '../core/services/http';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 
@@ -22,134 +23,180 @@ import { takeUntil } from 'rxjs/operators';
       <div class="auth-card">
         <div class="auth-header">
           <div class="auth-icon">🎓</div>
-          <h2>{{ activateMode ? 'Activate Your Account' : 'Student Login' }}</h2>
+          <h2>{{ forgotMode ? 'Reset Password' : (activateMode ? 'Activate Your Account' : 'Student Login') }}</h2>
           <p class="auth-subtitle">
-            {{ activateMode
-              ? 'First time? Set up your password using the Student ID given by your teacher'
-              : 'Sign in to view your marks and performance' }}
+            {{ forgotMode
+              ? 'Enter your Student ID and registered email to reset your password'
+              : (activateMode
+                  ? 'First time? Set up your password using the Student ID given by your teacher'
+                  : 'Sign in to view your marks and performance') }}
           </p>
         </div>
 
-        <div *ngIf="error" class="alert alert-error">{{ error }}</div>
-
-        <form (ngSubmit)="onSubmit(form)" #form="ngForm" class="auth-form" novalidate>
-
-          <div class="form-group">
-            <label for="studentId">Student ID</label>
-            <input
-              type="text"
-              id="studentId"
-              [(ngModel)]="studentUniqueId"
-              name="studentUniqueId"
-              #studentIdRef="ngModel"
-              placeholder="e.g. STU-AB12CD34"
-              required
-              maxlength="12"
-              autocomplete="username"
-              [disabled]="loading"
-              (input)="clearError()"
-              [style.text-transform]="activateMode ? 'uppercase' : 'none'"
-            />
-            <span class="field-error" *ngIf="(form.submitted || studentIdRef.touched) && studentIdRef.hasError('required')">
-              Student ID is required
-            </span>
+        <!-- ── Forgot-password panel ─────────────────────────── -->
+        <ng-container *ngIf="forgotMode">
+          <div *ngIf="forgotSuccess" class="alert alert-success">
+            {{ forgotSuccess }}
+            <br/><a (click)="enterActivateMode()" class="mode-link" style="display:inline-block;margin-top:8px;">Go to Activate Account &rarr;</a>
           </div>
+          <div *ngIf="forgotError" class="alert alert-error">{{ forgotError }}</div>
 
-          <!-- Email — only shown in activate mode -->
-          <div class="form-group" *ngIf="activateMode">
-            <label for="email">Email <span class="hint">(registered by your school admin)</span></label>
-            <input
-              type="email"
-              id="email"
-              [(ngModel)]="email"
-              name="email"
-              #emailRef="ngModel"
-              placeholder="your.email@example.com"
-              required
-              email
-              maxlength="100"
-              autocomplete="email"
-              [disabled]="loading"
-              (input)="clearError()"
-            />
-            <span class="field-error" *ngIf="(form.submitted || emailRef.touched) && emailRef.hasError('required')">
-              Email is required
-            </span>
-            <span class="field-error" *ngIf="(form.submitted || emailRef.touched) && emailRef.hasError('email')">
-              Enter a valid email address
-            </span>
+          <form (ngSubmit)="onForgotSubmit(forgotForm)" #forgotForm="ngForm" class="auth-form" novalidate *ngIf="!forgotSuccess">
+            <div class="form-group">
+              <label for="forgotStudentId">Student ID</label>
+              <input type="text" id="forgotStudentId" [(ngModel)]="forgotStudentUniqueId" name="forgotStudentUniqueId"
+                #forgotIdRef="ngModel" placeholder="e.g. STU-AB12CD34" required maxlength="12"
+                autocomplete="username" [disabled]="forgotLoading" (input)="forgotError = null" />
+              <span class="field-error" *ngIf="(forgotForm.submitted || forgotIdRef.touched) && forgotIdRef.hasError('required')">Student ID is required</span>
+            </div>
+            <div class="form-group">
+              <label for="forgotEmail">Registered Email</label>
+              <input type="email" id="forgotEmail" [(ngModel)]="forgotEmail" name="forgotEmail"
+                #forgotEmailRef="ngModel" placeholder="your.email@example.com" required email maxlength="100"
+                autocomplete="email" [disabled]="forgotLoading" (input)="forgotError = null" />
+              <span class="field-error" *ngIf="(forgotForm.submitted || forgotEmailRef.touched) && forgotEmailRef.hasError('required')">Email is required</span>
+              <span class="field-error" *ngIf="(forgotForm.submitted || forgotEmailRef.touched) && forgotEmailRef.hasError('email')">Enter a valid email address</span>
+            </div>
+            <button type="submit" class="btn-primary" [disabled]="forgotLoading">
+              <span *ngIf="forgotLoading" class="spinner"></span>
+              {{ forgotLoading ? 'Resetting…' : 'Reset Password' }}
+            </button>
+          </form>
+
+          <div class="auth-links">
+            <p><a (click)="exitForgotMode()" class="mode-link">Back to Sign In</a></p>
+            <p class="divider-text">Are you a teacher? <a routerLink="/login">Teacher login</a></p>
           </div>
+        </ng-container>
 
-          <div class="form-group">
-            <label for="password">{{ activateMode ? 'Choose a Password' : 'Password' }}</label>
-            <div class="input-group">
+        <!-- ── Normal login / activate panel ────────────────── -->
+        <ng-container *ngIf="!forgotMode">
+          <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+
+          <form (ngSubmit)="onSubmit(form)" #form="ngForm" class="auth-form" novalidate>
+
+            <div class="form-group">
+              <label for="studentId">Student ID</label>
               <input
-                [type]="showPassword ? 'text' : 'password'"
-                id="password"
-                [(ngModel)]="password"
-                name="password"
-                #passwordRef="ngModel"
-                [autocomplete]="activateMode ? 'new-password' : 'current-password'"
+                type="text"
+                id="studentId"
+                [(ngModel)]="studentUniqueId"
+                name="studentUniqueId"
+                #studentIdRef="ngModel"
+                placeholder="e.g. STU-AB12CD34"
                 required
-                minlength="6"
-                maxlength="50"
+                maxlength="12"
+                autocomplete="username"
+                [disabled]="loading"
+                (input)="clearError()"
+                [style.text-transform]="activateMode ? 'uppercase' : 'none'"
+              />
+              <span class="field-error" *ngIf="(form.submitted || studentIdRef.touched) && studentIdRef.hasError('required')">
+                Student ID is required
+              </span>
+            </div>
+
+            <!-- Email — only shown in activate mode -->
+            <div class="form-group" *ngIf="activateMode">
+              <label for="email">Email <span class="hint">(registered by your school admin)</span></label>
+              <input
+                type="email"
+                id="email"
+                [(ngModel)]="email"
+                name="email"
+                #emailRef="ngModel"
+                placeholder="your.email@example.com"
+                required
+                email
+                maxlength="100"
+                autocomplete="email"
                 [disabled]="loading"
                 (input)="clearError()"
               />
-              <button type="button" class="toggle-btn" (click)="showPassword = !showPassword" tabindex="-1">
-                {{ showPassword ? 'Hide' : 'Show' }}
-              </button>
+              <span class="field-error" *ngIf="(form.submitted || emailRef.touched) && emailRef.hasError('required')">
+                Email is required
+              </span>
+              <span class="field-error" *ngIf="(form.submitted || emailRef.touched) && emailRef.hasError('email')">
+                Enter a valid email address
+              </span>
             </div>
-            <span class="field-error" *ngIf="(form.submitted || passwordRef.touched) && passwordRef.hasError('required')">
-              Password is required
-            </span>
-            <span class="field-error" *ngIf="(form.submitted || passwordRef.touched) && passwordRef.hasError('minlength')">
-              Password must be at least 6 characters
-            </span>
-          </div>
 
-          <!-- Confirm Password — only shown in activate mode -->
-          <div class="form-group" *ngIf="activateMode">
-            <label for="confirmPassword">Confirm Password</label>
-            <div class="input-group">
-              <input
-                [type]="showConfirmPassword ? 'text' : 'password'"
-                id="confirmPassword"
-                [(ngModel)]="confirmPassword"
-                name="confirmPassword"
-                #confirmPwdRef="ngModel"
-                autocomplete="new-password"
-                required
-                minlength="6"
-                maxlength="50"
-                [disabled]="loading"
-                (input)="clearError()"
-              />
-              <button type="button" class="toggle-btn" (click)="showConfirmPassword = !showConfirmPassword" tabindex="-1">
-                {{ showConfirmPassword ? 'Hide' : 'Show' }}
-              </button>
+            <div class="form-group">
+              <label for="password">{{ activateMode ? 'Choose a Password' : 'Password' }}</label>
+              <div class="input-group">
+                <input
+                  [type]="showPassword ? 'text' : 'password'"
+                  id="password"
+                  [(ngModel)]="password"
+                  name="password"
+                  #passwordRef="ngModel"
+                  [autocomplete]="activateMode ? 'new-password' : 'current-password'"
+                  required
+                  minlength="6"
+                  maxlength="50"
+                  [disabled]="loading"
+                  (input)="clearError()"
+                />
+                <button type="button" class="toggle-btn" (click)="showPassword = !showPassword" tabindex="-1">
+                  {{ showPassword ? 'Hide' : 'Show' }}
+                </button>
+              </div>
+              <span class="field-error" *ngIf="(form.submitted || passwordRef.touched) && passwordRef.hasError('required')">
+                Password is required
+              </span>
+              <span class="field-error" *ngIf="(form.submitted || passwordRef.touched) && passwordRef.hasError('minlength')">
+                Password must be at least 6 characters
+              </span>
             </div>
-            <span class="field-error" *ngIf="(form.submitted || confirmPwdRef.touched) && confirmPwdRef.hasError('required')">
-              Please confirm your password
-            </span>
-            <span class="field-error" *ngIf="(form.submitted || confirmPwdRef.touched) && !confirmPwdRef.hasError('required') && passwordMismatch">
-              Passwords do not match
-            </span>
+
+            <!-- Confirm Password — only shown in activate mode -->
+            <div class="form-group" *ngIf="activateMode">
+              <label for="confirmPassword">Confirm Password</label>
+              <div class="input-group">
+                <input
+                  [type]="showConfirmPassword ? 'text' : 'password'"
+                  id="confirmPassword"
+                  [(ngModel)]="confirmPassword"
+                  name="confirmPassword"
+                  #confirmPwdRef="ngModel"
+                  autocomplete="new-password"
+                  required
+                  minlength="6"
+                  maxlength="50"
+                  [disabled]="loading"
+                  (input)="clearError()"
+                />
+                <button type="button" class="toggle-btn" (click)="showConfirmPassword = !showConfirmPassword" tabindex="-1">
+                  {{ showConfirmPassword ? 'Hide' : 'Show' }}
+                </button>
+              </div>
+              <span class="field-error" *ngIf="(form.submitted || confirmPwdRef.touched) && confirmPwdRef.hasError('required')">
+                Please confirm your password
+              </span>
+              <span class="field-error" *ngIf="(form.submitted || confirmPwdRef.touched) && !confirmPwdRef.hasError('required') && passwordMismatch">
+                Passwords do not match
+              </span>
+            </div>
+
+            <!-- Forgot password link — only in login mode -->
+            <div *ngIf="!activateMode" class="forgot-row">
+              <a (click)="enterForgotMode()" class="forgot-link">Forgot Password?</a>
+            </div>
+
+            <button type="submit" class="btn-primary" [disabled]="loading">
+              <span *ngIf="loading" class="spinner"></span>
+              {{ loading
+                ? (activateMode ? 'Activating…' : 'Signing in…')
+                : (activateMode ? 'Activate Account' : 'Sign In') }}
+            </button>
+          </form>
+
+          <div class="auth-links">
+            <p *ngIf="!activateMode && !forgotMode">First time logging in? <a (click)="toggleMode()" class="mode-link">Activate your account</a></p>
+            <p *ngIf="activateMode">Already activated? <a (click)="toggleMode()" class="mode-link">Sign in here</a></p>
+            <p class="divider-text">Are you a teacher? <a routerLink="/login">Teacher login</a></p>
           </div>
-
-          <button type="submit" class="btn-primary" [disabled]="loading">
-            <span *ngIf="loading" class="spinner"></span>
-            {{ loading
-              ? (activateMode ? 'Activating…' : 'Signing in…')
-              : (activateMode ? 'Activate Account' : 'Sign In') }}
-          </button>
-        </form>
-
-        <div class="auth-links">
-          <p *ngIf="!activateMode">First time logging in? <a (click)="toggleMode()" class="mode-link">Activate your account</a></p>
-          <p *ngIf="activateMode">Already activated? <a (click)="toggleMode()" class="mode-link">Sign in here</a></p>
-          <p class="divider-text">Are you a teacher? <a routerLink="/login">Teacher login</a></p>
-        </div>
+        </ng-container>
       </div>
     </div>
   `,
@@ -232,6 +279,10 @@ import { takeUntil } from 'rxjs/operators';
     .auth-links a:hover { text-decoration: underline; }
     .mode-link { cursor: pointer; }
     .divider-text { color: #999 !important; }
+    .forgot-row { text-align: right; margin-top: -6px; }
+    .forgot-link { color: #4caf50; font-size: 13px; cursor: pointer; text-decoration: none; font-weight: 600; }
+    .forgot-link:hover { text-decoration: underline; }
+    .alert-success { background: #e8f5e9; color: #2e7d32; border: 1px solid #a5d6a7; }
   `]
 })
 export class StudentLoginComponent implements OnInit, OnDestroy {
@@ -245,6 +296,14 @@ export class StudentLoginComponent implements OnInit, OnDestroy {
   showConfirmPassword = false;
   activateMode = false;
 
+  // Forgot-password state
+  forgotMode = false;
+  forgotStudentUniqueId = '';
+  forgotEmail = '';
+  forgotLoading = false;
+  forgotError: string | null = null;
+  forgotSuccess: string | null = null;
+
   get passwordMismatch(): boolean {
     return this.password !== this.confirmPassword;
   }
@@ -255,6 +314,7 @@ export class StudentLoginComponent implements OnInit, OnDestroy {
     private router: Router,
     private studentAuthState: StudentAuthStateService,
     private studentAuthBusiness: StudentAuthBusinessService,
+    private studentApi: StudentApiService,
     private cdr: ChangeDetectorRef
   ) { }
 
@@ -281,6 +341,50 @@ export class StudentLoginComponent implements OnInit, OnDestroy {
   toggleMode(): void {
     this.activateMode = !this.activateMode;
     this.clearError();
+  }
+
+  enterForgotMode(): void {
+    this.forgotMode = true;
+    this.forgotStudentUniqueId = this.studentUniqueId;
+    this.forgotEmail = '';
+    this.forgotError = null;
+    this.forgotSuccess = null;
+  }
+
+  exitForgotMode(): void {
+    this.forgotMode = false;
+    this.forgotError = null;
+    this.forgotSuccess = null;
+  }
+
+  enterActivateMode(): void {
+    this.forgotMode = false;
+    this.activateMode = true;
+    this.forgotError = null;
+    this.forgotSuccess = null;
+  }
+
+  onForgotSubmit(form: NgForm): void {
+    if (form.invalid) return;
+    this.forgotError = null;
+    this.forgotLoading = true;
+    this.cdr.markForCheck();
+
+    this.studentApi.forgotPassword(
+      this.forgotStudentUniqueId.toUpperCase().trim(),
+      this.forgotEmail.trim()
+    ).subscribe({
+      next: (res) => {
+        this.forgotSuccess = res.message;
+        this.forgotLoading = false;
+        this.cdr.markForCheck();
+      },
+      error: (err: any) => {
+        this.forgotError = err?.error?.message || 'Something went wrong. Please try again.';
+        this.forgotLoading = false;
+        this.cdr.markForCheck();
+      }
+    });
   }
 
   onSubmit(form: NgForm): void {
