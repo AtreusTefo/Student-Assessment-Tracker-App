@@ -1,0 +1,215 @@
+
+    <div class="container">
+      <h2>Student Details</h2>
+      
+      <div *ngIf="loading" class="loading">Loading student...</div>
+      
+      <div *ngIf="error" class="error">{{ error }}</div>
+      
+      <div *ngIf="student && !loading" class="detail-view">
+        <h3>{{ student.firstName }} {{ student.lastName }}</h3>
+        
+        <div class="section">
+          <h4>Personal Information</h4>
+          <div class="detail-row">
+            <label>Student ID:</label>
+            <span class="unique-id">{{ student.studentUniqueId }}</span>
+          </div>
+          <div class="detail-row">
+            <label>ID / Passport No.:</label>
+            <span>{{ student.idPassportNo }}</span>
+          </div>
+          <div class="detail-row">
+            <label>Email:</label>
+            <span>{{ student.email }}</span>
+          </div>
+          <div class="detail-row">
+            <label>Phone:</label>
+            <span>{{ student.phone }}</span>
+          </div>
+          <div class="detail-row">
+            <label>Grade:</label>
+            <span>{{ student.gradeName }}</span>
+          </div>
+          <div class="detail-row">
+            <label>Created Date:</label>
+            <span>{{ student.createdAt | date: 'MM/dd/yyyy' }}</span>
+          </div>
+        </div>
+        
+        <div class="section">
+          <h4>Assessments</h4>
+          <div *ngIf="!student.assessments || student.assessments.length === 0" class="no-assessments">
+            No assessments recorded yet.
+          </div>
+          <table *ngIf="student.assessments && student.assessments.length > 0" class="assessment-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Score</th>
+                <th>%</th>
+                <th>Due Date</th>
+                <th>Assigned</th>
+                <th>Submissions</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <ng-container *ngFor="let a of student.assessments">
+                <tr *ngIf="editingId !== a.id">
+                  <td>{{ a.name }}</td>
+                  <td>{{ a.score }} / {{ a.maxScore }}</td>
+                  <td>{{ a.maxScore > 0 ? ((a.score / a.maxScore) * 100 | number:'1.1-1') + '%' : '—' }}</td>
+                  <td [class.overdue]="isPastDue(a.dueDate)">
+                    {{ a.dueDate ? (a.dueDate | date: 'MM/dd/yyyy') : '—' }}
+                    <span *ngIf="isPastDue(a.dueDate)" class="overdue-badge">Overdue</span>
+                  </td>
+                  <td>
+                    <span *ngIf="a.isAssigned" class="badge badge-assigned">Yes</span>
+                    <span *ngIf="!a.isAssigned" class="badge badge-unassigned">No</span>
+                  </td>
+                  <td>
+                    <button class="btn btn-sm btn-outline" (click)="toggleSubmissions(a)" [disabled]="assessmentLoading">
+                      {{ a.submissionCount }} file{{ a.submissionCount !== 1 ? 's' : '' }}
+                      <span>{{ expandedSubmissionsId === a.id ? '▲' : '▼' }}</span>
+                    </button>
+                  </td>
+                  <td class="action-btns">
+                    <ng-container *ngIf="deletingId !== a.id">
+                      <button class="btn btn-sm btn-outline" (click)="startEdit(a)" [disabled]="assessmentLoading">Edit</button>
+                      <button class="btn btn-sm btn-danger" (click)="deletingId = a.id" [disabled]="assessmentLoading">Delete</button>
+                    </ng-container>
+                    <ng-container *ngIf="deletingId === a.id">
+                      <span class="confirm-text">Delete?</span>
+                      <button class="btn btn-sm btn-danger" (click)="confirmDelete(a.id)" [disabled]="assessmentLoading">Yes</button>
+                      <button class="btn btn-sm btn-secondary" (click)="deletingId = null">No</button>
+                    </ng-container>
+                  </td>
+                </tr>
+                <!-- Submissions panel (expands below the assessment row) -->
+                <tr *ngIf="expandedSubmissionsId === a.id" class="submissions-row">
+                  <td colspan="7">
+                    <div class="submissions-panel">
+                      <div *ngIf="submissionsLoading" class="sub-loading">Loading submissions…</div>
+                      <div *ngIf="!submissionsLoading && submissions.length === 0" class="no-submissions">No files submitted yet.</div>
+                      <table *ngIf="!submissionsLoading && submissions.length > 0" class="sub-table">
+                        <thead><tr><th>File</th><th>Size</th><th>Submitted</th><th></th></tr></thead>
+                        <tbody>
+                          <tr *ngFor="let s of submissions">
+                            <td>{{ s.fileName }}</td>
+                            <td>{{ formatFileSize(s.fileSize) }}</td>
+                            <td>{{ s.submittedAt | date:'MM/dd/yyyy HH:mm' }}</td>
+                            <td>
+                              <button class="btn btn-sm btn-outline" (click)="downloadSubmission(a, s)">Download</button>
+                              <button class="btn btn-sm btn-danger" (click)="deleteSubmission(a, s)">Delete</button>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
+                    </div>
+                  </td>
+                </tr>
+                <tr *ngIf="editingId === a.id" class="editing-row">
+                  <td><input type="text" [(ngModel)]="editForm.name" maxlength="100" [disabled]="assessmentLoading" class="edit-input" /></td>
+                  <td>
+                    <input type="number" [(ngModel)]="editForm.score" min="0" [disabled]="assessmentLoading" class="edit-input-sm" />
+                    /
+                    <input type="number" [(ngModel)]="editForm.maxScore" min="1" [disabled]="assessmentLoading" class="edit-input-sm" />
+                  </td>
+                  <td>{{ editForm.maxScore > 0 ? ((editForm.score / editForm.maxScore) * 100 | number:'1.1-1') + '%' : '—' }}</td>
+                  <td><input type="date" [(ngModel)]="editForm.dueDate" [disabled]="assessmentLoading" class="edit-input" /></td>
+                  <td>
+                    <label class="checkbox-label">
+                      <input type="checkbox" [(ngModel)]="editForm.isAssigned" [disabled]="assessmentLoading" />
+                      Assigned
+                    </label>
+                  </td>
+                  <td>—</td>
+                  <td class="action-btns">
+                    <button class="btn btn-sm btn-primary" (click)="saveEdit(a.id)" [disabled]="assessmentLoading">Save</button>
+                    <button class="btn btn-sm btn-secondary" (click)="cancelEdit()" [disabled]="assessmentLoading">Cancel</button>
+                  </td>
+                </tr>
+                <!-- Instructions row shown when editing -->
+                <tr *ngIf="editingId === a.id" class="editing-row">
+                  <td colspan="7">
+                    <textarea [(ngModel)]="editForm.instructions" placeholder="Instructions (optional)" maxlength="2000"
+                      [disabled]="assessmentLoading" class="instructions-textarea"></textarea>
+                  </td>
+                </tr>
+              </ng-container>
+            </tbody>
+          </table>
+
+          <div class="add-assessment">
+            <h5>Add Assessment</h5>
+            <div *ngIf="assessmentError" class="error small-msg">{{ assessmentError }}</div>
+            <div *ngIf="assessmentSuccess" class="success small-msg">{{ assessmentSuccess }}</div>
+            <div class="assessment-form">
+              <input type="text" [(ngModel)]="newAssessment.name" placeholder="Name (e.g. Test 1)" maxlength="100" [disabled]="assessmentLoading" />
+              <input type="number" [(ngModel)]="newAssessment.maxScore" placeholder="Max Score" min="1" [disabled]="assessmentLoading" />
+              <input type="number" [(ngModel)]="newAssessment.score" placeholder="Score" min="0" [disabled]="assessmentLoading" />
+              <input type="date" [(ngModel)]="newAssessment.dueDate" [disabled]="assessmentLoading" />
+              <label class="checkbox-label">
+                <input type="checkbox" [(ngModel)]="newAssessment.isAssigned" [disabled]="assessmentLoading" /> Assign to student
+              </label>
+              <button class="btn btn-primary btn-sm" (click)="addAssessment()" [disabled]="assessmentLoading">Add</button>
+              <button class="btn btn-bulk btn-sm" (click)="openBulkModal()" [disabled]="assessmentLoading">Bulk Assign to Class Group</button>
+            </div>
+            <div *ngIf="newAssessment.isAssigned" class="instructions-block">
+              <textarea [(ngModel)]="newAssessment.instructions" placeholder="Instructions (optional)" maxlength="2000"
+                [disabled]="assessmentLoading" class="instructions-textarea"></textarea>
+            </div>
+          </div>
+        </div>
+        
+        <div class="section">
+          <h4>Performance Summary</h4>
+          <div class="detail-row">
+            <label>Total Score:</label>
+            <span>{{ student.totalScore }} / {{ student.maxPossible }}</span>
+          </div>
+          <div class="detail-row">
+            <label>Average:</label>
+            <span>{{ student.averageScore | number: '1.2-2' }}%</span>
+          </div>
+          <div class="detail-row">
+            <label>Percentage:</label>
+            <span>{{ student.percentage | number: '1.2-2' }}%</span>
+          </div>
+          <div class="detail-row">
+            <label>Performance Level:</label>
+            <span [ngClass]="getPerformanceClass(student.performanceLevel)">
+              {{ student.performanceLevel }}
+            </span>
+          </div>
+        </div>
+        
+        <div class="actions">
+          <button class="btn btn-export-csv" (click)="exportCsv()">&#x2193; Export CSV</button>
+          <button class="btn btn-export-pdf" (click)="exportPdf()">&#x2193; Export PDF</button>
+          <a routerLink="/" class="btn btn-secondary">Back to List</a>
+        </div>
+      </div>
+
+      <!-- Bulk Assign Modal -->
+      <div *ngIf="showBulkModal" class="modal-overlay" (click)="closeBulkModal()">
+        <div class="modal" (click)="$event.stopPropagation()">
+          <h3>Bulk Assign Assessment to Class Group</h3>
+          <p class="modal-hint">Assigns the current assessment form to <strong>all students</strong> in the selected class group.</p>
+          <div *ngIf="bulkError" class="error small-msg">{{ bulkError }}</div>
+          <div *ngIf="bulkSuccess" class="success small-msg">{{ bulkSuccess }}</div>
+          <div class="form-group">
+            <label>Select Class Group</label>
+            <div *ngIf="classGroupsLoading" style="color:#1976d2;font-style:italic">Loading class groups…</div>
+            <select *ngIf="!classGroupsLoading" [(ngModel)]="selectedClassGroupId">
+              <option [ngValue]="0" disabled>-- Select class group --</option>
+              <option *ngFor="let g of classGroups" [ngValue]="g.id">{{ g.name }} ({{ g.subjectName }}, {{ g.gradeName }}, {{ g.studentCount }} students)</option>
+            </select>
+          </div>
+          <div class="modal-actions">
+            <button class="btn btn-primary" (click)="executeBulkAssign()" [disabled]="bulkLoading || selectedClassGroupId === 0">{{ bulkLoading ? 'Assigning…' : 'Assign to All' }}</button>
+            <button class="btn btn-secondary" (click)="closeBulkModal()">Cancel</button>
+          </div>
+        </div>
+      </div>

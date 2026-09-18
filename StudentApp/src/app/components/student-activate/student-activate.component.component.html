@@ -1,0 +1,131 @@
+
+    <div class="auth-wrapper">
+      <div class="auth-card">
+        <div class="auth-header">
+          <div class="auth-icon">🎓</div>
+          <h2>Student Sign Up</h2>
+          <p class="auth-subtitle">
+            Activate your account using the Student ID given to you by your teacher
+          </p>
+        </div>
+
+        <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+
+        <form (ngSubmit)="onSubmit(form)" #form="ngForm" class="auth-form" novalidate>
+
+          <div class="form-group">
+            <label for="studentUniqueId">Student ID <span class="hint">(given by your teacher)</span></label>
+            <input
+              type="text"
+              id="studentUniqueId"
+              [(ngModel)]="formData.studentUniqueId"
+              name="studentUniqueId"
+              #studentUniqueId="ngModel"
+              placeholder="e.g. STU-AB12CD34"
+              required
+              maxlength="12"
+              autocomplete="username"
+              [disabled]="loading"
+              (input)="clearError()"
+              style="text-transform: uppercase"
+            />
+            <span class="field-error" *ngIf="(form.submitted || studentUniqueId.touched) && studentUniqueId.hasError('required')">
+              Student ID is required
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="email">Email <span class="hint">(registered by your school admin)</span></label>
+            <input
+              type="email"
+              id="email"
+              [(ngModel)]="formData.email"
+              name="email"
+              #email="ngModel"
+              placeholder="your.email@example.com"
+              required
+              email
+              maxlength="100"
+              autocomplete="email"
+              [disabled]="loading"
+              (input)="clearError()"
+            />
+            <span class="field-error" *ngIf="(form.submitted || email.touched) && email.hasError('required')">
+              Email is required
+            </span>
+            <span class="field-error" *ngIf="(form.submitted || email.touched) && email.hasError('email')">
+              Enter a valid email address
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="password">Choose a Password</label>
+            <div class="input-group">
+              <input
+                [type]="showPassword ? 'text' : 'password'"
+                id="password"
+                [(ngModel)]="formData.password"
+                name="password"
+                #password="ngModel"
+                autocomplete="new-password"
+                required
+                minlength="8"
+                maxlength="255"
+                [disabled]="loading"
+                (input)="clearError()"
+              />
+              <button type="button" class="toggle-btn" (click)="showPassword = !showPassword" tabindex="-1">
+                {{ showPassword ? 'Hide' : 'Show' }}
+              </button>
+            </div>
+            <span class="field-error" *ngIf="(form.submitted || password.touched) && password.hasError('required')">
+              Password is required
+            </span>
+            <span class="field-error" *ngIf="(form.submitted || password.touched) && password.hasError('minlength')">
+              Password must be at least 8 characters
+            </span>
+            <span class="field-error" *ngIf="(form.submitted || password.touched) && !password.hasError('required') && !password.hasError('minlength') && !isPasswordComplex(formData.password)">
+              Password must contain an uppercase letter, a number, and a special character
+            </span>
+          </div>
+
+          <div class="form-group">
+            <label for="confirmPassword">Confirm Password</label>
+            <div class="input-group">
+              <input
+                [type]="showConfirmPassword ? 'text' : 'password'"
+                id="confirmPassword"
+                [(ngModel)]="confirmPassword"
+                name="confirmPassword"
+                #confirmPwd="ngModel"
+                autocomplete="new-password"
+                required
+                minlength="8"
+                maxlength="255"
+                [disabled]="loading"
+                (input)="clearError()"
+              />
+              <button type="button" class="toggle-btn" (click)="showConfirmPassword = !showConfirmPassword" tabindex="-1">
+                {{ showConfirmPassword ? 'Hide' : 'Show' }}
+              </button>
+            </div>
+            <span class="field-error" *ngIf="(form.submitted || confirmPwd.touched) && confirmPwd.hasError('required')">
+              Please confirm your password
+            </span>
+            <span class="field-error" *ngIf="(form.submitted || confirmPwd.touched) && !confirmPwd.hasError('required') && passwordMismatch">
+              Passwords do not match
+            </span>
+          </div>
+
+          <button type="submit" class="btn-primary" [disabled]="loading">
+            <span *ngIf="loading" class="spinner"></span>
+            {{ loading ? 'Activating…' : 'Activate Account' }}
+          </button>
+        </form>
+
+        <div class="auth-links">
+          <p>Already activated? <a routerLink="/student/login">Sign in here</a></p>
+          <p class="divider-text">Are you a teacher? <a routerLink="/login">Teacher login</a></p>
+        </div>
+      </div>
+    </div>

@@ -32,3 +32,6 @@ wwwrootcd/
 # Angular build artifacts
 StudentApp/public/*
 !StudentApp/public/favicon*
+
+# Visual Studio cache
+.vs/

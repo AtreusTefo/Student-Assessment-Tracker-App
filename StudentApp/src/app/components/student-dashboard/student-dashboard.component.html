@@ -1,0 +1,241 @@
+
+    <div class="dashboard" *ngIf="student; else loading">
+
+      <!-- ── Header ──────────────────────────────────────────────────────── -->
+      <div class="dash-header">
+        <div class="dash-header-left">
+          <div class="avatar">{{ initials }}</div>
+          <div>
+            <h1 class="student-name">{{ student.firstName }} {{ student.lastName }}</h1>
+            <div class="student-meta">
+              <span class="badge badge-id">{{ student.studentUniqueId }}</span>
+              <span class="badge badge-grade">{{ student.gradeName }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Summary Cards ────────────────────────────────────────────────── -->
+      <div class="cards-grid">
+        <div class="card card-score">
+          <div class="card-icon">📊</div>
+          <div class="card-body">
+            <div class="card-value">{{ student.totalScore | number:'1.0-1' }} / {{ student.maxPossible | number:'1.0-1' }}</div>
+            <div class="card-label">Total Score</div>
+          </div>
+        </div>
+
+        <div class="card card-avg">
+          <div class="card-icon">📈</div>
+          <div class="card-body">
+            <div class="card-value">{{ student.averageScore | number:'1.0-1' }}%</div>
+            <div class="card-label">Average Score</div>
+          </div>
+        </div>
+
+        <div class="card card-pct">
+          <div class="card-icon">🎯</div>
+          <div class="card-body">
+            <div class="card-value">{{ student.percentage | number:'1.0-1' }}%</div>
+            <div class="card-label">Overall Percentage</div>
+          </div>
+        </div>
+
+        <div class="card" [ngClass]="performanceCardClass">
+          <div class="card-icon">🏆</div>
+          <div class="card-body">
+            <div class="card-value">{{ student.performanceLevel }}</div>
+            <div class="card-label">Performance Level</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── Progress Bar ──────────────────────────────────────────────────── -->
+      <div class="progress-section">
+        <div class="progress-header">
+          <span class="progress-label">Overall Progress</span>
+          <span class="progress-pct">{{ student.percentage | number:'1.0-1' }}%</span>
+        </div>
+        <div class="progress-track">
+          <div
+            class="progress-fill"
+            [style.width.%]="progressWidth"
+            [ngClass]="progressClass"
+          ></div>
+        </div>
+        <div class="progress-legend">
+          <span class="legend-item danger">Needs Support (&lt;50%)</span>
+          <span class="legend-item warning">Satisfactory (50-55%)</span>
+          <span class="legend-item info">Good (56-75%)</span>
+          <span class="legend-item success">Excellent (&gt;75%)</span>
+        </div>
+      </div>
+
+      <!-- ── Assessments Table ─────────────────────────────────────────────── -->
+      <div class="table-section">
+        <h2 class="section-title">My Assessments</h2>
+
+        <div *ngIf="student.assessments.length === 0" class="empty-state">
+          <span class="empty-icon">📋</span>
+          <p>No assessments recorded yet. Your teacher will add them soon.</p>
+        </div>
+
+        <div class="table-responsive" *ngIf="student.assessments.length > 0">
+          <table class="assessment-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th>Assessment</th>
+                <th>Score</th>
+                <th>Max Score</th>
+                <th>Percentage</th>
+                <th>Due Date</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let a of student.assessments; let i = index">
+                <td>{{ i + 1 }}</td>
+                <td class="assessment-name">{{ a.name }}</td>
+                <td><strong>{{ a.score | number:'1.0-1' }}</strong></td>
+                <td>{{ a.maxScore | number:'1.0-1' }}</td>
+                <td>
+                  <span class="pct-badge" [ngClass]="getPctClass(a.score, a.maxScore)">
+                    {{ getAssessmentPct(a.score, a.maxScore) | number:'1.0-1' }}%
+                  </span>
+                </td>
+                <td>{{ a.dueDate ? (a.dueDate | date:'mediumDate') : '—' }}</td>
+                <td>
+                  <span *ngIf="isOverdue(a.dueDate)" class="status-badge overdue">Overdue</span>
+                  <ng-container *ngIf="!isOverdue(a.dueDate)">
+                    <span *ngIf="a.submissionCount > 0" class="status-badge submitted">✓ Submitted ({{ a.submissionCount }})</span>
+                    <button *ngIf="a.isAssigned && a.submissionCount === 0"
+                      class="btn-upload" (click)="openUploadModal(a.id)">Submit File</button>
+                    <span *ngIf="!a.isAssigned && a.submissionCount === 0" class="status-badge pending">Pending</span>
+                  </ng-container>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- ── My Profile ──────────────────────────────────────────────────── -->
+      <div class="profile-card">
+
+        <div class="profile-card-header">
+          <h2 class="section-title">My Profile</h2>
+          <span class="profile-status-badge">
+            <span class="status-dot"></span> Active
+          </span>
+        </div>
+
+        <div class="profile-layout">
+
+          <!-- Identity Panel -->
+          <div class="profile-identity">
+            <div class="profile-avatar-lg">{{ initials }}</div>
+            <div class="profile-name-block">
+              <div class="profile-full-name">{{ student.firstName }} {{ student.lastName }}</div>
+              <div class="profile-uid-chip">
+                <span class="uid-prefix">ID</span>
+                <span class="uid-value">{{ student.studentUniqueId }}</span>
+              </div>
+            </div>
+            <div class="profile-grade-badge">🎓 {{ student.gradeName }}</div>
+            <div class="profile-since">
+              <span class="profile-since-icon">📅</span>
+              Member since {{ student.createdAt | date:'MMMM yyyy' }}
+            </div>
+          </div>
+
+          <!-- Details Panel -->
+          <div class="profile-details">
+
+            <div class="profile-field">
+              <div class="field-icon-wrap email-icon">✉️</div>
+              <div class="field-content">
+                <div class="field-label">Email Address</div>
+                <div class="field-value">{{ student.email }}</div>
+              </div>
+            </div>
+
+            <div class="profile-field">
+              <div class="field-icon-wrap phone-icon">📞</div>
+              <div class="field-content">
+                <div class="field-label">Phone Number</div>
+                <div class="field-value">{{ student.phone }}</div>
+              </div>
+            </div>
+
+            <div class="profile-field">
+              <div class="field-icon-wrap id-icon">🪪</div>
+              <div class="field-content">
+                <div class="field-label">ID / Passport Number</div>
+                <div class="field-value">{{ student.idPassportNo }}</div>
+              </div>
+            </div>
+
+            <div class="profile-field">
+              <div class="field-icon-wrap grade-icon">🎓</div>
+              <div class="field-content">
+                <div class="field-label">Enrolled Grade</div>
+                <div class="field-value">{{ student.gradeName }}</div>
+              </div>
+            </div>
+
+            <div class="profile-field">
+              <div class="field-icon-wrap uid-icon">🔑</div>
+              <div class="field-content">
+                <div class="field-label">Student Unique ID</div>
+                <div class="field-value"><span class="mono-chip">{{ student.studentUniqueId }}</span></div>
+              </div>
+            </div>
+
+            <div class="profile-field">
+              <div class="field-icon-wrap date-icon">📅</div>
+              <div class="field-content">
+                <div class="field-label">Registration Date</div>
+                <div class="field-value">{{ student.createdAt | date:'longDate' }}</div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <ng-template #loading>
+      <div class="loading-screen">
+        <div class="spinner-large"></div>
+        <p>Loading your dashboard…</p>
+      </div>
+    </ng-template>
+    <!-- \u2500\u2500 Upload Modal \u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500 -->
+    <div class="modal-overlay" *ngIf="uploadModalOpen" (click)="closeUploadModal()">
+      <div class="modal-box" (click)="$event.stopPropagation()">
+        <div class="modal-header">
+          <h3>Submit Assignment</h3>
+          <button class="modal-close" (click)="closeUploadModal()">\u00d7</button>
+        </div>
+        <div class="modal-body">
+          <p *ngIf="uploadModalInstructions" class="upload-instructions">{{ uploadModalInstructions }}</p>
+          <p *ngIf="!uploadModalInstructions" class="upload-instructions muted">No specific instructions provided.</p>
+          <div class="file-drop-zone" (click)="fileInput.click()">
+            <span *ngIf="!selectedFile">\ud83d\udcc2 Click to choose a file</span>
+            <span *ngIf="selectedFile" class="selected-file-name">{{ selectedFile.name }} ({{ formatFileSize(selectedFile.size) }})</span>
+          </div>
+          <input #fileInput type="file" hidden
+            accept=".pdf,.doc,.docx,.jpg,.jpeg,.png"
+            (change)="onFileSelected($event)" />
+          <div *ngIf="uploadError" class="upload-error">{{ uploadError }}</div>
+        </div>
+        <div class="modal-footer">
+          <button class="btn-secondary" (click)="closeUploadModal()" [disabled]="uploadLoading">Cancel</button>
+          <button class="btn-submit" (click)="submitFile()" [disabled]="!selectedFile || uploadLoading">
+            {{ uploadLoading ? 'Uploading\u2026' : 'Upload' }}
+          </button>
+        </div>
+      </div>
+    </div>

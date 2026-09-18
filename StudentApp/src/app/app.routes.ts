@@ -1,14 +1,14 @@
 import { Routes } from '@angular/router';
-import { StudentListComponent } from './components/student-list.component';
-import { StudentDetailComponent } from './components/student-detail.component';
-import { StudentFormComponent } from './components/student-form.component';
-import { SignUpFormComponent } from './components/signup-form.component';
-import { LoginFormComponent } from './components/login-form.component';
-import { StudentLoginComponent } from './components/student-login.component';
-import { StudentDashboardComponent } from './components/student-dashboard.component';
-import { AdminLoginComponent } from './components/admin-login.component';
-import { AdminDashboardComponent } from './components/admin-dashboard.component';
-import { TeacherDashboardComponent } from './components/teacher-dashboard.component';
+import { StudentListComponent } from './components/student-list/student-list.component';
+import { StudentDetailComponent } from './components/student-detail/student-detail.component';
+import { StudentFormComponent } from './components/student-form/student-form.component';
+import { SignUpFormComponent } from './components/teacher-activate/teacher-activate.component';
+import { LoginFormComponent } from './components/teacher-login/teacher-login-form.component';
+import { StudentLoginComponent } from './components/student-login/student-login.component';
+import { StudentDashboardComponent } from './components/student-dashboard/student-dashboard.component';
+import { AdminLoginComponent } from './components/admin-login/admin-login.component';
+import { AdminDashboardComponent } from './components/admin-dashboard/admin-dashboard.component';
+import { TeacherDashboardComponent } from './components/teacher-dashboard/teacher-dashboard.component';
 import { authGuard } from './core/guards/auth.guard';
 import { guestGuard } from './core/guards/guest.guard';
 import { studentAuthGuard } from './core/guards/student-auth.guard';
@@ -16,6 +16,7 @@ import { studentGuestGuard } from './core/guards/student-guest.guard';
 import { adminAuthGuard, adminGuestGuard } from './core/guards/admin.guard';
 
 export const routes: Routes = [
+
   // Teacher protected routes — require teacher authentication
   { path: '', component: StudentListComponent, canActivate: [authGuard] },
   { path: 'teacher/dashboard', component: TeacherDashboardComponent, canActivate: [authGuard] },

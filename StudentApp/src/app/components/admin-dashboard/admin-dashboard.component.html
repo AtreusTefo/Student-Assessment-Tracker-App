@@ -1,0 +1,351 @@
+<div class="admin-dashboard">
+  <header class="dashboard-header">
+    <div>
+      <h1>Admin Dashboard</h1>
+      <div class="admin-welcome">Welcome, {{ adminName || 'Admin' }}</div>
+    </div>
+    <button class="btn btn-secondary" (click)="logout()">Logout</button>
+  </header>
+
+  <nav class="dashboard-tabs">
+    <button [class.active]="activeTab === 'teachers'" (click)="activeTab = 'teachers'; loadTeachersIfNeeded()">Teachers</button>
+    <button [class.active]="activeTab === 'students'" (click)="activeTab = 'students'; loadStudentsIfNeeded()">Students</button>
+    <button [class.active]="activeTab === 'audit'" (click)="activeTab = 'audit'; loadAuditLogsIfNeeded()">Audit Logs</button>
+  </nav>
+
+  <div *ngIf="error" class="alert alert-error">{{ error }}</div>
+  <div *ngIf="successMsg" class="alert alert-success">{{ successMsg }}</div>
+
+  <section *ngIf="activeTab === 'teachers'" class="panel">
+    <div class="panel-actions">
+      <button class="btn btn-primary" (click)="toggleTeacherForm()">{{ showTeacherForm ? 'Hide Teacher Form' : 'Create Teacher' }}</button>
+      <button class="btn btn-secondary" (click)="toggleBulkTeacher()">{{ showBulkTeacher ? 'Hide Bulk Import' : 'Bulk Import Teachers' }}</button>
+    </div>
+
+    <div *ngIf="showTeacherForm" class="form-card">
+      <h2>Create Teacher</h2>
+      <form (ngSubmit)="createTeacher()">
+        <div class="field-row">
+          <label for="teacher-id">ID/Passport No.</label>
+          <input id="teacher-id" name="teacherId" [(ngModel)]="newTeacher.idPassportNo" />
+        </div>
+        <div class="field-row">
+          <label for="teacher-first">First Name</label>
+          <input id="teacher-first" name="teacherFirst" [(ngModel)]="newTeacher.firstName" />
+        </div>
+        <div class="field-row">
+          <label for="teacher-last">Last Name</label>
+          <input id="teacher-last" name="teacherLast" [(ngModel)]="newTeacher.lastName" />
+        </div>
+        <div class="field-row">
+          <label for="teacher-email">Email</label>
+          <input id="teacher-email" type="email" name="teacherEmail" [(ngModel)]="newTeacher.email" />
+        </div>
+        <div class="field-row">
+          <label for="teacher-phone">Phone</label>
+          <input id="teacher-phone" name="teacherPhone" [(ngModel)]="newTeacher.phone" />
+        </div>
+        <div class="field-row">
+          <label for="teacher-subject">Subject</label>
+          <select id="teacher-subject" name="teacherSubject" [(ngModel)]="newTeacher.subjectId">
+            <option value="0">Select subject</option>
+            <option *ngFor="let subject of subjects" [value]="subject.id">{{ subject.name }}</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit" [disabled]="submittingTeacher">Save Teacher</button>
+          <button class="btn btn-secondary" type="button" (click)="toggleTeacherForm()">Cancel</button>
+        </div>
+      </form>
+    </div>
+
+    <div *ngIf="showBulkTeacher" class="form-card">
+      <h2>Bulk Teacher Import</h2>
+      <div class="bulk-mode-actions">
+        <button class="btn btn-secondary" type="button" (click)="bulkTeacherMode = 'paste'">Paste CSV</button>
+        <button class="btn btn-secondary" type="button" (click)="bulkTeacherMode = 'file'">Upload File</button>
+      </div>
+      <div *ngIf="bulkTeacherMode === 'paste'" class="field-row">
+        <label>Paste CSV content</label>
+        <textarea [(ngModel)]="bulkTeacherCsvText" name="bulkTeacherCsvText"></textarea>
+      </div>
+      <div *ngIf="bulkTeacherMode === 'file'" class="field-row">
+        <label>Upload CSV file</label>
+        <input type="file" accept=".csv" (change)="onTeacherFileSelected($event)" />
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="button" (click)="previewBulkTeachers()">Preview</button>
+        <button class="btn btn-primary" type="button" (click)="executeBulkTeachers()" [disabled]="importingTeachers">Import</button>
+        <button class="btn btn-secondary" type="button" (click)="downloadTeacherTemplate()">Download Template</button>
+      </div>
+      <div *ngIf="bulkTeacherPreview.length" class="preview-card">
+        <h3>Preview</h3>
+        <div class="preview-row" *ngFor="let row of bulkTeacherPreview">{{ row.idPassportNo }} - {{ row.firstName }} {{ row.lastName }}</div>
+      </div>
+    </div>
+
+    <div class="table-card">
+      <h2>Teachers</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Subject</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let teacher of teachers">
+            <td>{{ teacher.idPassportNo }}</td>
+            <td>{{ teacher.firstName }} {{ teacher.lastName }}</td>
+            <td>{{ teacher.email }}</td>
+            <td>{{ teacher.subjectName }}</td>
+            <td class="actions-cell">
+              <button class="btn btn-secondary" type="button" (click)="openEditTeacher(teacher)">Edit</button>
+              <button class="btn btn-secondary" type="button" (click)="resetTeacherPassword(teacher)">Reset Password</button>
+              <button class="btn btn-danger" type="button" (click)="confirmDeleteTeacher(teacher)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="editTeacherTarget" class="form-card edit-card">
+      <h2>Edit Teacher</h2>
+      <form (ngSubmit)="saveEditTeacher()">
+        <div class="field-row">
+          <label for="edit-teacher-first">First Name</label>
+          <input id="edit-teacher-first" name="editTeacherFirst" [(ngModel)]="editTeacher.firstName" />
+        </div>
+        <div class="field-row">
+          <label for="edit-teacher-last">Last Name</label>
+          <input id="edit-teacher-last" name="editTeacherLast" [(ngModel)]="editTeacher.lastName" />
+        </div>
+        <div class="field-row">
+          <label for="edit-teacher-email">Email</label>
+          <input id="edit-teacher-email" type="email" name="editTeacherEmail" [(ngModel)]="editTeacher.email" />
+        </div>
+        <div class="field-row">
+          <label for="edit-teacher-phone">Phone</label>
+          <input id="edit-teacher-phone" name="editTeacherPhone" [(ngModel)]="editTeacher.phone" />
+        </div>
+        <div class="field-row">
+          <label for="edit-teacher-subject">Subject</label>
+          <select id="edit-teacher-subject" name="editTeacherSubject" [(ngModel)]="editTeacher.subjectId">
+            <option value="0">Select subject</option>
+            <option *ngFor="let subject of subjects" [value]="subject.id">{{ subject.name }}</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit" [disabled]="savingEdit">Save</button>
+          <button class="btn btn-secondary" type="button" (click)="cancelEditTeacher()">Cancel</button>
+        </div>
+      </form>
+      <div *ngIf="editError" class="alert alert-error">{{ editError }}</div>
+    </div>
+  </section>
+
+  <section *ngIf="activeTab === 'students'" class="panel">
+    <div class="panel-actions">
+      <button class="btn btn-primary" (click)="toggleStudentForm()">{{ showStudentForm ? 'Hide Student Form' : 'Create Student' }}</button>
+      <button class="btn btn-secondary" (click)="toggleBulkStudent()">{{ showBulkStudent ? 'Hide Bulk Import' : 'Bulk Import Students' }}</button>
+    </div>
+
+    <div *ngIf="showStudentForm" class="form-card">
+      <h2>Create Student</h2>
+      <form (ngSubmit)="createStudent()">
+        <div class="field-row">
+          <label for="student-id">ID/Passport No.</label>
+          <input id="student-id" name="studentId" [(ngModel)]="newStudent.idPassportNo" />
+        </div>
+        <div class="field-row">
+          <label for="student-first">First Name</label>
+          <input id="student-first" name="studentFirst" [(ngModel)]="newStudent.firstName" />
+        </div>
+        <div class="field-row">
+          <label for="student-last">Last Name</label>
+          <input id="student-last" name="studentLast" [(ngModel)]="newStudent.lastName" />
+        </div>
+        <div class="field-row">
+          <label for="student-email">Email</label>
+          <input id="student-email" type="email" name="studentEmail" [(ngModel)]="newStudent.email" />
+        </div>
+        <div class="field-row">
+          <label for="student-phone">Phone</label>
+          <input id="student-phone" name="studentPhone" [(ngModel)]="newStudent.phone" />
+        </div>
+        <div class="field-row">
+          <label for="student-grade">Grade</label>
+          <select id="student-grade" name="studentGrade" [(ngModel)]="newStudent.gradeId">
+            <option value="0">Select grade</option>
+            <option *ngFor="let grade of grades" [value]="grade.id">{{ grade.name }}</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit" [disabled]="submittingStudent">Save Student</button>
+          <button class="btn btn-secondary" type="button" (click)="toggleStudentForm()">Cancel</button>
+        </div>
+      </form>
+    </div>
+
+    <div *ngIf="showBulkStudent" class="form-card">
+      <h2>Bulk Student Import</h2>
+      <div class="bulk-mode-actions">
+        <button class="btn btn-secondary" type="button" (click)="bulkStudentMode = 'paste'">Paste CSV</button>
+        <button class="btn btn-secondary" type="button" (click)="bulkStudentMode = 'file'">Upload File</button>
+      </div>
+      <div *ngIf="bulkStudentMode === 'paste'" class="field-row">
+        <label>Paste CSV content</label>
+        <textarea [(ngModel)]="bulkStudentCsvText" name="bulkStudentCsvText"></textarea>
+      </div>
+      <div *ngIf="bulkStudentMode === 'file'" class="field-row">
+        <label>Upload CSV file</label>
+        <input type="file" accept=".csv" (change)="onStudentFileSelected($event)" />
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="button" (click)="previewBulkStudents()">Preview</button>
+        <button class="btn btn-primary" type="button" (click)="executeBulkStudents()" [disabled]="importingStudents">Import</button>
+        <button class="btn btn-secondary" type="button" (click)="downloadStudentTemplate()">Download Template</button>
+      </div>
+      <div *ngIf="bulkStudentPreview.length" class="preview-card">
+        <h3>Preview</h3>
+        <div class="preview-row" *ngFor="let row of bulkStudentPreview">{{ row.idPassportNo }} - {{ row.firstName }} {{ row.lastName }}</div>
+      </div>
+    </div>
+
+    <div class="search-row">
+      <label for="student-search">Search students</label>
+      <input id="student-search" [(ngModel)]="studentSearch" name="studentSearch" placeholder="Search by name, ID or email" />
+    </div>
+
+    <div class="table-card">
+      <h2>Students</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Name</th>
+            <th>Email</th>
+            <th>Teachers</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let student of filteredStudents">
+            <td>{{ student.studentUniqueId || student.idPassportNo }}</td>
+            <td>{{ student.firstName }} {{ student.lastName }}</td>
+            <td>{{ student.email }}</td>
+            <td>
+              <div *ngIf="student.teachers?.length; else noAssigned">
+                <div *ngFor="let teacher of student.teachers" class="teacher-badge">
+                  {{ teacher.fullName || (teacher.firstName + ' ' + teacher.lastName) }}
+                  <button class="link-button" type="button" (click)="unassignTeacher(student.id, teacher.teacherId)">Unassign</button>
+                </div>
+              </div>
+              <ng-template #noAssigned>None</ng-template>
+            </td>
+            <td class="actions-cell">
+              <button class="btn btn-secondary" type="button" (click)="toggleAssignPanel(student.id)">Assign Teacher</button>
+              <button class="btn btn-secondary" type="button" (click)="openEditStudent(student)">Edit</button>
+              <button class="btn btn-secondary" type="button" (click)="resetStudentPassword(student)">Reset Password</button>
+              <button class="btn btn-danger" type="button" (click)="confirmDeleteStudent(student)">Delete</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div *ngIf="assigningStudentId !== null" class="form-card assign-card">
+      <h3>Assign Teacher</h3>
+      <div class="field-row">
+        <label for="assign-teacher">Teacher</label>
+        <select id="assign-teacher" [(ngModel)]="teacherToAssignId" name="assignTeacherId">
+          <option value="0">Select teacher</option>
+          <option *ngFor="let teacher of teachers" [value]="teacher.teacherId">{{ teacher.firstName }} {{ teacher.lastName }}</option>
+        </select>
+      </div>
+      <div class="form-actions">
+        <button class="btn btn-primary" type="button" (click)="assignTeacher(assigningStudentId)">Assign</button>
+        <button class="btn btn-secondary" type="button" (click)="toggleAssignPanel(assigningStudentId)">Cancel</button>
+      </div>
+    </div>
+
+    <div *ngIf="editStudentTarget" class="form-card edit-card">
+      <h2>Edit Student</h2>
+      <form (ngSubmit)="saveEditStudent()">
+        <div class="field-row">
+          <label for="edit-student-first">First Name</label>
+          <input id="edit-student-first" name="editStudentFirst" [(ngModel)]="editStudent.firstName" />
+        </div>
+        <div class="field-row">
+          <label for="edit-student-last">Last Name</label>
+          <input id="edit-student-last" name="editStudentLast" [(ngModel)]="editStudent.lastName" />
+        </div>
+        <div class="field-row">
+          <label for="edit-student-email">Email</label>
+          <input id="edit-student-email" type="email" name="editStudentEmail" [(ngModel)]="editStudent.email" />
+        </div>
+        <div class="field-row">
+          <label for="edit-student-phone">Phone</label>
+          <input id="edit-student-phone" name="editStudentPhone" [(ngModel)]="editStudent.phone" />
+        </div>
+        <div class="field-row">
+          <label for="edit-student-grade">Grade</label>
+          <select id="edit-student-grade" name="editStudentGrade" [(ngModel)]="editStudent.gradeId">
+            <option value="0">Select grade</option>
+            <option *ngFor="let grade of grades" [value]="grade.id">{{ grade.name }}</option>
+          </select>
+        </div>
+        <div class="form-actions">
+          <button class="btn btn-primary" type="submit" [disabled]="savingEdit">Save</button>
+          <button class="btn btn-secondary" type="button" (click)="cancelEditStudent()">Cancel</button>
+        </div>
+      </form>
+      <div *ngIf="editError" class="alert alert-error">{{ editError }}</div>
+    </div>
+  </section>
+
+  <section *ngIf="activeTab === 'audit'" class="panel">
+    <div class="filter-row">
+      <div class="field-row">
+        <label for="audit-entity">Entity</label>
+        <select id="audit-entity" [(ngModel)]="auditEntityFilter" name="auditEntityFilter" (change)="applyAuditFilter()">
+          <option value="">All Entities</option>
+          <option *ngFor="let log of auditLogs" [value]="log.entityName">{{ log.entityName }}</option>
+        </select>
+      </div>
+      <div class="field-row">
+        <label for="audit-action">Action</label>
+        <select id="audit-action" [(ngModel)]="auditActionFilter" name="auditActionFilter" (change)="applyAuditFilter()">
+          <option value="">All Actions</option>
+          <option *ngFor="let log of auditLogs" [value]="log.action">{{ log.action }}</option>
+        </select>
+      </div>
+    </div>
+    <div class="table-card">
+      <h2>Audit Logs</h2>
+      <table>
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Entity</th>
+            <th>Action</th>
+            <th>User</th>
+            <th>Details</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let log of filteredAuditLogs">
+            <td>{{ log.timestamp | date:'short' }}</td>
+            <td>{{ log.entityName }}</td>
+            <td>{{ log.action }}</td>
+            <td>{{ log.username || log.user }}</td>
+            <td>{{ formatJson(log.details) }}</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+</div>

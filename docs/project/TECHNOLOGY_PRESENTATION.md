@@ -1,5 +1,4 @@
 ﻿# Technology Stack and Architecture Overview
-
 This presentation provides a brief overview of the key technologies and architectural patterns used in the Student Assessment Tracker application.
 
 ## Core Technologies & Architecture
