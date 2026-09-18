@@ -1,0 +1,71 @@
+
+    <div class="container">
+      <h2>{{ isEdit ? 'Edit Student' : 'Create Student' }}</h2>
+      
+      <div *ngIf="error && isServerError" class="server-error">{{ error }}</div>
+      
+      <form (ngSubmit)="onSubmit(form)" #form="ngForm" class="form">
+        <div class="form-group">
+          <label for="idPassportNo">ID / Passport No.:</label>
+          <input type="text" id="idPassportNo" [(ngModel)]="student.idPassportNo" name="idPassportNo" #idPassportNo="ngModel" placeholder="e.g., 123416789 or PA1234567" autocomplete="off" required minlength="9" maxlength="9" pattern="^[a-zA-Z0-9\-]+$" [disabled]="loading" />
+          <span class="error" *ngIf="(form.submitted || idPassportNo.touched || idPassportNo.dirty) && idPassportNo.hasError('required')">ID/Passport No. is required</span>
+          <span class="error" *ngIf="(form.submitted || idPassportNo.touched || idPassportNo.dirty) && idPassportNo.hasError('pattern')">ID/Passport No. can only contain letters, numbers, and hyphens</span>
+          <span class="error" *ngIf="(form.submitted || idPassportNo.touched || idPassportNo.dirty) && (idPassportNo.hasError('minlength') || idPassportNo.hasError('maxlength'))">ID/Passport No. must be exactly 9 characters</span>
+          <span class="error" *ngIf="fieldErrors['idPassportNo'] && fieldErrors['idPassportNo'].length">{{ fieldErrors['idPassportNo'].join('\n') }}</span>
+        </div>
+        
+        <div class="form-group">
+          <label for="firstName">First Name:</label>
+          <input type="text" id="firstName" [(ngModel)]="student.firstName" name="firstName" #firstName="ngModel" autocomplete="given-name" required minlength="2" maxlength="50" pattern="^[a-zA-Z\s\-]+$" (keypress)="allowOnlyLetters($event)" [disabled]="loading" />
+          <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('required')">First name is required</span>
+          <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('minlength')">First name must be at least 2 characters</span>
+          <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('maxlength')">First name cannot exceed 50 characters</span>
+          <span class="error" *ngIf="(form.submitted || firstName.touched || firstName.dirty) && firstName.hasError('pattern')">First name can only contain letters, spaces, and hyphens</span>
+          <span class="error" *ngIf="fieldErrors['firstName'] && fieldErrors['firstName'].length">{{ fieldErrors['firstName'].join('\n') }}</span>
+        </div>
+        
+        <div class="form-group">
+          <label for="lastName">Last Name:</label>
+          <input type="text" id="lastName" [(ngModel)]="student.lastName" name="lastName" #lastName="ngModel" autocomplete="family-name" required minlength="2" maxlength="50" pattern="^[a-zA-Z\s\-]+$" (keypress)="allowOnlyLetters($event)" [disabled]="loading" />
+          <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('required')">Last name is required</span>
+          <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('minlength')">Last name must be at least 2 characters</span>
+          <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('maxlength')">Last name cannot exceed 50 characters</span>
+          <span class="error" *ngIf="(form.submitted || lastName.touched || lastName.dirty) && lastName.hasError('pattern')">Last name can only contain letters, spaces, and hyphens</span>
+          <span class="error" *ngIf="fieldErrors['lastName'] && fieldErrors['lastName'].length">{{ fieldErrors['lastName'].join('\n') }}</span>
+        </div>
+        
+        <div class="form-group">
+          <label for="email">Email:</label>
+          <input type="email" id="email" [(ngModel)]="student.email" name="email" #email="ngModel" autocomplete="email" required maxlength="255" [disabled]="loading" />
+          <span class="error" *ngIf="(form.submitted || email.touched || email.dirty) && email.hasError('required')">Email is required</span>
+          <span class="error" *ngIf="(form.submitted || email.touched || email.dirty) && email.hasError('email')">Email must be a valid email address</span>
+          <span class="error" *ngIf="(form.submitted || email.touched || email.dirty) && email.hasError('maxlength')">Email cannot exceed 255 characters</span>
+          <span class="error" *ngIf="fieldErrors['email'] && fieldErrors['email'].length">{{ fieldErrors['email'].join('\n') }}</span>
+        </div>
+        
+        <div class="form-group">
+          <label for="phone">Phone (8 digits, e.g., 72254856):</label>
+          <input type="text" id="phone" [(ngModel)]="student.phone" name="phone" #phone="ngModel" placeholder="72254856" minlength="8" maxlength="8" pattern="^\\d{8}$" autocomplete="tel" (input)="validatePhone()" (keypress)="allowOnlyNumbers($event)" required [disabled]="loading" />
+          <span class="error" *ngIf="(form.submitted || phone.touched || phone.dirty) && phone.hasError('required')">Phone is required</span>
+          <span class="error" *ngIf="(form.submitted || phone.touched || phone.dirty) && (phone.hasError('pattern') || phone.hasError('minlength') || phone.hasError('maxlength'))">Phone must be exactly 8 digits</span>
+          <span class="error" *ngIf="fieldErrors['phone'] && fieldErrors['phone'].length">{{ fieldErrors['phone'].join('\n') }}</span>
+        </div>
+        
+        <div class="form-group">
+          <label for="gradeId">Grade:</label>
+          <select id="gradeId" [(ngModel)]="student.gradeId" name="gradeId" #gradeId="ngModel" required [disabled]="loading">
+            <option [ngValue]="0" disabled>-- Select Grade --</option>
+            <option *ngFor="let g of grades" [value]="g.id">{{ g.name }}</option>
+          </select>
+          <span class="error" *ngIf="(form.submitted || gradeId.touched || gradeId.dirty) && gradeId.hasError('required')">Grade is required</span>
+          <span class="error" *ngIf="fieldErrors['gradeId'] && fieldErrors['gradeId'].length">{{ fieldErrors['gradeId'].join('\n') }}</span>
+        </div>
+        
+        <div class="actions">
+          <button type="submit" class="btn btn-primary" [disabled]="loading">
+            {{ loading ? 'Saving...' : (isEdit ? 'Update' : 'Create') }}
+          </button>
+          <a [routerLink]="loading ? null : '/'" class="btn btn-secondary" [class.disabled]="loading">Cancel</a>
+        </div>
+      </form>
+    </div>
