@@ -7,7 +7,7 @@ no CORS changes are needed.
 
 | Part | Azure service | Plan |
 |------|---------------|------|
-| API and Angular front end | App Service (Windows, .NET 8) | Free (F1) |
+| API and Angular front end | App Service (Windows, .NET 10 runtime) | Free (F1) |
 | Database | Azure SQL Database | Free offer (serverless) |
 | Build and deploy | GitHub Actions (`.github/workflows/azure-app-service.yml`) | Free for public repositories |
 
@@ -37,7 +37,7 @@ subjects and the default admin are created the first time it runs.
 ## 2. Create the App Service
 
 1. Create a **Web App**.
-2. **Publish**: Code. **Runtime stack**: .NET 8 (LTS). **Operating system**:
+2. **Publish**: Code. **Runtime stack**: .NET 10 (LTS). The project targets .NET 8 and sets `RollForward` to `Major`, so it runs on the newer runtime. .NET 8 is no longer offered for new apps. **Operating system**:
    Windows. **Pricing plan**: Free F1.
 3. After it is created, open **Settings > Environment variables**.
 4. Under **Application settings**, add:
