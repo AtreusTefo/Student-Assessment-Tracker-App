@@ -75,6 +75,10 @@ StudentAssessmentTracker/                  ← Solution Root
 - **Tests**: Vitest 4
 - **Tables**: DataTables.net v2 + Buttons plugin
 
+## Deployment
+
+The app deploys to Azure as a single App Service (API and Angular front end together) with an Azure SQL Database, both on free plans. The GitHub Actions workflow in `.github/workflows/azure-app-service.yml` builds every pull request and deploys every push to `main`. See [docs/guides/DEPLOYMENT_AZURE.md](docs/guides/DEPLOYMENT_AZURE.md) for the setup steps.
+
 ## Database
 
 The application uses **SQL Server LocalDB** with **EF Core migrations** that are applied automatically on startup:

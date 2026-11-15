@@ -143,6 +143,18 @@ builder.Services.AddCors(options =>
 var jwtKey = builder.Configuration["Jwt:Key"]
     ?? throw new InvalidOperationException("Jwt:Key is not configured. Add it to appsettings.");
 
+// Outside Development, refuse to start with the placeholder key that ships in
+// appsettings.json (it is public on GitHub, so anyone could sign their own admin
+// tokens with it) or with a key too short for HMAC-SHA256.
+// On Azure App Service set the application setting Jwt__Key to a long random secret.
+if (!builder.Environment.IsDevelopment() &&
+    (jwtKey.StartsWith("REPLACE_WITH", StringComparison.Ordinal) || Encoding.UTF8.GetByteCount(jwtKey) < 32))
+{
+    throw new InvalidOperationException(
+        "Jwt:Key is still the placeholder from appsettings.json or is shorter than 32 bytes. " +
+        "Set a long random secret (for example the Jwt__Key application setting) before running outside Development.");
+}
+
 builder.Services
     .AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -160,8 +172,15 @@ builder.Services
         };
     });
 
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-    ?? throw new InvalidOperationException("Connection string 'DefaultConnection' not found.");
+// appsettings.json ships an empty DefaultConnection, so check for blank as well as
+// missing. On Azure App Service add a connection string named DefaultConnection.
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    throw new InvalidOperationException(
+        "Connection string 'DefaultConnection' is not configured. " +
+        "Set it in appsettings.Development.json locally, or as a connection string named DefaultConnection on the host.");
+}
 
 builder.Services.AddDbContext<ApplicationDbContext>(options =>
 {
