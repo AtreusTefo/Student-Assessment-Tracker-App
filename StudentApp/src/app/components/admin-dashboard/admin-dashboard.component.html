@@ -338,11 +338,11 @@
         </thead>
         <tbody>
           <tr *ngFor="let log of filteredAuditLogs">
-            <td>{{ log.timestamp | date:'short' }}</td>
+            <td>{{ log.changedAt | date:'short' }}</td>
             <td>{{ log.entityName }}</td>
             <td>{{ log.action }}</td>
-            <td>{{ log.username || log.user }}</td>
-            <td>{{ formatJson(log.details) }}</td>
+            <td>{{ log.changedBy || '—' }}<span *ngIf="log.changedByRole"> ({{ log.changedByRole }})</span></td>
+            <td>{{ formatJson(log.newValues ?? log.oldValues) }}</td>
           </tr>
         </tbody>
       </table>
